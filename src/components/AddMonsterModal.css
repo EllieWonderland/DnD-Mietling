@@ -1,0 +1,102 @@
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: #00000090;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 150;
+}
+
+.modal-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-red);
+  border-radius: 12px;
+  padding: 28px 32px;
+  width: min(400px, 90vw);
+  display: flex; flex-direction: column; gap: 16px;
+  box-shadow: 0 8px 40px #000a;
+}
+
+.modal-title {
+  font-family: var(--font-title);
+  font-size: 1.4rem;
+  color: #ff9999;
+  letter-spacing: 0.06em;
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.modal-field label {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.modal-input {
+  padding: 10px 14px;
+  background: var(--bg-dark);
+  border: 1px solid var(--gray-dim);
+  border-radius: 6px;
+  color: var(--text-main);
+  font-size: 1rem;
+  font-family: var(--font-body);
+  width: 100%;
+}
+
+.modal-input:focus {
+  outline: none;
+  border-color: var(--red-mid);
+}
+
+.modal-row {
+  display: flex;
+  gap: 12px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.modal-cancel {
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid var(--gray-dim);
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.modal-cancel:hover { border-color: var(--text-dim); color: var(--text-main); }
+
+.modal-add {
+  padding: 10px 24px;
+  background: var(--red-dark);
+  border: 1px solid var(--red-mid);
+  border-radius: 6px;
+  color: #ff9999;
+  font-family: var(--font-title);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  transition: all 0.15s;
+}
+
+.modal-add:hover:not(:disabled) { background: var(--red-mid); }
+.modal-add:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Ally variant */
+.modal-box--ally  { border-color: #3a6ea8; }
+.modal-title--ally { color: #99ccff; }
+.modal-add--ally {
+  background: #0d1e30;
+  border-color: #3a6ea8;
+  color: #99ccff;
+}
+.modal-add--ally:hover:not(:disabled) { background: #152840; }

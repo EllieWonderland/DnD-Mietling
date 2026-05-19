@@ -1,0 +1,74 @@
+.victory-overlay {
+  position: fixed; inset: 0;
+  background: #00000095;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 300;
+  cursor: pointer;
+}
+
+.victory-canvas {
+  position: absolute; inset: 0;
+  pointer-events: none;
+}
+
+.victory-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  animation: victoryIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes victoryIn {
+  from { transform: scale(0.3); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.victory-text {
+  font-family: var(--font-title);
+  font-size: clamp(4rem, 14vw, 9rem);
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.15em;
+  text-shadow:
+    0 0 30px var(--gold),
+    0 0 80px #c9a22780,
+    0 4px 8px #00000080;
+  animation: pulseGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes pulseGlow {
+  from { text-shadow: 0 0 30px var(--gold), 0 0 80px #c9a22780; }
+  to   { text-shadow: 0 0 60px var(--gold), 0 0 150px #c9a227cc; }
+}
+
+.victory-sub {
+  font-family: var(--font-title);
+  font-size: clamp(1rem, 3vw, 1.6rem);
+  color: var(--text-dim);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.victory-btn {
+  margin-top: 12px;
+  padding: 14px 48px;
+  background: linear-gradient(135deg, #7a6215, #c9a227, #7a6215);
+  color: var(--bg-dark);
+  font-family: var(--font-title);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  border-radius: 8px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 24px #c9a22760;
+  transition: all 0.2s;
+}
+
+.victory-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 36px #c9a22790;
+}

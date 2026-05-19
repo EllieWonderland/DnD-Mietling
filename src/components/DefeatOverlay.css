@@ -1,0 +1,76 @@
+.defeat-overlay {
+  position: fixed; inset: 0;
+  background: #000000b0;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 300;
+  cursor: pointer;
+}
+
+.defeat-canvas {
+  position: absolute; inset: 0;
+  pointer-events: none;
+}
+
+.defeat-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  animation: defeatIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes defeatIn {
+  from { transform: scale(1.4); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.defeat-text {
+  font-family: var(--font-title);
+  font-size: clamp(3.5rem, 13vw, 8rem);
+  font-weight: 700;
+  color: #cc1a1a;
+  letter-spacing: 0.15em;
+  text-shadow:
+    0 0 30px #8b0000,
+    0 0 80px #66000080,
+    0 4px 8px #00000099;
+  animation: defeatPulse 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes defeatPulse {
+  from { text-shadow: 0 0 20px #8b0000, 0 0 60px #66000060; }
+  to   { text-shadow: 0 0 50px #cc1a1a, 0 0 120px #8b0000aa; }
+}
+
+.defeat-sub {
+  font-family: var(--font-title);
+  font-size: clamp(0.9rem, 2.5vw, 1.4rem);
+  color: #a08080;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.defeat-btn {
+  margin-top: 12px;
+  padding: 14px 48px;
+  background: linear-gradient(135deg, #3a0a0a, #8b0000, #3a0a0a);
+  color: #e8d8d8;
+  font-family: var(--font-title);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  border-radius: 8px;
+  text-transform: uppercase;
+  border: 1px solid #8b0000;
+  box-shadow: 0 4px 24px #8b000060;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.defeat-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 36px #8b000090;
+}

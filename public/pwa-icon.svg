@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="DnD Mietling">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2a2018" />
+      <stop offset="100%" stop-color="#1a1410" />
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f2d36f" />
+      <stop offset="100%" stop-color="#c9a227" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)" />
+  <circle cx="256" cy="256" r="176" fill="none" stroke="url(#gold)" stroke-width="20" opacity="0.9" />
+  <path d="M256 116l84 64-32 98 30 94-82 60-82-60 30-94-32-98z" fill="none" stroke="url(#gold)" stroke-width="20" stroke-linejoin="round" />
+  <path d="M190 316h132" stroke="url(#gold)" stroke-width="22" stroke-linecap="round" />
+  <path d="M196 180h120" stroke="url(#gold)" stroke-width="18" stroke-linecap="round" opacity="0.85" />
+  <text x="256" y="298" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="92" font-weight="700" fill="#e8dcc8">DM</text>
+</svg>

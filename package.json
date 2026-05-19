@@ -1,0 +1,26 @@
+{
+  "name": "dnd-mietling",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:all": "concurrently \"node server.js\" \"vite --host\"",
+    "build": "vite build",
+    "preview": "vite preview",
+    "preview:all": "concurrently \"node server.js\" \"vite preview --host\"",
+    "server": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^9.1.0",
+    "vite": "^5.4.2"
+  }
+}
