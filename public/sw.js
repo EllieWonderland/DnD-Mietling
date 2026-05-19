@@ -19,6 +19,19 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url)
   if (url.origin !== self.location.origin) return
 
+  // Bypass cache for media (audio/video) — prefer network and don't cache large media files
+  const mediaExt = ['.mp3', '.mp4', '.mov', '.webm', '.wav', '.ogg']
+  const isMedia = mediaExt.some(ext => url.pathname.toLowerCase().endsWith(ext))
+    || event.request.destination === 'audio'
+    || event.request.destination === 'video'
+
+  if (isMedia) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    )
+    return
+  }
+
   event.respondWith(
     caches.match(event.request).then(cached => {
       const networkFetch = fetch(event.request)
