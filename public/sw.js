@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dnd-mietling-v2'
+const CACHE_NAME = 'dnd-mietling-v3'
 const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/pwa-icon.svg']
 
 self.addEventListener('install', event => {
