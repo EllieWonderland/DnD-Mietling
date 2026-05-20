@@ -81,40 +81,55 @@ export default function App() {
   const pendingStateRef = useRef(null)
   const [displayState, setDisplayState] = useState(null)
 
-  // WebSocket: connect with auto-reconnect
+  // WebSocket: load URL from config.json at runtime (not baked at build time)
   useEffect(() => {
     let closed = false
 
-    function connect() {
-      if (closed) return
-      const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const wsUrl = import.meta.env.PROD
-        ? `${wsProto}//${window.location.host}`
-        : `ws://${window.location.hostname}:3001`
-      const ws = new WebSocket(wsUrl)
-      wsRef.current = ws
+    async function init() {
+      let wsUrl
+      try {
+        const res = await fetch('/config.json')
+        const cfg = await res.json()
+        if (cfg.wsUrl && !cfg.wsUrl.startsWith('REPLACE')) wsUrl = cfg.wsUrl
+      } catch {}
 
-      ws.onopen = () => {
-        if (pendingStateRef.current) {
-          ws.send(pendingStateRef.current)
-          pendingStateRef.current = null
-        }
+      if (!wsUrl) {
+        wsUrl = import.meta.env.DEV
+          ? `ws://${window.location.hostname}:3001`
+          : null
       }
 
-      ws.onmessage = event => {
-        if (APP_MODE === 'display') {
-          try {
-            const msg = JSON.parse(event.data)
-            if (msg.type === 'STATE') setDisplayState(msg.state)
-          } catch {}
+      if (!wsUrl) return // no server configured — silently skip WebSocket
+
+      function connect() {
+        if (closed) return
+        const ws = new WebSocket(wsUrl)
+        wsRef.current = ws
+
+        ws.onopen = () => {
+          if (pendingStateRef.current) {
+            ws.send(pendingStateRef.current)
+            pendingStateRef.current = null
+          }
         }
+
+        ws.onmessage = event => {
+          if (APP_MODE === 'display') {
+            try {
+              const msg = JSON.parse(event.data)
+              if (msg.type === 'STATE') setDisplayState(msg.state)
+            } catch {}
+          }
+        }
+
+        ws.onclose = () => { if (!closed) setTimeout(connect, 3000) }
+        ws.onerror = () => {}
       }
 
-      ws.onclose = () => { if (!closed) setTimeout(connect, 3000) }
-      ws.onerror = () => {}
+      connect()
     }
 
-    connect()
+    init()
     return () => {
       closed = true
       if (wsRef.current) {
