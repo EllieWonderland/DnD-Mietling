@@ -1,20 +1,24 @@
-import adventureUrl from '../Music/adventure_music.mp3'
-import dawnUrl from '../Music/dawn_music.mp3'
-import dreamingUrl from '../Music/dreaming_music.mp3'
-import epicUrl from '../Music/epic-fantasy-background-music.mp3'
-import walkingUrl from '../Music/walking_music.mp3'
 import cheerUrl from '../Effects/cheer.mp3'
 import disappointmentUrl from '../Effects/disappointment.mp3'
 import whipUrl from '../Effects/whip.mp3'
-import campfireVideo from '../Videos/Lagerfeuer.mp4'
-import villageVideo from '../Videos/dorf.mp4'
-import tavernVideo from '../Videos/taverne.mp4'
-import forestVideo from '../Videos/wald.mp4'
-import gladeVideo from '../Videos/lichtung.mov'
-import dungeonVideo from '../Videos/dungeon.mp4'
-import dustyDungeonVideo from '../Videos/dusty_dungeon.mp4'
-import houseVideo from '../Videos/house_in_woods.mp4'
-import bachVideo from '../Videos/bach.mp4'
+
+const CDN = 'https://pub-28096ab7cf5d497990bc972094f05721.r2.dev'
+
+const adventureUrl      = `${CDN}/Music/adventure_music.mp3`
+const dawnUrl           = `${CDN}/Music/dawn_music.mp3`
+const dreamingUrl       = `${CDN}/Music/dreaming_music.mp3`
+const epicUrl           = `${CDN}/Music/epic-fantasy-background-music.mp3`
+const walkingUrl        = `${CDN}/Music/walking_music.mp3`
+
+const campfireVideo     = `${CDN}/Videos/Lagerfeuer.mp4`
+const villageVideo      = `${CDN}/Videos/dorf.mp4`
+const tavernVideo       = `${CDN}/Videos/taverne.mp4`
+const forestVideo       = `${CDN}/Videos/wald.mp4`
+const gladeVideo        = `${CDN}/Videos/lichtung.mp4`
+const dungeonVideo      = `${CDN}/Videos/dungeon.mp4`
+const dustyDungeonVideo = `${CDN}/Videos/dusty_dungeon.mp4`
+const houseVideo        = `${CDN}/Videos/house_in_woods.mp4`
+const bachVideo         = `${CDN}/Videos/bach.mp4`
 
 export function IconCompass() {
   return (

@@ -55,7 +55,7 @@ export default function AmbienceScene({ scene, onPlayEffect, onBack, displayOnly
           loop
           muted={!scene.hasAudio}
           playsInline
-          preload="auto"
+          preload="none"
           poster={poster}
           onPlaying={() => setVideoStatus('ready')}
           onError={() => setVideoStatus('error')}
