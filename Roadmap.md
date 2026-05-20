@@ -94,7 +94,124 @@ Priorisierte Aufgabenliste mit Umsetzungsschritten. Nach Abschluss jeder Aufgabe
    - Kostenlos: dauerhaft im Free Tier (bis ~10 GB, derzeit ~200 MB geplant)
    - Kommerziell verwendbar: Ja, R2 ist nicht auf Privat beschränkt
 
-10. Idee: Schwer komprimierbare Videos durch bessere Quellen ersetzen
+10. WebSocket-Server: Migration zu Cloudflare Workers + Durable Objects
+    - Ziel: Den bisherigen `server.js` (Express + ws, läuft nicht auf Vercel) durch einen Cloudflare Worker mit Durable Object ersetzen. Der Worker übernimmt die WebSocket-Verbindung zwischen Controller (Tablet) und Display (Tisch-TV), leitet State weiter und cached den letzten bekannten State für neu verbindende Displays.
+    - Status: TODO
+
+    **Hintergrund & Problem:**
+    `server.js` ist ein persistenter Node.js-Prozess — Vercel ist serverless und unterstützt das nicht. Deshalb hängt `?mode=display` dauerhaft bei "Verbindung wird hergestellt". Der WebSocket-Server läuft aktuell nirgendwo in der Cloud.
+
+    **Warum Cloudflare Workers + Durable Objects (nicht Fly.io o.ä.):**
+    - Cloudflare bereits im Einsatz (R2) → eine Plattform für alles
+    - Kein VM-Management, kein Einschlafen, global verteilt
+    - Free Tier: 100k Worker-Requests/Tag + großzügige DO-Compute-Zeit — für eine Spielgruppe weit mehr als genug
+    - Kommerziell: $5/Monat Workers Paid Plan reicht für Vermarktung
+    - Durable Objects: Hibernatable WebSockets — DO schläft zwischen Nachrichten, spart Compute, bleibt aber verbunden
+
+    **Neue Dateistruktur:**
+    ```
+    worker/
+    ├── src/
+    │   └── index.js       ← Worker-Einstiegspunkt + Durable Object (GameSession)
+    └── wrangler.toml      ← Cloudflare-Deployment-Konfiguration
+    ```
+
+    **Phase 1 — Worker + Durable Object schreiben (`worker/src/index.js`)**
+    - [ ] `GameSession` Durable Object implementieren:
+      - Hält eine Liste aktiver WebSocket-Verbindungen
+      - Cached `lastState` (letzter STATE-Message vom Controller)
+      - Neue Verbindungen erhalten sofort `lastState` (Display verbindet sich nach Controller)
+      - Nutzt Hibernatable WebSockets (`state.acceptWebSocket()`) statt `webSocket.accept()` für Effizienz
+      - Leitet STATE-Messages an alle anderen verbundenen Clients weiter
+    - [ ] Worker-Einstiegspunkt: leitet alle WebSocket-Upgrade-Requests an die `GameSession`-DO weiter (alle Clients landen in einer einzigen `GameSession`-Instanz namens `"default"`)
+    - [ ] CORS-Header setzen, falls nötig (Vercel-Domain + localhost)
+
+    Referenz-Implementierung (Durable Object mit Hibernatable WebSockets):
+    ```js
+    export class GameSession {
+      constructor(state) { this.state = state; this.lastState = null }
+
+      async fetch(request) {
+        const [client, server] = Object.values(new WebSocketPair())
+        this.state.acceptWebSocket(server)
+        if (this.lastState) server.send(this.lastState)
+        return new Response(null, { status: 101, webSocket: client })
+      }
+
+      webSocketMessage(ws, data) {
+        try {
+          const msg = JSON.parse(data)
+          if (msg.type === 'STATE') {
+            this.lastState = data
+            for (const client of this.state.getWebSockets()) {
+              if (client !== ws) client.send(data)
+            }
+          }
+        } catch {}
+      }
+
+      webSocketClose(ws) {}
+      webSocketError(ws) {}
+    }
+
+    export default {
+      async fetch(request, env) {
+        const id = env.GAME_SESSION.idFromName('default')
+        return env.GAME_SESSION.get(id).fetch(request)
+      }
+    }
+    ```
+
+    **Phase 2 — `wrangler.toml` konfigurieren**
+    - [ ] Wrangler CLI installieren: `npm install -g wrangler`
+    - [ ] `wrangler login` (Cloudflare-Account verknüpfen)
+    - [ ] `worker/wrangler.toml` anlegen:
+      ```toml
+      name = "dnd-mietling-ws"
+      main = "src/index.js"
+      compatibility_date = "2024-09-23"
+      compatibility_flags = ["nodejs_compat"]
+
+      [durable_objects]
+      bindings = [{ name = "GAME_SESSION", class_name = "GameSession" }]
+
+      [[migrations]]
+      tag = "v1"
+      new_classes = ["GameSession"]
+      ```
+    - [ ] Deployment testen: `wrangler deploy` aus dem `worker/`-Verzeichnis
+    - [ ] Worker-URL notieren: `wss://dnd-mietling-ws.<account>.workers.dev`
+
+    **Phase 3 — App.jsx: WS-URL konfigurierbar machen**
+    - [ ] Aktuelle Hardcodierung ersetzen:
+      ```js
+      // Vorher (hardcodiert auf window.location.host — funktioniert nicht auf Vercel):
+      const wsUrl = import.meta.env.PROD
+        ? `${wsProto}//${window.location.host}`
+        : `ws://${window.location.hostname}:3001`
+
+      // Nachher (konfigurierbar via Env Var):
+      const wsUrl = import.meta.env.VITE_WS_URL
+        ?? (import.meta.env.PROD
+          ? `${wsProto}//${window.location.host}`
+          : `ws://${window.location.hostname}:3001`)
+      ```
+    - [ ] `.env.development` anlegen: `VITE_WS_URL=ws://localhost:3001` (für lokale Dev-Sessions mit server.js)
+    - [ ] `VITE_WS_URL=wss://dnd-mietling-ws.<account>.workers.dev` in Vercel-Dashboard als Env Var eintragen
+
+    **Phase 4 — QA**
+    - [ ] Lokaler Test: Controller auf Tab 1, Display (`?mode=display`) auf Tab 2 → State wird synchronisiert
+    - [ ] Produktions-Test: Controller auf Tablet, Display auf TV → Musik/Videos spielen korrekt
+    - [ ] Reconnect-Test: Display-Tab kurz schließen und neu öffnen → bekommt sofort letzten State
+    - [ ] Stabilität: Worker läuft stabil über eine ganze Spielsession (2–4 Stunden)
+
+    **Ergebnis nach Umsetzung:**
+    - WebSocket-Server: Cloudflare Edge, global, kein Einschlafen, kein VM
+    - Kosten: $0 im Free Tier für private Nutzung
+    - Vermarktung: Workers Paid Plan ($5/Monat) reicht für beliebig viele Gruppen
+    - `server.js` bleibt als lokale Dev-Fallback erhalten, wird aber nicht mehr deployed
+
+12. Idee: Schwer komprimierbare Videos durch bessere Quellen ersetzen
     - Ziel: `wald.mp4` (kaum Komprimierung, war bereits H.264) und `lichtung.mp4` (nur 35 % Reduktion, hohes Quelldatenvolumen) durch web-optimierte Alternativen ersetzen, die bei CRF 28 deutlich kleiner werden.
     - Status: IDEE — kein akuter Handlungsbedarf, bis Videos ausgetauscht werden sollen.
     - Hinweis: Gute Quellen für lizenzfreie Ambient-Loops: Pexels, Pixabay, Mixkit (alle kostenlos, auch kommerziell).
