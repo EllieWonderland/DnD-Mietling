@@ -63,32 +63,23 @@ Priorisierte Aufgabenliste mit Umsetzungsschritten. Nach Abschluss jeder Aufgabe
    `+faststart` ist wichtig: Ermöglicht sofortigen Start beim Streamen (Metadaten am Dateianfang).
 
    **Phase 2 — Cloudflare R2 einrichten**
-   - [ ] Cloudflare-Account erstellen (kostenlos)
-   - [ ] R2-Bucket anlegen (z. B. `dnd-mietling-media`)
-   - [ ] CORS-Policy konfigurieren: erlaubt Requests von `localhost:5173` und der Vercel-Domain
-   - [ ] Optimierte Medien hochladen (Videos nach Phase 1, Audio-Tracks)
-   - [ ] Öffentlichen Bucket-Endpunkt aktivieren ODER Custom Domain (z. B. `media.dndmietling.app`) via Cloudflare DNS verbinden
-   - [ ] CDN-Basis-URL als Umgebungsvariable anlegen: `VITE_MEDIA_BASE_URL=https://...`
+   - [x] Cloudflare-Account erstellen (kostenlos)
+   - [x] R2-Bucket `dnd-mietling-media` anlegen
+   - [x] CORS-Policy konfigurieren (localhost:5173 + *.vercel.app, Range-Header erlaubt)
+   - [x] Optimierte Videos + Musik hochladen (Music/ und Videos/ im Bucket)
+   - [x] Öffentlichen Endpunkt aktiviert: `https://pub-28096ab7cf5d497990bc972094f05721.r2.dev`
 
-   **Phase 3 — Code-Refactoring (soundboardData.jsx + Overlays)**
-   - [ ] `soundboardData.jsx`: Alle `import videoFile from '../Videos/...'` durch URL-Strings ersetzen
-     ```js
-     // Vorher:
-     import campfireVideo from '../Videos/Lagerfeuer.mp4'
-     // Nachher:
-     const BASE = import.meta.env.VITE_MEDIA_BASE_URL
-     const campfireVideo = `${BASE}/Videos/Lagerfeuer.mp4`
-     ```
-   - [ ] `VictoryOverlay.jsx` + `DefeatOverlay.jsx`: Gleiche Umstellung für `orchestral_win.mp3` / `defeat_outro.mp3`
-   - [ ] Lokaler Fallback für Entwicklung: `.env.development` mit `VITE_MEDIA_BASE_URL=http://localhost:5173/media` + Symlink auf `src/Videos`/`src/Music` in `public/media/`
-   - [ ] `AmbienceScene.jsx`: `preload="none"` statt `preload="auto"` setzen — Video nur laden, wenn Szene ausgewählt wird
-   - [ ] Lazy-Loading: Video-`src` erst setzen, wenn Szene aktiv wird (kein Vor-Laden aller 9 Szenen)
+   **Phase 3 — Code-Refactoring (soundboardData.jsx + AmbienceScene)**
+   - [x] `soundboardData.jsx`: Alle Video- und Musik-Imports durch CDN-URLs ersetzt (CDN-Konstante `const CDN = '...'`)
+   - [x] `lichtung.mov` → `lichtung.mp4` in der URL korrigiert
+   - [x] Effects-Imports (`cheer`, `disappointment`, `whip`) bleiben gebündelt — Overlay-Sounds auch
+   - [x] `AmbienceScene.jsx`: `preload="auto"` → `preload="none"` (kein Vor-Laden beim Seitenstart)
+   - [x] `.gitignore`: `src/Videos/` und die 5 CDN-Musiktracks ausgeschlossen; Effects + Overlay-Sounds bleiben im Repo
 
    **Phase 4 — Deployment & Vercel-Konfiguration**
-   - [ ] `vercel.json`: Cache-Header für Medien-Assets von R2 prüfen (R2 liefert eigene Cache-Header)
-   - [ ] `.gitignore` / `.vercelignore`: `src/Videos/`, `src/Music/`, `src/Effects/` ausschließen, damit große Dateien nie ins Repo/Deployment geraten
-   - [ ] `vite.config.ts`: Sicherstellen, dass keine Media-Imports mehr existieren (Build schlägt fehl, wenn doch)
-   - [ ] Environment Variable `VITE_MEDIA_BASE_URL` in Vercel-Dashboard eintragen
+   - [x] `src/Videos/` und CDN-Musiktracks aus git-Tracking entfernt (`git rm --cached`)
+   - [x] Build verifiziert: `dist/` ist ~5 MB (zuvor 700+ MB) — keine Media-Imports mehr im Bundle
+   - [ ] Vercel-Deploy nach Push prüfen: läuft der Build sauber durch?
 
    **Phase 5 — QA & Fallback-Verhalten**
    - [ ] Testen: Alle 9 Video-Szenen laden korrekt (Range Requests, keine CORS-Fehler)
