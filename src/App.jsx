@@ -176,6 +176,29 @@ export default function App() {
     }
   }, [])
 
+  // Controller: play music locally
+  useEffect(() => {
+    if (APP_MODE !== 'controller') return
+    if (musicRef.current) {
+      musicRef.current.pause()
+      musicRef.current.currentTime = 0
+      musicRef.current = null
+    }
+    if (!playingMusicKey) return
+    const track = MUSIC_TRACKS.find(t => t.key === playingMusicKey)
+    if (!track) return
+    const audio = new Audio(track.url)
+    audio.loop = true
+    audio.volume = masterVolume
+    audio.play().catch(() => {})
+    musicRef.current = audio
+  }, [playingMusicKey])
+
+  useEffect(() => {
+    if (APP_MODE !== 'controller' || !musicRef.current) return
+    musicRef.current.volume = masterVolume
+  }, [masterVolume])
+
   // TV: start/stop music when playingMusicKey changes (or after audio unlock)
   useEffect(() => {
     if (APP_MODE !== 'display' || !audioUnlocked) return
