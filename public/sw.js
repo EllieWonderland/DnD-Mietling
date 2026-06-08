@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dnd-mietling-v3'
+const CACHE_NAME = 'dnd-mietling-v4'
 const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/pwa-icon.svg']
 
 self.addEventListener('install', event => {
@@ -19,7 +19,7 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url)
   if (url.origin !== self.location.origin) return
 
-  // Bypass cache for media (audio/video) — prefer network and don't cache large media files
+  // Medien (Audio/Video): immer Netzwerk, nicht cachen
   const mediaExt = ['.mp3', '.mp4', '.mov', '.webm', '.wav', '.ogg']
   const isMedia = mediaExt.some(ext => url.pathname.toLowerCase().endsWith(ext))
     || event.request.destination === 'audio'
@@ -32,6 +32,32 @@ self.addEventListener('fetch', event => {
     return
   }
 
+  // HTML / Navigation / Runtime-Config: NETWORK-FIRST.
+  // index.html verweist auf gehashte Asset-Dateinamen — eine veraltete
+  // gecachte index.html wuerde sonst dauerhaft die alte App-Version laden.
+  // config.json ist Runtime-Konfiguration (WS-URL) und darf nie veralten.
+  const isFresh = event.request.mode === 'navigate'
+    || event.request.destination === 'document'
+    || url.pathname === '/'
+    || url.pathname.endsWith('.html')
+    || url.pathname === '/config.json'
+
+  if (isFresh) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response && response.status === 200) {
+            const clone = response.clone()
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone))
+          }
+          return response
+        })
+        .catch(() => caches.match(event.request).then(cached => cached || caches.match('/')))
+    )
+    return
+  }
+
+  // Uebrige Assets (gehashte JS/CSS, Bilder): cache-first + Hintergrund-Update
   event.respondWith(
     caches.match(event.request).then(cached => {
       const networkFetch = fetch(event.request)
