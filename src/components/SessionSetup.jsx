@@ -12,6 +12,8 @@ export default function SessionSetup({
   onPlayMusic,
   onPlayEffect,
   onOpenScene,
+  onStopScene,
+  activeSceneKey,
   mood,
   onMoodChange,
   onSelectMusic,
@@ -145,6 +147,8 @@ export default function SessionSetup({
             onPlayMusic={onPlayMusic}
             onPlayEffect={onPlayEffect}
             onOpenScene={onOpenScene}
+            onStopScene={onStopScene}
+            activeSceneKey={activeSceneKey}
             mood={mood}
             onMoodChange={onMoodChange}
             onSelectMusic={onSelectMusic}

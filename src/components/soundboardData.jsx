@@ -37,6 +37,16 @@ const dungeonVideo      = `${CDN}/Videos/dungeon.mp4`
 const dustyDungeonVideo = `${CDN}/Videos/dusty_dungeon.mp4`
 const houseVideo        = `${CDN}/Videos/house_in_woods.mp4`
 const bachVideo         = `${CDN}/Videos/bach.mp4`
+const castleVideo       = `${CDN}/Videos/burg.mp4`
+const libraryVideo      = `${CDN}/Videos/bibliothek.mp4`
+const shipVideo         = `${CDN}/Videos/piratenschiff.mp4`
+const forestEdgeVideo   = `${CDN}/Videos/waldrand.mp4`
+const graveyardVideo    = `${CDN}/Videos/friedhof.mp4`
+const caveVideo         = `${CDN}/Videos/höhle.mp4`
+const cellVideo         = `${CDN}/Videos/kerker.mp4`
+const moonVideo         = `${CDN}/Videos/mond.mp4`
+const moonSeaVideo      = `${CDN}/Videos/mond_meer.mp4`
+const nightRainVideo    = `${CDN}/Videos/nachtregen.mp4`
 
 export function IconCompass() {
   return (
@@ -331,6 +341,26 @@ export function IconCoins() {
   )
 }
 
+export function IconShip() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 15h16l-2 5H6z"/>
+      <path d="M12 15V4l6 4-6 2"/>
+      <path d="M12 15v-5"/>
+      <path d="M2 21c1.4 0 1.4-1 2.8-1s1.4 1 2.8 1 1.4-1 2.8-1 1.4 1 2.8 1 1.4-1 2.8-1"/>
+    </svg>
+  )
+}
+
+export function IconBook() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 5a2 2 0 0 1 2-2h5v17H6a2 2 0 0 0-2 2z"/>
+      <path d="M20 5a2 2 0 0 0-2-2h-5v17h5a2 2 0 0 1 2 2z"/>
+    </svg>
+  )
+}
+
 // JINGLES / EVENT SOUNDS (kein Stimmungsprofil — werden NICHT vom Regler-Selektor gewählt)
 export const EVENT_SOUNDS = [
   { key: 'defeat',    label: 'Defeat Outro',       url: m('defeat_outro.mp3') },
@@ -465,4 +495,14 @@ export const VIDEO_SCENES = [
   { key: 'dusty-dungeon', label: 'Ruinen', url: dustyDungeonVideo, Icon: IconRuins },
   { key: 'house', label: 'Waldhaus', url: houseVideo, Icon: IconHouse },
   { key: 'river', label: 'Bach', url: bachVideo, Icon: IconRiver },
+  { key: 'forest-edge', label: 'Waldrand', url: forestEdgeVideo, Icon: IconTrees },
+  { key: 'castle', label: 'Burg', url: castleVideo, Icon: IconCrown },
+  { key: 'library', label: 'Bibliothek', url: libraryVideo, Icon: IconBook },
+  { key: 'ship', label: 'Piratenschiff', url: shipVideo, Icon: IconShip },
+  { key: 'cave', label: 'Höhle', url: caveVideo, Icon: IconDungeon },
+  { key: 'cell', label: 'Kerker', url: cellVideo, Icon: IconDungeon },
+  { key: 'graveyard-scene', label: 'Friedhof', url: graveyardVideo, Icon: IconRuins },
+  { key: 'moon', label: 'Mondnacht', url: moonVideo, Icon: IconMoon },
+  { key: 'moon-sea', label: 'Mondmeer', url: moonSeaVideo, Icon: IconRiver },
+  { key: 'night-rain', label: 'Nachtregen', url: nightRainVideo, Icon: IconMoon },
 ]

@@ -157,6 +157,66 @@
   box-shadow: 0 0 8px #f2d36f88;
 }
 
+.combat-sb-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.combat-sb-tab {
+  padding: 8px 6px;
+  border-radius: 8px;
+  border: 1px solid var(--border-gold);
+  background: #1a1510;
+  color: var(--gold-light);
+  font-weight: 700;
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.combat-sb-tab:hover {
+  border-color: var(--gold);
+  background: #2a2016;
+}
+
+.combat-sb-tab.active {
+  border-color: var(--gold-light);
+  background: #2e2010;
+  color: var(--gold);
+  box-shadow: 0 0 10px var(--active-glow);
+}
+
+.combat-sb-tab-live {
+  margin-left: 4px;
+  color: #5fd06a;
+  font-size: 0.6rem;
+}
+
+.combat-sb-tabpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 38vh;
+  overflow-y: auto;
+}
+
+.combat-sb-effect-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.combat-sb-group-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
+}
+
 .combat-sb-section {
   display: flex;
   align-items: center;

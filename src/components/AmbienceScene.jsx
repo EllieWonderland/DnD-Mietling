@@ -53,7 +53,7 @@ export default function AmbienceScene({ scene, onPlayEffect, onBack, displayOnly
           src={scene.url}
           autoPlay
           loop
-          muted={!scene.hasAudio}
+          muted
           playsInline
           preload="none"
           poster={poster}

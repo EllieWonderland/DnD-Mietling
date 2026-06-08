@@ -75,7 +75,6 @@ export default function App() {
   const [playerProfiles, setPlayerProfiles] = useState(() => loadPlayerProfiles() || PLAYER_DEFAULTS)
   const [savedCombat, setSavedCombat] = useState(() => loadCombatState())
   const [mood, setMood] = useState({ danger: 0.2, energy: 0.4, mysticism: 0.3, tone: 0.6 })
-  const musicRef = useRef(null)
   const tvMusicRef = useRef(null)
 
   const wsRef = useRef(null)
@@ -177,28 +176,8 @@ export default function App() {
     }
   }, [])
 
-  // Controller: play music locally
-  useEffect(() => {
-    if (APP_MODE !== 'controller') return
-    if (musicRef.current) {
-      musicRef.current.pause()
-      musicRef.current.currentTime = 0
-      musicRef.current = null
-    }
-    if (!playingMusicKey) return
-    const track = MUSIC_TRACKS.find(t => t.key === playingMusicKey)
-    if (!track) return
-    const audio = new Audio(track.url)
-    audio.loop = true
-    audio.volume = masterVolume
-    audio.play().catch(() => {})
-    musicRef.current = audio
-  }, [playingMusicKey])
-
-  useEffect(() => {
-    if (APP_MODE !== 'controller' || !musicRef.current) return
-    musicRef.current.volume = masterVolume
-  }, [masterVolume])
+  // Musik & Video laufen NUR auf dem TV (Display-Modus). Der Controller (Master)
+  // steuert nur und zeigt an, was läuft — kein lokales Abspielen hier.
 
   // TV: start/stop music when playingMusicKey changes (or after audio unlock)
   useEffect(() => {
@@ -280,16 +259,15 @@ export default function App() {
     setSavedCombat(null)
   }
 
+  // Szene starten: läuft nur auf dem TV. Controller wechselt NICHT in eine
+  // Vollbild-Ansicht, sondern zeigt im Soundboard nur an, dass sie live ist.
   function openAmbienceScene(scene) {
     if (!scene) return
-    setAmbienceScene(scene.key)
-    setPhase('ambience')
+    setAmbienceScene(prev => prev === scene.key ? null : scene.key)
   }
 
-  function backToSetupFromAmbience() {
-    stopMusic()
+  function stopAmbienceScene() {
     setAmbienceScene(null)
-    setPhase('setup')
   }
 
   function updatePlayerProfile(id, name, maxHp) {
@@ -392,12 +370,9 @@ export default function App() {
 
     return (
       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-        {(dp === 'setup' || !dp) && (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src={mietlingLogo} alt="DnD Mietling" style={{ maxWidth: '400px', width: '60vw', objectFit: 'contain' }} />
-          </div>
-        )}
-        {dp === 'combat' && (
+        {/* Der Kampfbildschirm hat immer Vorrang. Eine aktive Szene pausiert
+            während des Kampfes und läuft danach wieder (sofern nicht gestoppt). */}
+        {dp === 'combat' ? (
           <InitiativeTracker
             participants={dPart}
             setParticipants={() => {}}
@@ -412,14 +387,17 @@ export default function App() {
             setDefeat={() => {}}
             displayOnly
           />
-        )}
-        {dp === 'ambience' && dScene && (
+        ) : dScene ? (
           <AmbienceScene
             scene={dScene}
             onPlayEffect={() => {}}
             onBack={() => {}}
             displayOnly
           />
+        ) : (
+          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={mietlingLogo} alt="DnD Mietling" style={{ maxWidth: '400px', width: '60vw', objectFit: 'contain' }} />
+          </div>
         )}
       </div>
     )
@@ -502,6 +480,8 @@ export default function App() {
           onPlayMusic={playMusicAndSyncSliders}
           onPlayEffect={playEffect}
           onOpenScene={openAmbienceScene}
+          onStopScene={stopAmbienceScene}
+          activeSceneKey={ambienceScene}
           mood={mood}
           onMoodChange={setMood}
           onSelectMusic={selectMusic}
@@ -533,16 +513,6 @@ export default function App() {
           onStopMusic={stopMusic}
         />
       )}
-      {phase === 'ambience' && (() => {
-        const scene = VIDEO_SCENES.find(s => s.key === ambienceScene) ?? null
-        return scene ? (
-          <AmbienceScene
-            scene={scene}
-            onPlayEffect={playEffect}
-            onBack={backToSetupFromAmbience}
-          />
-        ) : null
-      })()}
     </div>
   )
 }

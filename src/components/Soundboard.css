@@ -54,6 +54,105 @@
   box-shadow: 0 0 10px #f2d36f88;
 }
 
+/* ── Kategorie-Tabs (Musik / Soundeffekte / Videoszenen) ──────────────── */
+.sb-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.sb-tab {
+  position: relative;
+  padding: 12px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border-gold);
+  background: #1a1510;
+  color: var(--gold-light);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.sb-tab:hover {
+  border-color: var(--gold);
+  background: #2a2016;
+}
+
+.sb-tab-active {
+  border-color: var(--gold-light);
+  background: #2e2010;
+  color: var(--gold);
+  box-shadow: 0 0 14px var(--active-glow);
+}
+
+.sb-tab-live {
+  margin-left: 6px;
+  color: #5fd06a;
+  font-size: 0.7rem;
+  animation: sb-live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes sb-live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.sb-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Live-Leiste (aktive Szene) ───────────────────────────────────────── */
+.sb-live-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(95, 208, 106, 0.45);
+  background: rgba(95, 208, 106, 0.08);
+}
+
+.sb-live-dot {
+  color: #5fd06a;
+  font-size: 0.8rem;
+  animation: sb-live-pulse 1.6s ease-in-out infinite;
+}
+
+.sb-live-text {
+  flex: 1;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.sb-live-stop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid var(--border-gold);
+  background: #1a1510;
+  color: #d8b34a;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sb-live-stop:hover {
+  border-color: var(--gold);
+  background: #2a2016;
+}
+
+.sb-live-stop svg {
+  width: 16px;
+  height: 16px;
+}
+
 .sb-section {
   display: flex;
   flex-direction: column;

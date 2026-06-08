@@ -3,7 +3,7 @@ import ParticipantCard from './ParticipantCard.jsx'
 import AddMonsterModal from './AddMonsterModal.jsx'
 import VictoryOverlay from './VictoryOverlay.jsx'
 import DefeatOverlay from './DefeatOverlay.jsx'
-import { EFFECT_TRACKS } from './soundboardData.jsx'
+import { getEffectGroups } from './soundboardData.jsx'
 import MoodMixer from './MoodMixer.jsx'
 import MusicLibrary from './MusicLibrary.jsx'
 import './InitiativeTracker.css'
@@ -22,6 +22,7 @@ export default function InitiativeTracker({
   const [showAddAlly, setShowAddAlly] = useState(false)
   const [concentrationAlert, setConcentrationAlert] = useState(null)
   const [showSoundboard, setShowSoundboard] = useState(false)
+  const [cTab, setCTab] = useState(null) // 'music' | 'effects' | 'scenes' | null
   const [canDrag, setCanDrag] = useState(!displayOnly)
   const dragItem = useRef(null)
   const dragOver = useRef(null)
@@ -218,7 +219,9 @@ export default function InitiativeTracker({
         }
       </header>
 
-      {!displayOnly && showSoundboard && onPlayMusic && (
+      {!displayOnly && showSoundboard && onPlayMusic && (() => {
+        const toggleTab = tab => setCTab(t => (t === tab ? null : tab))
+        return (
         <div className="combat-sb-panel">
           <div className="combat-sb-volume-row">
             <span className="combat-sb-vol-icon">🔊</span>
@@ -229,40 +232,63 @@ export default function InitiativeTracker({
               className="combat-sb-slider"
             />
           </div>
-          {mood && onMoodChange && onSelectMusic && (
-            <div className="combat-sb-section">
-              <span className="combat-sb-label">Stimmung</span>
-              <MoodMixer
-                mood={mood}
-                onMoodChange={onMoodChange}
-                onCommit={onSelectMusic}
-                onStop={onStopMusic}
-                playingMusicKey={playingMusicKey}
-              />
+
+          <div className="combat-sb-tabs">
+            <button
+              className={`combat-sb-tab${cTab === 'music' ? ' active' : ''}`}
+              onClick={() => toggleTab('music')}
+            >
+              Musik{playingMusicKey && <span className="combat-sb-tab-live">●</span>}
+            </button>
+            <button
+              className={`combat-sb-tab${cTab === 'effects' ? ' active' : ''}`}
+              onClick={() => toggleTab('effects')}
+            >
+              Soundeffekte
+            </button>
+          </div>
+
+          {cTab === 'music' && (
+            <div className="combat-sb-tabpanel">
+              {mood && onMoodChange && onSelectMusic && (
+                <MoodMixer
+                  mood={mood}
+                  onMoodChange={onMoodChange}
+                  onCommit={onSelectMusic}
+                  onStop={onStopMusic}
+                  playingMusicKey={playingMusicKey}
+                />
+              )}
+              <MusicLibrary playingMusicKey={playingMusicKey} onPlayMusic={onPlayMusic} variant="compact" />
             </div>
           )}
-          <div className="combat-sb-section">
-            <span className="combat-sb-label">Musik</span>
-            <MusicLibrary playingMusicKey={playingMusicKey} onPlayMusic={onPlayMusic} variant="compact" />
-          </div>
-          <div className="combat-sb-section">
-            <span className="combat-sb-label">Effekte</span>
-            <div className="combat-sb-grid">
-              {EFFECT_TRACKS.map(track => (
-                <button
-                  key={track.key}
-                  className="combat-sb-btn"
-                  onClick={() => onPlayEffect(track)}
-                  title={track.label}
-                >
-                  <span className="combat-sb-icon"><track.Icon /></span>
-                  <span className="combat-sb-btn-label">{track.label}</span>
-                </button>
+
+          {cTab === 'effects' && (
+            <div className="combat-sb-tabpanel">
+              {getEffectGroups().map(group => (
+                <div key={group.name} className="combat-sb-effect-group">
+                  <span className="combat-sb-group-label">{group.name}</span>
+                  <div className="combat-sb-grid">
+                    {group.tracks.map(track => (
+                      <button
+                        key={track.key}
+                        className="combat-sb-btn"
+                        onClick={() => onPlayEffect(track)}
+                        title={track.label}
+                      >
+                        <span className="combat-sb-icon"><track.Icon /></span>
+                        <span className="combat-sb-btn-label">{track.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
-          </div>
+          )}
+
         </div>
-      )}
+        )
+      })()}
 
       <div className="tracker-body">
         <div className="participant-list" ref={listRef}>
