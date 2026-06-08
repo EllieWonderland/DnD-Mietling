@@ -117,6 +117,25 @@
   gap: 8px;
 }
 
+.sb-effect-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sb-effect-group + .sb-effect-group {
+  margin-top: 6px;
+}
+
+.sb-effect-group-label {
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+}
+
 .sb-effect-btn .sb-icon-only svg {
   stroke: #c68642;
 }

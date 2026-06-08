@@ -1,6 +1,27 @@
 import cheerUrl from '../Effects/cheer.mp3'
 import disappointmentUrl from '../Effects/disappointment.mp3'
 import whipUrl from '../Effects/whip.mp3'
+import faustschlagUrl from '../Effects/Faustschlag.mp3'
+import explosionUrl from '../Effects/explosion.mp3'
+import glasbruchUrl from '../Effects/glasbruch.mp3'
+import trommelwirbelUrl from '../Effects/trommelwirbel.mp3'
+import drachenbruellenUrl from '../Effects/drachenbrüllen.mp3'
+import drachengrummelnUrl from '../Effects/Drachengrummeln.mp3'
+import monsterbruellenUrl from '../Effects/monsterbrüllen.mp3'
+import wolfsgeheulUrl from '../Effects/wolfsgeheul.mp3'
+import zombieUrl from '../Effects/zombie.mp3'
+import win1Url from '../Effects/win1.mp3'
+import win2Url from '../Effects/win2.mp3'
+import fail1Url from '../Effects/fail1.mp3'
+import fail2Url from '../Effects/fail2.mp3'
+import applausUrl from '../Effects/applaus.mp3'
+import gelaechterUrl from '../Effects/gelaechter.mp3'
+import glockeUrl from '../Effects/Glocke.mp3'
+import tuerAufUrl from '../Effects/tür öffnen.mp3'
+import tuerZuUrl from '../Effects/tür schließen.mp3'
+import abgeschlossenUrl from '../Effects/abgeschlossen.mp3'
+import geldUrl from '../Effects/geld.mp3'
+import holySpellUrl from '../Effects/Holy Spell.mp3'
 
 const CDN = 'https://pub-28096ab7cf5d497990bc972094f05721.r2.dev'
 
@@ -208,6 +229,108 @@ export function IconRuins() {
   )
 }
 
+// ── Effekt-Icons ──────────────────────────────────────────────────────────
+export function IconBurst() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="12,2 14,9 21,7 16,12 21,17 14,15 12,22 10,15 3,17 8,12 3,7 10,9"/>
+    </svg>
+  )
+}
+
+export function IconShatter() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2v6l-3 3 3 3-2 8"/>
+      <path d="M12 8l4-2"/>
+      <path d="M9 14l-5 1"/>
+      <path d="M15 11l5 3"/>
+    </svg>
+  )
+}
+
+export function IconDrum() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <ellipse cx="12" cy="9" rx="8" ry="3"/>
+      <path d="M4 9v5c0 1.7 3.6 3 8 3s8-1.3 8-3V9"/>
+      <path d="M8 7L5 4M16 7l3-3"/>
+    </svg>
+  )
+}
+
+export function IconDragon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 14c-1-4 2-7 6-7l2-3 1 4c2 .5 3 2 3 4l3 1-2 2c0 2-2 4-5 4-4 0-7-2-8-5z"/>
+      <circle cx="9" cy="11" r="0.9" fill="currentColor"/>
+    </svg>
+  )
+}
+
+export function IconSkull() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3a7 7 0 0 0-5 11.9V18a1 1 0 0 0 1 1h1v2h6v-2h1a1 1 0 0 0 1-1v-3.1A7 7 0 0 0 12 3z"/>
+      <circle cx="9.5" cy="11" r="1.3" fill="currentColor"/>
+      <circle cx="14.5" cy="11" r="1.3" fill="currentColor"/>
+    </svg>
+  )
+}
+
+export function IconTrophy() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 4h8v5a4 4 0 0 1-8 0z"/>
+      <path d="M8 5H5v1a3 3 0 0 0 3 3M16 5h3v1a3 3 0 0 1-3 3"/>
+      <path d="M12 13v4"/>
+      <path d="M10 17h4l1 4H9z"/>
+    </svg>
+  )
+}
+
+export function IconClap() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 21l-4-4a2 2 0 0 1 0-3l1-1 4 4"/>
+      <path d="M12 12l3-7a1.5 1.5 0 0 1 2.8 1l-1.8 5"/>
+      <path d="M16 11l2-4a1.5 1.5 0 0 1 2.7 1.2L19 14a5 5 0 0 1-7 4"/>
+      <path d="M5 6l1 2M3 9l2 .5"/>
+    </svg>
+  )
+}
+
+export function IconBell() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/>
+      <path d="M10 21a2 2 0 0 0 4 0"/>
+      <path d="M12 3V5"/>
+    </svg>
+  )
+}
+
+export function IconDoor() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 21V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v17"/>
+      <path d="M4 21h16"/>
+      <circle cx="13" cy="12" r="1" fill="currentColor"/>
+    </svg>
+  )
+}
+
+export function IconCoins() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <ellipse cx="9" cy="7" rx="6" ry="3"/>
+      <path d="M3 7v4c0 1.7 2.7 3 6 3"/>
+      <path d="M9 14c0 1.7 2.7 3 6 3s6-1.3 6-3v-4c0-1.4-1.8-2.5-4.3-2.9"/>
+      <path d="M15 14v3"/>
+    </svg>
+  )
+}
+
 // JINGLES / EVENT SOUNDS (kein Stimmungsprofil — werden NICHT vom Regler-Selektor gewählt)
 export const EVENT_SOUNDS = [
   { key: 'defeat',    label: 'Defeat Outro',       url: m('defeat_outro.mp3') },
@@ -283,11 +406,54 @@ export function getMusicGroups() {
   return cats
 }
 
+// cat = Oberkategorie. Reihenfolge im Array bestimmt die Anzeige-Reihenfolge.
+// Bleibt eine flache Liste (App.jsx sucht Effekte per key) — Gruppierung via getEffectGroups().
 export const EFFECT_TRACKS = [
-  { key: 'cheer', label: 'Jubel', url: cheerUrl, Icon: IconStar },
-  { key: 'disappointment', label: 'Enttäuschung', url: disappointmentUrl, Icon: IconSad },
-  { key: 'whip', label: 'Peitsche', url: whipUrl, Icon: IconLightning },
+  // ── Kampf & Action ────────────────────────────────────────────────────
+  { key: 'faustschlag',     label: 'Faustschlag',    cat: 'Kampf & Action', url: faustschlagUrl,    Icon: IconBurst },
+  { key: 'explosion',       label: 'Explosion',      cat: 'Kampf & Action', url: explosionUrl,      Icon: IconBurst },
+  { key: 'glasbruch',       label: 'Glasbruch',      cat: 'Kampf & Action', url: glasbruchUrl,      Icon: IconShatter },
+  { key: 'trommelwirbel',   label: 'Trommelwirbel',  cat: 'Kampf & Action', url: trommelwirbelUrl,  Icon: IconDrum },
+  { key: 'whip',            label: 'Peitsche',       cat: 'Kampf & Action', url: whipUrl,           Icon: IconLightning },
+
+  // ── Kreaturen ─────────────────────────────────────────────────────────
+  { key: 'drachenbruellen', label: 'Drachenbrüllen', cat: 'Kreaturen', url: drachenbruellenUrl, Icon: IconDragon },
+  { key: 'drachengrummeln', label: 'Drachengrummeln',cat: 'Kreaturen', url: drachengrummelnUrl, Icon: IconDragon },
+  { key: 'monsterbruellen', label: 'Monsterbrüllen', cat: 'Kreaturen', url: monsterbruellenUrl, Icon: IconSkull },
+  { key: 'wolfsgeheul',     label: 'Wolfsgeheul',    cat: 'Kreaturen', url: wolfsgeheulUrl,     Icon: IconMoon },
+  { key: 'zombie',          label: 'Zombie',         cat: 'Kreaturen', url: zombieUrl,          Icon: IconSkull },
+
+  // ── Erfolg & Misserfolg ───────────────────────────────────────────────
+  { key: 'win1',  label: 'Sieg 1',   cat: 'Erfolg & Misserfolg', url: win1Url,  Icon: IconTrophy },
+  { key: 'win2',  label: 'Sieg 2',   cat: 'Erfolg & Misserfolg', url: win2Url,  Icon: IconTrophy },
+  { key: 'fail1', label: 'Patzer 1', cat: 'Erfolg & Misserfolg', url: fail1Url, Icon: IconSad },
+  { key: 'fail2', label: 'Patzer 2', cat: 'Erfolg & Misserfolg', url: fail2Url, Icon: IconSad },
+
+  // ── Publikum & Reaktion ───────────────────────────────────────────────
+  { key: 'applaus',        label: 'Applaus',      cat: 'Publikum & Reaktion', url: applausUrl,        Icon: IconClap },
+  { key: 'gelaechter',     label: 'Gelächter',    cat: 'Publikum & Reaktion', url: gelaechterUrl,     Icon: IconClap },
+  { key: 'cheer',          label: 'Jubel',        cat: 'Publikum & Reaktion', url: cheerUrl,          Icon: IconStar },
+  { key: 'disappointment', label: 'Enttäuschung', cat: 'Publikum & Reaktion', url: disappointmentUrl, Icon: IconSad },
+
+  // ── Umgebung & Magie ──────────────────────────────────────────────────
+  { key: 'glocke',        label: 'Glocke',         cat: 'Umgebung & Magie', url: glockeUrl,        Icon: IconBell },
+  { key: 'tuer-auf',      label: 'Tür öffnen',     cat: 'Umgebung & Magie', url: tuerAufUrl,       Icon: IconDoor },
+  { key: 'tuer-zu',       label: 'Tür schließen',  cat: 'Umgebung & Magie', url: tuerZuUrl,        Icon: IconDoor },
+  { key: 'abgeschlossen', label: 'Abgeschlossen',  cat: 'Umgebung & Magie', url: abgeschlossenUrl, Icon: IconDoor },
+  { key: 'geld',          label: 'Münzen',         cat: 'Umgebung & Magie', url: geldUrl,          Icon: IconCoins },
+  { key: 'holy-spell',    label: 'Heiliger Zauber',cat: 'Umgebung & Magie', url: holySpellUrl,     Icon: IconSun },
 ]
+
+// Gruppiert EFFECT_TRACKS nach Oberkategorie (Reihenfolge wie im Array).
+export function getEffectGroups() {
+  const cats = []
+  for (const track of EFFECT_TRACKS) {
+    let cat = cats.find(c => c.name === track.cat)
+    if (!cat) { cat = { name: track.cat, tracks: [] }; cats.push(cat) }
+    cat.tracks.push(track)
+  }
+  return cats
+}
 
 export const VIDEO_SCENES = [
   { key: 'campfire', label: 'Lagerfeuer', url: campfireVideo, Icon: IconCampfire },

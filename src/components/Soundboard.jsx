@@ -1,5 +1,5 @@
 import './Soundboard.css'
-import { EFFECT_TRACKS, VIDEO_SCENES } from './soundboardData.jsx'
+import { getEffectGroups, VIDEO_SCENES } from './soundboardData.jsx'
 import MoodMixer from './MoodMixer.jsx'
 import MusicLibrary from './MusicLibrary.jsx'
 
@@ -69,20 +69,25 @@ export default function Soundboard({
 
       <div className="sb-section">
         <div className="sb-section-label">Effekte</div>
-        <div className="sb-effects-grid">
-          {EFFECT_TRACKS.map(track => (
-            <button
-              key={track.key}
-              className="sb-icon-btn sb-effect-btn"
-              onClick={() => onPlayEffect(track)}
-              aria-label={track.label}
-              title={track.label}
-            >
-              <span className="sb-icon-only"><track.Icon /></span>
-              <span className="sb-btn-label">{track.label}</span>
-            </button>
-          ))}
-        </div>
+        {getEffectGroups().map(group => (
+          <div key={group.name} className="sb-effect-group">
+            <div className="sb-effect-group-label">{group.name}</div>
+            <div className="sb-effects-grid">
+              {group.tracks.map(track => (
+                <button
+                  key={track.key}
+                  className="sb-icon-btn sb-effect-btn"
+                  onClick={() => onPlayEffect(track)}
+                  aria-label={track.label}
+                  title={track.label}
+                >
+                  <span className="sb-icon-only"><track.Icon /></span>
+                  <span className="sb-btn-label">{track.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
