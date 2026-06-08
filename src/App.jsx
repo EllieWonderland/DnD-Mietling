@@ -184,19 +184,35 @@ export default function App() {
     if (APP_MODE !== 'display' || !audioUnlocked) return
     const key = displayState?.playingMusicKey
     const volume = displayState?.masterVolume ?? 0.72
-    if (tvMusicRef.current) {
-      tvMusicRef.current.pause()
-      tvMusicRef.current.currentTime = 0
-      tvMusicRef.current = null
+
+    // EIN persistentes Audio-Element wiederverwenden statt pro Songwechsel ein
+    // neues zu erzeugen. Auf Tablets fuehrt das Anhaeufen mehrerer Media-Elemente
+    // (Streaming + Decoding, parallel zum Video) sonst zu Speicher-/Limit-Freezes.
+    let audio = tvMusicRef.current
+    if (!audio) {
+      audio = new Audio()
+      audio.loop = true
+      tvMusicRef.current = audio
     }
-    if (!key) return
+
+    if (!key) {
+      // Stoppen und Puffer/Stream explizit freigeben
+      audio.pause()
+      audio.removeAttribute('src')
+      audio.load()
+      return
+    }
+
     const track = MUSIC_TRACKS.find(t => t.key === key)
     if (!track) return
-    const audio = new Audio(track.url)
+
+    // Quelle tauschen: alter Stream wird durch load() freigegeben, Start bei 0
+    audio.pause()
+    audio.src = track.url
     audio.loop = true
     audio.volume = volume
+    audio.load()
     audio.play().catch(() => {})
-    tvMusicRef.current = audio
   }, [displayState?.playingMusicKey, audioUnlocked])
 
   // TV: sync volume while music is playing
@@ -213,6 +229,9 @@ export default function App() {
     const audio = new Audio(track.url)
     audio.volume = displayState.masterVolume ?? 0.72
     audio.play().catch(() => {})
+    // Nach dem Abspielen Stream/Puffer freigeben, damit sich Effekt-Audios
+    // nicht ansammeln (sonst Speicherdruck auf dem Tablet)
+    audio.onended = () => { audio.removeAttribute('src'); audio.load() }
   }, [displayState?.effectTrigger?.nonce, audioUnlocked])
 
   // Controller: auto-save full combat state on every change during combat
