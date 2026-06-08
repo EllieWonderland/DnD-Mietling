@@ -13,6 +13,7 @@ export default function Soundboard({
   mood,
   onMoodChange,
   onSelectMusic,
+  onStopMusic,
 }) {
   return (
     <div className="soundboard">
@@ -37,6 +38,7 @@ export default function Soundboard({
             mood={mood}
             onMoodChange={onMoodChange}
             onCommit={onSelectMusic}
+            onStop={onStopMusic}
             playingMusicKey={playingMusicKey}
           />
         </div>

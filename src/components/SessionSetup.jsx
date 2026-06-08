@@ -15,6 +15,7 @@ export default function SessionSetup({
   mood,
   onMoodChange,
   onSelectMusic,
+  onStopMusic,
 }) {
   const [selected, setSelected] = useState(players.map(p => p.id))
   const [initiatives, setInitiatives] = useState({})
@@ -147,6 +148,7 @@ export default function SessionSetup({
             mood={mood}
             onMoodChange={onMoodChange}
             onSelectMusic={onSelectMusic}
+            onStopMusic={onStopMusic}
           />
         </div>
       </div>

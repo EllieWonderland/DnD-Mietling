@@ -11,7 +11,7 @@ const AXES = [
 
 // mood: { danger, energy, mysticism, tone } — kontrolliert vom Parent (Hybrid-Modus)
 // onCommit(track): wird NUR beim Loslassen aufgerufen (pointerup / Preset-Klick)
-export default function MoodMixer({ mood, onMoodChange, onCommit, playingMusicKey }) {
+export default function MoodMixer({ mood, onMoodChange, onCommit, onStop, playingMusicKey }) {
   // Preview direkt aus den (kontrollierten) Reglerwerten ableiten -> bleibt immer aktuell,
   // auch wenn ein Song-Klick im Soundboard die Regler von außen verschiebt.
   const preview = findBestTrack(mood.danger, mood.energy, mood.mysticism, mood.tone, MUSIC_TRACKS)
@@ -30,6 +30,19 @@ export default function MoodMixer({ mood, onMoodChange, onCommit, playingMusicKe
       <div className="mm-preview">
         <span className="mm-preview-label">{preview?.label ?? '—'}</span>
         {playingMusicKey === preview?.key && <span className="mm-live">● live</span>}
+        {playingMusicKey && onStop && (
+          <button
+            type="button"
+            className="mm-stop"
+            onClick={onStop}
+            title="Musik stoppen"
+            aria-label="Musik stoppen"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden>
+              <rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" />
+            </svg>
+          </button>
+        )}
       </div>
 
       <div className="mm-sliders">

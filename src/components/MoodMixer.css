@@ -43,6 +43,34 @@
   white-space: nowrap;
 }
 
+.mm-stop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  color: var(--monster-red, #b03a2e);
+  background: linear-gradient(180deg, #2c2114, #1d160d);
+  border: 1px solid rgba(176, 58, 46, 0.55);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, color 0.15s;
+}
+
+.mm-stop:hover,
+.mm-stop:active {
+  color: #e0584a;
+  border-color: #e0584a;
+  box-shadow: 0 0 10px rgba(224, 88, 74, 0.4);
+}
+
+.mm-stop svg {
+  width: 20px;
+  height: 20px;
+}
+
 /* ── Vertikale Slider ─────────────────────────────────────────────────── */
 .mm-sliders {
   display: flex;

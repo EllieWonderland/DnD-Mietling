@@ -505,6 +505,7 @@ export default function App() {
           mood={mood}
           onMoodChange={setMood}
           onSelectMusic={selectMusic}
+          onStopMusic={stopMusic}
         />
       )}
       {phase === 'combat' && (
@@ -529,6 +530,7 @@ export default function App() {
           mood={mood}
           onMoodChange={setMood}
           onSelectMusic={selectMusic}
+          onStopMusic={stopMusic}
         />
       )}
       {phase === 'ambience' && (() => {

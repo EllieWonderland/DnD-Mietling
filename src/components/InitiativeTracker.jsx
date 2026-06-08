@@ -16,7 +16,7 @@ export default function InitiativeTracker({
   onNextTurn, onPrevTurn, onEndCombat, victory, setVictory, defeat, setDefeat,
   displayOnly = false,
   playingMusicKey, volume, onVolumeChange, onPlayMusic, onPlayEffect,
-  mood, onMoodChange, onSelectMusic,
+  mood, onMoodChange, onSelectMusic, onStopMusic,
 }) {
   const [showAddMonster, setShowAddMonster] = useState(false)
   const [showAddAlly, setShowAddAlly] = useState(false)
@@ -236,6 +236,7 @@ export default function InitiativeTracker({
                 mood={mood}
                 onMoodChange={onMoodChange}
                 onCommit={onSelectMusic}
+                onStop={onStopMusic}
                 playingMusicKey={playingMusicKey}
               />
             </div>
