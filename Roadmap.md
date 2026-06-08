@@ -30,13 +30,17 @@ Diese Features sind vollständig im Code und im Praxiseinsatz:
 
 ### 1. WebSocket-Server: Deploy auf Cloudflare Workers + Durable Objects
 - Ziel: `server.js` (Express + ws, läuft nicht auf Vercel) durch einen Cloudflare Worker mit Durable Object ersetzen. Der Worker hält die WebSocket-Verbindung zwischen Controller (Tablet) und Display (Tisch-TV), leitet State weiter und cached den letzten State für neu verbindende Displays.
-- Status: **IN PROGRESS** — Code (Worker, `wrangler.toml`, App.jsx-Env-Var) fertig; **Deploy + Vercel-Env-Var fehlen**. Bis dahin hängt `?mode=display` bei „Verbindung wird hergestellt".
+- Status: **IN PROGRESS** — Code komplett & validiert; es fehlt nur noch der **eigentliche Deploy** (braucht interaktiven Browser-Login, daher manuell). Bis dahin hängt `?mode=display` bei „Verbindung wird hergestellt".
 
-  **Offene Schritte:**
-  - [ ] `npm install -g wrangler` + `wrangler login`
-  - [ ] `wrangler deploy` aus `worker/` → Worker-URL notieren (`wss://dnd-mietling-ws.<account>.workers.dev`)
-  - [ ] `VITE_WS_URL=wss://…workers.dev` in Vercel als Env Var eintragen, neu deployen
-  - [ ] QA: Controller (Tab/Tablet) + Display (`?mode=display`, TV) → State-Sync, Musik/Videos, Reconnect, Stabilität über eine ganze Session
+  **Bereits erledigt:**
+  - [x] Worker + Durable Object (`worker/src/index.js`) — `lastState` wird im **DO-Storage** persistiert, übersteht damit Hibernation (neu verbindende Displays bekommen sofort den letzten State)
+  - [x] `worker/wrangler.toml` konfiguriert; `wrangler deploy --dry-run` validiert sauber durch (Binding `GAME_SESSION` löst auf)
+  - [x] App-Seite fertig: WS-URL kommt zur Laufzeit aus `public/config.json` (`wsUrl`), kein Rebuild/Env-Var nötig. Steht bereits auf `wss://dnd-mietling-ws.janafisenko.workers.dev` und ist eingecheckt → Vercel liefert es automatisch aus.
+
+  **Offene Schritte (manuell, interaktiv):**
+  - [ ] `npx wrangler login` (öffnet Browser, Cloudflare-OAuth)
+  - [ ] `npx wrangler deploy --cwd worker` → muss exakt den Worker-Namen `dnd-mietling-ws` unter Account `janafisenko` deployen (sonst `config.json` anpassen)
+  - [ ] QA: Controller (Tab/Tablet) + Display (`?mode=display`, TV) → State-Sync, Musik/Videos, Reconnect (Display-Tab schließen/öffnen → bekommt sofort letzten State), Stabilität über eine ganze Session
 
   **Ergebnis:** WebSocket am Cloudflare Edge, kein VM/Einschlafen, $0 im Free Tier. `server.js` bleibt nur lokaler Dev-Fallback.
 
@@ -52,7 +56,14 @@ Diese Features sind vollständig im Code und im Praxiseinsatz:
   - [ ] Mobile/Tablet: autoplay + playsInline + muted korrekt (iOS-Safari)
   - [ ] Poster-Thumbnails je Video für Ladezeiten-UX generieren + Ladeindikator anzeigen
 
-### 3. Ambience-Video: Darstellungsoptionen
+### 3. Drag&Drop touchfähig machen (Pointer-Events)
+- Problem: Der Platztausch nutzt HTML5-Drag&Drop (`draggable` + drag-Events). Das funktioniert auf **Touchscreens nativ nicht** — am Tablet (Primärgerät!) lässt sich per Finger keine Kachel ziehen.
+- Ziel: Drag&Drop auf **Pointer-Events** (`onPointerDown/Move/Up`) umstellen, sodass Maus *und* Touch funktionieren. Tausch-Logik (Swap zweier Kacheln) bleibt; nur die Eingabeerkennung wechselt.
+- [ ] Pointer-basiertes Dragging mit Long-Press-Schwelle (damit Scrollen nicht versehentlich zieht)
+- [ ] Drop-Ziel weiterhin per Highlight markieren (`.drag-over-target` wiederverwenden)
+- [ ] Auf echtem Tablet testen (Touch) + Desktop (Maus)
+
+### 4. Ambience-Video: Darstellungsoptionen
 - `object-fit` steht jetzt auf `contain` (keine abgeschnittenen Ränder mehr, ggf. schwarze Balken).
 - [ ] Optional: pro Szene zwischen `cover`/`contain` umschaltbar, falls einzelne Loops mit Balken stören.
 
@@ -60,19 +71,19 @@ Diese Features sind vollständig im Code und im Praxiseinsatz:
 
 ## Offen — Priorität niedrig / Ideen
 
-### 4. Soundboard & Musik (MoodMixer / MusicLibrary) — Feinschliff
+### 5. Soundboard & Musik (MoodMixer / MusicLibrary) — Feinschliff
 - Großes, aktiv beackertes Feature. Sammelpunkt für künftige Verbesserungen:
   - [ ] „Medien-Wunschliste" pflegen (gewünschte Effekte/Tracks)
   - [ ] Lautstärke-/Fade-Verhalten beim Szenenwechsel prüfen
 
-### 5. UI-Finish: Lesbarkeit aus 1,5 m (konkretisieren)
+### 6. UI-Finish: Lesbarkeit aus 1,5 m (konkretisieren)
 - [ ] Am echten Tablet/TV: Schriftgrößen, Kontrast, HP-/Schadenszahlen aus 1,5 m prüfen und nachziehen.
 
-### 6. Schwer komprimierbare Videos ersetzen (Idee)
+### 7. Schwer komprimierbare Videos ersetzen (Idee)
 - `wald.mp4` (kaum komprimierbar) und `lichtung.mp4` (nur 35 % Reduktion) durch web-optimierte Loops ersetzen, die bei CRF 28 deutlich kleiner werden.
 - Quellen für lizenzfreie Ambient-Loops: Pexels, Pixabay, Mixkit (kostenlos, auch kommerziell).
 
-### 7. Medien-Abdeckung: D&D-Szenen-Übersicht (Referenz)
+### 8. Medien-Abdeckung: D&D-Szenen-Übersicht (Referenz)
 Checkliste, welche Szenarien bereits Video + Musik haben. Fehlende bei Bedarf ergänzen.
 
 | Szene (DE) | Szene (EN) | Video | Musik | Notizen |

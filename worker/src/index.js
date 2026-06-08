@@ -1,7 +1,6 @@
 export class GameSession {
   constructor(state) {
     this.state = state
-    this.lastState = null
   }
 
   async fetch(request) {
@@ -13,16 +12,21 @@ export class GameSession {
     const [client, server] = Object.values(new WebSocketPair())
     this.state.acceptWebSocket(server)
 
-    if (this.lastState) server.send(this.lastState)
+    // Letzten bekannten State sofort an neu verbundene Clients senden
+    // (z. B. Display, das sich nach dem Controller verbindet).
+    // Aus DO-Storage gelesen, damit er eine Hibernation des Durable Object
+    // uebersteht — In-Memory-State ginge dabei verloren.
+    const lastState = await this.state.storage.get('lastState')
+    if (lastState) server.send(lastState)
 
     return new Response(null, { status: 101, webSocket: client })
   }
 
-  webSocketMessage(ws, data) {
+  async webSocketMessage(ws, data) {
     try {
       const msg = JSON.parse(data)
       if (msg.type === 'STATE') {
-        this.lastState = data
+        await this.state.storage.put('lastState', data)
         for (const client of this.state.getWebSockets()) {
           if (client !== ws) client.send(data)
         }
@@ -36,8 +40,6 @@ export class GameSession {
 
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url)
-
     // CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, {
