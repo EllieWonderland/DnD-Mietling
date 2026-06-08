@@ -89,7 +89,7 @@ Diese Features sind vollständig im Code und im Praxiseinsatz:
 ### 5. Soundboard & Musik (MoodMixer / MusicLibrary) — Feinschliff
 - Großes, aktiv beackertes Feature. Sammelpunkt für künftige Verbesserungen:
   - [ ] „Medien-Wunschliste" pflegen (gewünschte Effekte/Tracks)
-  - [ ] Lautstärke-/Fade-Verhalten beim Szenenwechsel prüfen
+  - [x] **Fade-Verhalten beim Songwechsel** — sanftes Aus-/Einblenden (600 ms) auf dem einen persistenten Audio-Element statt hartem Schnitt (`fadeAudio` in `App.jsx`). Kein zweites Element → kein echter Crossfade, schont den Tablet-Speicher. Volume-Sync funkt während eines laufenden Fades nicht dazwischen.
 
 ### 6. UI-Finish: Lesbarkeit aus 1,5 m (konkretisieren)
 - [ ] Am echten Tablet/TV: Schriftgrößen, Kontrast, HP-/Schadenszahlen aus 1,5 m prüfen und nachziehen.

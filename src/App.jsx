@@ -41,6 +41,28 @@ function clearCombatState() {
   localStorage.removeItem('dnd-combat-state')
 }
 
+// Sanftes Ein-/Ausblenden der Lautstaerke auf EINEM Audio-Element (kein zweites
+// Element -> kein echter Crossfade, schont aber den Tablet-Speicher). Ein evtl.
+// laufendes Fade in fadeRef wird zuerst abgebrochen. onDone laeuft erst, wenn das
+// Ziel erreicht wurde und das Fade nicht zwischendurch ersetzt wurde.
+function fadeAudio(audio, fadeRef, target, durationMs, onDone) {
+  if (fadeRef.current) clearInterval(fadeRef.current)
+  const stepMs = 40
+  const start = audio.volume
+  const steps = Math.max(1, Math.round(durationMs / stepMs))
+  let i = 0
+  const id = setInterval(() => {
+    i++
+    audio.volume = Math.min(1, Math.max(0, start + (target - start) * (i / steps)))
+    if (i >= steps) {
+      clearInterval(id)
+      if (fadeRef.current === id) fadeRef.current = null
+      onDone?.()
+    }
+  }, stepMs)
+  fadeRef.current = id
+}
+
 function makePlayer(pid, savedHP, profiles) {
   const profile = profiles.find(p => p.id === pid) ?? { id: pid, name: pid, maxHp: 20 }
   const hp = savedHP[pid] ?? profile.maxHp
@@ -79,6 +101,7 @@ export default function App() {
   const [savedCombat, setSavedCombat] = useState(() => loadCombatState())
   const [mood, setMood] = useState({ danger: 0.2, energy: 0.4, mysticism: 0.3, tone: 0.6 })
   const tvMusicRef = useRef(null)
+  const fadeRef = useRef(null)
 
   const wsRef = useRef(null)
   const pendingStateRef = useRef(null)
@@ -198,29 +221,47 @@ export default function App() {
       tvMusicRef.current = audio
     }
 
-    if (!key) {
-      // Stoppen und Puffer/Stream explizit freigeben
+    const FADE_MS = 600
+
+    // Quelle tauschen, leise starten und sanft einblenden (alter Stream wird
+    // durch load() freigegeben).
+    const startTrack = track => {
       audio.pause()
-      audio.removeAttribute('src')
+      audio.src = track.url
+      audio.loop = true
+      audio.volume = 0
       audio.load()
+      audio.play().catch(() => {})
+      fadeAudio(audio, fadeRef, volume, FADE_MS)
+    }
+
+    if (!key) {
+      // Ausblenden, dann stoppen und Puffer/Stream explizit freigeben
+      if (!audio.src || audio.paused) return
+      fadeAudio(audio, fadeRef, 0, FADE_MS, () => {
+        audio.pause()
+        audio.removeAttribute('src')
+        audio.load()
+      })
       return
     }
 
     const track = MUSIC_TRACKS.find(t => t.key === key)
     if (!track) return
 
-    // Quelle tauschen: alter Stream wird durch load() freigegeben, Start bei 0
-    audio.pause()
-    audio.src = track.url
-    audio.loop = true
-    audio.volume = volume
-    audio.load()
-    audio.play().catch(() => {})
+    // Laeuft bereits ein anderer Song -> erst ausblenden, dann wechseln
+    if (audio.src && !audio.paused) {
+      fadeAudio(audio, fadeRef, 0, FADE_MS, () => startTrack(track))
+    } else {
+      startTrack(track)
+    }
   }, [displayState?.playingMusicKey, audioUnlocked])
 
   // TV: sync volume while music is playing
   useEffect(() => {
     if (APP_MODE !== 'display' || !audioUnlocked || !tvMusicRef.current) return
+    // Laeuft gerade ein Fade, nicht dazwischenfunken — es endet binnen ~600 ms.
+    if (fadeRef.current) return
     tvMusicRef.current.volume = displayState?.masterVolume ?? 0.72
   }, [displayState?.masterVolume, audioUnlocked])
 
