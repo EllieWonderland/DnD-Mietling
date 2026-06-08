@@ -3,16 +3,10 @@ import ParticipantCard from './ParticipantCard.jsx'
 import AddMonsterModal from './AddMonsterModal.jsx'
 import VictoryOverlay from './VictoryOverlay.jsx'
 import DefeatOverlay from './DefeatOverlay.jsx'
-import { MUSIC_TRACKS, EFFECT_TRACKS } from './soundboardData.jsx'
+import { EFFECT_TRACKS } from './soundboardData.jsx'
+import MoodMixer from './MoodMixer.jsx'
+import MusicLibrary from './MusicLibrary.jsx'
 import './InitiativeTracker.css'
-
-function IconStop() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden width="20" height="20">
-      <rect x="5" y="5" width="14" height="14" rx="2"/>
-    </svg>
-  )
-}
 
 let monsterIdCounter = Date.now()
 
@@ -22,6 +16,7 @@ export default function InitiativeTracker({
   onNextTurn, onPrevTurn, onEndCombat, victory, setVictory, defeat, setDefeat,
   displayOnly = false,
   playingMusicKey, volume, onVolumeChange, onPlayMusic, onPlayEffect,
+  mood, onMoodChange, onSelectMusic,
 }) {
   const [showAddMonster, setShowAddMonster] = useState(false)
   const [showAddAlly, setShowAddAlly] = useState(false)
@@ -234,26 +229,20 @@ export default function InitiativeTracker({
               className="combat-sb-slider"
             />
           </div>
+          {mood && onMoodChange && onSelectMusic && (
+            <div className="combat-sb-section">
+              <span className="combat-sb-label">Stimmung</span>
+              <MoodMixer
+                mood={mood}
+                onMoodChange={onMoodChange}
+                onCommit={onSelectMusic}
+                playingMusicKey={playingMusicKey}
+              />
+            </div>
+          )}
           <div className="combat-sb-section">
             <span className="combat-sb-label">Musik</span>
-            <div className="combat-sb-grid">
-              {MUSIC_TRACKS.map(track => {
-                const playing = playingMusicKey === track.key
-                return (
-                  <button
-                    key={track.key}
-                    className={`combat-sb-btn${playing ? ' combat-sb-playing' : ''}`}
-                    onClick={() => onPlayMusic(track)}
-                    title={track.label}
-                  >
-                    <span className="combat-sb-icon">
-                      {playing ? <IconStop /> : <track.Icon />}
-                    </span>
-                    <span className="combat-sb-btn-label">{track.label}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <MusicLibrary playingMusicKey={playingMusicKey} onPlayMusic={onPlayMusic} variant="compact" />
           </div>
           <div className="combat-sb-section">
             <span className="combat-sb-label">Effekte</span>

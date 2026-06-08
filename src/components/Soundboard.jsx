@@ -1,13 +1,7 @@
 import './Soundboard.css'
-import { MUSIC_TRACKS, EFFECT_TRACKS, VIDEO_SCENES } from './soundboardData.jsx'
-
-function IconStop() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <rect x="5" y="5" width="14" height="14" rx="2"/>
-    </svg>
-  )
-}
+import { EFFECT_TRACKS, VIDEO_SCENES } from './soundboardData.jsx'
+import MoodMixer from './MoodMixer.jsx'
+import MusicLibrary from './MusicLibrary.jsx'
 
 export default function Soundboard({
   playingMusicKey,
@@ -16,6 +10,9 @@ export default function Soundboard({
   onPlayMusic,
   onPlayEffect,
   onOpenScene,
+  mood,
+  onMoodChange,
+  onSelectMusic,
 }) {
   return (
     <div className="soundboard">
@@ -33,26 +30,21 @@ export default function Soundboard({
         />
       </div>
 
+      {mood && onMoodChange && onSelectMusic && (
+        <div className="sb-section">
+          <div className="sb-section-label">Stimmung</div>
+          <MoodMixer
+            mood={mood}
+            onMoodChange={onMoodChange}
+            onCommit={onSelectMusic}
+            playingMusicKey={playingMusicKey}
+          />
+        </div>
+      )}
+
       <div className="sb-section">
         <div className="sb-section-label">Musik</div>
-        <div className="sb-music-grid">
-          {MUSIC_TRACKS.map(track => {
-            const playing = playingMusicKey === track.key
-            return (
-              <button
-                key={track.key}
-                className={`sb-icon-btn${playing ? ' sb-playing' : ''}`}
-                onClick={() => onPlayMusic(track)}
-                aria-label={track.label}
-                title={track.label}
-                aria-pressed={playing}
-              >
-                <span className="sb-icon-only">{playing ? <IconStop /> : <track.Icon />}</span>
-                <span className="sb-btn-label">{track.label}</span>
-              </button>
-            )
-          })}
-        </div>
+        <MusicLibrary playingMusicKey={playingMusicKey} onPlayMusic={onPlayMusic} />
       </div>
 
       <div className="sb-section">

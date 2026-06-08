@@ -74,6 +74,7 @@ export default function App() {
   const [audioUnlocked, setAudioUnlocked] = useState(false)
   const [playerProfiles, setPlayerProfiles] = useState(() => loadPlayerProfiles() || PLAYER_DEFAULTS)
   const [savedCombat, setSavedCombat] = useState(() => loadCombatState())
+  const [mood, setMood] = useState({ danger: 0.2, energy: 0.4, mysticism: 0.3, tone: 0.6 })
   const musicRef = useRef(null)
   const tvMusicRef = useRef(null)
 
@@ -249,6 +250,18 @@ export default function App() {
     if (!track) return
     if (playingMusicKey === track.key) { setPlayingMusicKey(null); return }
     setPlayingMusicKey(track.key)
+  }
+
+  // Regler-Pfad: setzt Musik nur, wenn sie sich ändert (KEIN Toggle, anders als playMusic)
+  function selectMusic(track) {
+    if (!track || track.key === playingMusicKey) return
+    setPlayingMusicKey(track.key)
+  }
+
+  // Hybrid: manueller Klick im Soundboard -> Regler auf die Mood-Werte des Songs ziehen
+  function playMusicAndSyncSliders(track) {
+    playMusic(track)                 // bestehende Toggle-Logik (Klick auf laufenden Song = Stop)
+    if (track?.mood) setMood(track.mood)
   }
 
   function playEffect(track) {
@@ -486,9 +499,12 @@ export default function App() {
           playingMusicKey={playingMusicKey}
           volume={masterVolume}
           onVolumeChange={setMasterVolume}
-          onPlayMusic={playMusic}
+          onPlayMusic={playMusicAndSyncSliders}
           onPlayEffect={playEffect}
           onOpenScene={openAmbienceScene}
+          mood={mood}
+          onMoodChange={setMood}
+          onSelectMusic={selectMusic}
         />
       )}
       {phase === 'combat' && (
@@ -508,8 +524,11 @@ export default function App() {
           playingMusicKey={playingMusicKey}
           volume={masterVolume}
           onVolumeChange={setMasterVolume}
-          onPlayMusic={playMusic}
+          onPlayMusic={playMusicAndSyncSliders}
           onPlayEffect={playEffect}
+          mood={mood}
+          onMoodChange={setMood}
+          onSelectMusic={selectMusic}
         />
       )}
       {phase === 'ambience' && (() => {

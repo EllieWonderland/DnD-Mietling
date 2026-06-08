@@ -96,7 +96,7 @@ Priorisierte Aufgabenliste mit Umsetzungsschritten. Nach Abschluss jeder Aufgabe
 
 10. WebSocket-Server: Migration zu Cloudflare Workers + Durable Objects
     - Ziel: Den bisherigen `server.js` (Express + ws, läuft nicht auf Vercel) durch einen Cloudflare Worker mit Durable Object ersetzen. Der Worker übernimmt die WebSocket-Verbindung zwischen Controller (Tablet) und Display (Tisch-TV), leitet State weiter und cached den letzten bekannten State für neu verbindende Displays.
-    - Status: TODO
+    - Status: IN PROGRESS — Phasen 1–3 erledigt; Phase 4 (Deploy + QA) steht aus
 
     **Hintergrund & Problem:**
     `server.js` ist ein persistenter Node.js-Prozess — Vercel ist serverless und unterstützt das nicht. Deshalb hängt `?mode=display` dauerhaft bei "Verbindung wird hergestellt". Der WebSocket-Server läuft aktuell nirgendwo in der Cloud.
@@ -117,14 +117,14 @@ Priorisierte Aufgabenliste mit Umsetzungsschritten. Nach Abschluss jeder Aufgabe
     ```
 
     **Phase 1 — Worker + Durable Object schreiben (`worker/src/index.js`)**
-    - [ ] `GameSession` Durable Object implementieren:
+    - [x] `GameSession` Durable Object implementieren:
       - Hält eine Liste aktiver WebSocket-Verbindungen
       - Cached `lastState` (letzter STATE-Message vom Controller)
       - Neue Verbindungen erhalten sofort `lastState` (Display verbindet sich nach Controller)
       - Nutzt Hibernatable WebSockets (`state.acceptWebSocket()`) statt `webSocket.accept()` für Effizienz
       - Leitet STATE-Messages an alle anderen verbundenen Clients weiter
-    - [ ] Worker-Einstiegspunkt: leitet alle WebSocket-Upgrade-Requests an die `GameSession`-DO weiter (alle Clients landen in einer einzigen `GameSession`-Instanz namens `"default"`)
-    - [ ] CORS-Header setzen, falls nötig (Vercel-Domain + localhost)
+    - [x] Worker-Einstiegspunkt: leitet alle WebSocket-Upgrade-Requests an die `GameSession`-DO weiter (alle Clients landen in einer einzigen `GameSession`-Instanz namens `"default"`)
+    - [x] CORS-Header setzen, falls nötig (Vercel-Domain + localhost)
 
     Referenz-Implementierung (Durable Object mit Hibernatable WebSockets):
     ```js
@@ -165,7 +165,7 @@ Priorisierte Aufgabenliste mit Umsetzungsschritten. Nach Abschluss jeder Aufgabe
     **Phase 2 — `wrangler.toml` konfigurieren**
     - [ ] Wrangler CLI installieren: `npm install -g wrangler`
     - [ ] `wrangler login` (Cloudflare-Account verknüpfen)
-    - [ ] `worker/wrangler.toml` anlegen:
+    - [x] `worker/wrangler.toml` anlegen:
       ```toml
       name = "dnd-mietling-ws"
       main = "src/index.js"
@@ -183,7 +183,7 @@ Priorisierte Aufgabenliste mit Umsetzungsschritten. Nach Abschluss jeder Aufgabe
     - [ ] Worker-URL notieren: `wss://dnd-mietling-ws.<account>.workers.dev`
 
     **Phase 3 — App.jsx: WS-URL konfigurierbar machen**
-    - [ ] Aktuelle Hardcodierung ersetzen:
+    - [x] Aktuelle Hardcodierung ersetzen:
       ```js
       // Vorher (hardcodiert auf window.location.host — funktioniert nicht auf Vercel):
       const wsUrl = import.meta.env.PROD
@@ -196,8 +196,8 @@ Priorisierte Aufgabenliste mit Umsetzungsschritten. Nach Abschluss jeder Aufgabe
           ? `${wsProto}//${window.location.host}`
           : `ws://${window.location.hostname}:3001`)
       ```
-    - [ ] `.env.development` anlegen: `VITE_WS_URL=ws://localhost:3001` (für lokale Dev-Sessions mit server.js)
-    - [ ] `VITE_WS_URL=wss://dnd-mietling-ws.<account>.workers.dev` in Vercel-Dashboard als Env Var eintragen
+    - [x] `.env.development` anlegen: `VITE_WS_URL=ws://localhost:3001` (für lokale Dev-Sessions mit server.js)
+    - [ ] `VITE_WS_URL=wss://dnd-mietling-ws.<account>.workers.dev` in Vercel-Dashboard als Env Var eintragen (nach Deploy)
 
     **Phase 4 — QA**
     - [ ] Lokaler Test: Controller auf Tab 1, Display (`?mode=display`) auf Tab 2 → State wird synchronisiert

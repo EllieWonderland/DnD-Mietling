@@ -4,11 +4,8 @@ import whipUrl from '../Effects/whip.mp3'
 
 const CDN = 'https://pub-28096ab7cf5d497990bc972094f05721.r2.dev'
 
-const adventureUrl      = `${CDN}/Music/adventure_music.mp3`
-const dawnUrl           = `${CDN}/Music/dawn_music.mp3`
-const dreamingUrl       = `${CDN}/Music/dreaming_music.mp3`
-const epicUrl           = `${CDN}/Music/epic-fantasy-background-music.mp3`
-const walkingUrl        = `${CDN}/Music/walking_music.mp3`
+// Helfer: baut die R2-URL für einen Musik-Dateinamen
+const m = (file) => `${CDN}/Music/${file}`
 
 const campfireVideo     = `${CDN}/Videos/Lagerfeuer.mp4`
 const villageVideo      = `${CDN}/Videos/dorf.mp4`
@@ -211,13 +208,80 @@ export function IconRuins() {
   )
 }
 
-export const MUSIC_TRACKS = [
-  { key: 'adventure', label: 'Abenteuer', url: adventureUrl, Icon: IconCompass },
-  { key: 'dawn', label: 'Morgengrauen', url: dawnUrl, Icon: IconSun },
-  { key: 'dreaming', label: 'Träumerei', url: dreamingUrl, Icon: IconMoon },
-  { key: 'epic', label: 'Episch', url: epicUrl, Icon: IconCrown },
-  { key: 'walking', label: 'Reise', url: walkingUrl, Icon: IconRoad },
+// JINGLES / EVENT SOUNDS (kein Stimmungsprofil — werden NICHT vom Regler-Selektor gewählt)
+export const EVENT_SOUNDS = [
+  { key: 'defeat',    label: 'Defeat Outro',       url: m('defeat_outro.mp3') },
+  { key: 'victory',   label: 'Victory Fanfare',    url: m('orchestral_win.mp3') },
+  { key: 'war-intro', label: 'War Conflict Intro', url: m('amaksi-war-conflict-intro-272503.mp3') },
 ]
+
+// cat = Kategorie, sub = Unterkategorie (für die geordnete Songliste).
+// Reihenfolge im Array bestimmt die Reihenfolge in der Anzeige.
+export const MUSIC_TRACKS = [
+  // ── Siedlung & Hof ────────────────────────────────────────────────────
+  { key: 'peasant-folk',            label: 'Bauernvolk',               cat: 'Siedlung & Hof', sub: 'Dorf & Taverne',  url: m('dueg-oth-musik-bauern-142722.mp3'),                                  Icon: IconMug,   mood: { danger: 0.00, energy: 0.65, mysticism: 0.10, tone: 0.85 } },
+  { key: 'middle-ages-happiness',   label: 'Heiteres Mittelalter',     cat: 'Siedlung & Hof', sub: 'Dorf & Taverne',  url: m('land_of_books_youtube-middle-ages-happynes-432859.mp3'),             Icon: IconMug,   mood: { danger: 0.00, energy: 0.60, mysticism: 0.10, tone: 0.90 } },
+  { key: 'medieval-festive-dance',  label: 'Festlicher Tanz',          cat: 'Siedlung & Hof', sub: 'Dorf & Taverne',  url: m('tunetank-medieval-festive-music-412772.mp3'),                        Icon: IconMug,   mood: { danger: 0.00, energy: 0.75, mysticism: 0.10, tone: 0.85 } },
+  { key: 'medieval-nobility',       label: 'Höfischer Adel',           cat: 'Siedlung & Hof', sub: 'Adel & Hof',      url: m('dueg-oth-musik-adel-142724.mp3'),                                    Icon: IconCrown, mood: { danger: 0.00, energy: 0.45, mysticism: 0.20, tone: 0.85 } },
+  { key: 'the-tournament',          label: 'Das Turnier',              cat: 'Siedlung & Hof', sub: 'Adel & Hof',      url: m('emmraan-the-tournament-280277.mp3'),                                 Icon: IconCrown, mood: { danger: 0.25, energy: 0.70, mysticism: 0.15, tone: 0.80 } },
+  { key: 'fantasy-kingdom',         label: 'Königreich',               cat: 'Siedlung & Hof', sub: 'Adel & Hof',      url: m('emmraan-fantasy-kingdom-261257.mp3'),                                Icon: IconCrown, mood: { danger: 0.10, energy: 0.35, mysticism: 0.45, tone: 0.80 } },
+  { key: 'medieval-ambience',       label: 'Mittelalter-Ambiente',     cat: 'Siedlung & Hof', sub: 'Mauern & Hallen', url: m('dueg-oth-musik-hintergrund-142725.mp3'),                             Icon: IconHouse, mood: { danger: 0.10, energy: 0.30, mysticism: 0.20, tone: 0.60 } },
+  { key: 'sunset-castle',           label: 'Abendrot am Schloss',      cat: 'Siedlung & Hof', sub: 'Mauern & Hallen', url: m('valentinik-sunset-at-the-castle-350754.mp3'),                        Icon: IconHouse, mood: { danger: 0.05, energy: 0.25, mysticism: 0.35, tone: 0.75 } },
+  { key: 'mystical-city',           label: 'Mystische Stadt',          cat: 'Siedlung & Hof', sub: 'Mauern & Hallen', url: m('luis_humanoide-the-mystical-city-cinematic-music-496260.mp3'),       Icon: IconHouse, mood: { danger: 0.20, energy: 0.35, mysticism: 0.70, tone: 0.65 } },
+  { key: 'the-tower',               label: 'Der Turm',                 cat: 'Siedlung & Hof', sub: 'Mauern & Hallen', url: m('welbornworks-thetower-328520.mp3'),                                  Icon: IconHouse, mood: { danger: 0.50, energy: 0.40, mysticism: 0.80, tone: 0.40 } },
+  { key: 'castle-hollow-steps',     label: 'Hohle Schritte',           cat: 'Siedlung & Hof', sub: 'Mauern & Hallen', url: m('menieldm-castle-of-hollow-steps-495836.mp3'),                        Icon: IconHouse, mood: { danger: 0.50, energy: 0.15, mysticism: 0.40, tone: 0.20 } },
+  { key: 'cinematic-desolation',    label: 'Trostlosigkeit',           cat: 'Siedlung & Hof', sub: 'Mauern & Hallen', url: m('senormusica81-cinematic-desolation-2026-v2-2-463167.mp3'),           Icon: IconSad,   mood: { danger: 0.40, energy: 0.15, mysticism: 0.30, tone: 0.10 } },
+
+  // ── Reise & Wildnis ───────────────────────────────────────────────────
+  { key: 'walking-theme',           label: 'Wanderung',                cat: 'Reise & Wildnis', sub: 'Wege & Aufbruch', url: m('walking_music.mp3'),                                                 Icon: IconRoad,    mood: { danger: 0.10, energy: 0.35, mysticism: 0.15, tone: 0.70 } },
+  { key: 'adventure-theme',         label: 'Abenteuer',                cat: 'Reise & Wildnis', sub: 'Wege & Aufbruch', url: m('adventure_music.mp3'),                                               Icon: IconCompass, mood: { danger: 0.20, energy: 0.55, mysticism: 0.30, tone: 0.80 } },
+  { key: 'great-adventure',         label: 'Großes Abenteuer',         cat: 'Reise & Wildnis', sub: 'Wege & Aufbruch', url: m('mvnocopyrightmusic-great-adventure-532735.mp3'),                     Icon: IconCompass, mood: { danger: 0.15, energy: 0.50, mysticism: 0.25, tone: 0.80 } },
+  { key: 'dawn-hope',               label: 'Dämmerung der Hoffnung',   cat: 'Reise & Wildnis', sub: 'Wege & Aufbruch', url: m('dawn_music.mp3'),                                                    Icon: IconSun,     mood: { danger: 0.05, energy: 0.20, mysticism: 0.25, tone: 0.90 } },
+  { key: 'wild-wood',               label: 'Der wilde Wald',           cat: 'Reise & Wildnis', sub: 'Wald & Moor',     url: m('kaazoom-the-wild-wood-full-version-404937.mp3'),                     Icon: IconTrees,   mood: { danger: 0.30, energy: 0.40, mysticism: 0.40, tone: 0.60 } },
+  { key: 'midnight-forest',         label: 'Mitternachtswald',         cat: 'Reise & Wildnis', sub: 'Wald & Moor',     url: m('geoffharvey-midnight-in-the-pine-forest-228844.mp3'),                Icon: IconTrees,   mood: { danger: 0.40, energy: 0.20, mysticism: 0.50, tone: 0.35 } },
+  { key: 'spirits-moor',            label: 'Geister des Moors',        cat: 'Reise & Wildnis', sub: 'Wald & Moor',     url: m('geoffharvey-spirits-of-the-moor-180852.mp3'),                        Icon: IconRiver,   mood: { danger: 0.55, energy: 0.25, mysticism: 0.70, tone: 0.25 } },
+  { key: 'woods-mystery',           label: 'Geheimnisvoller Wald',     cat: 'Reise & Wildnis', sub: 'Wald & Moor',     url: m('ob-lix-the-woods-mystery-intrigue-background-music-110802.mp3'),      Icon: IconTrees,   mood: { danger: 0.45, energy: 0.35, mysticism: 0.50, tone: 0.45 } },
+
+  // ── Verlies & Ruinen ──────────────────────────────────────────────────
+  { key: 'dark-spooky',             label: 'Unheimliche Höhle',        cat: 'Verlies & Ruinen', sub: 'Höhlen & Gewölbe', url: m('leberch-dark-spooky-309318.mp3'),                                    Icon: IconDungeon, mood: { danger: 0.70, energy: 0.25, mysticism: 0.40, tone: 0.10 } },
+  { key: 'echoes-beneath-stone',    label: 'Echos unter Stein',        cat: 'Verlies & Ruinen', sub: 'Höhlen & Gewölbe', url: m('menieldm-echoes-beneath-the-stone-495845.mp3'),                      Icon: IconDungeon, mood: { danger: 0.65, energy: 0.20, mysticism: 0.50, tone: 0.15 } },
+  { key: 'obsidian-halls',          label: 'Obsidianhallen',           cat: 'Verlies & Ruinen', sub: 'Höhlen & Gewölbe', url: m('menieldm-obsidian-halls-495840.mp3'),                                Icon: IconDungeon, mood: { danger: 0.75, energy: 0.30, mysticism: 0.60, tone: 0.15 } },
+  { key: 'graveyard',               label: 'Der Friedhof',             cat: 'Verlies & Ruinen', sub: 'Ruinen & Gräber',  url: m('thisisbeatkitchen-beatkitchen-the-graveyard-yu-gi-oh-soundtrack-104-bpm-387052.mp3'), Icon: IconRuins, mood: { danger: 0.60, energy: 0.45, mysticism: 0.60, tone: 0.20 } },
+  { key: 'forgotten-kingdom',       label: 'Vergessenes Königreich',   cat: 'Verlies & Ruinen', sub: 'Ruinen & Gräber',  url: m('onecinematicstudio-the-forgotten-kingdom-_-melancholic-amp-grand-ancient-ruins-music-529059.mp3'), Icon: IconRuins, mood: { danger: 0.30, energy: 0.25, mysticism: 0.60, tone: 0.35 } },
+  { key: 'secrets-forgotten',       label: 'Geheimnisse der Vergessenen', cat: 'Verlies & Ruinen', sub: 'Ruinen & Gräber', url: m('melodierealm-secrets-of-the-forgotten-453719.mp3'),               Icon: IconRuins,   mood: { danger: 0.35, energy: 0.20, mysticism: 0.80, tone: 0.45 } },
+
+  // ── Kampf & Verfolgung ────────────────────────────────────────────────
+  { key: 'war-drums',               label: 'Kriegstrommeln',           cat: 'Kampf & Verfolgung', sub: 'Schlacht',           url: m('amaksi-war-drums-173853.mp3'),                                       Icon: IconLightning, mood: { danger: 0.75, energy: 0.70, mysticism: 0.10, tone: 0.40 } },
+  { key: 'epic-legend',             label: 'Epische Legende',          cat: 'Kampf & Verfolgung', sub: 'Schlacht',           url: m('epic-fantasy-background-music.mp3'),                                 Icon: IconCrown,     mood: { danger: 0.60, energy: 0.75, mysticism: 0.50, tone: 0.75 } },
+  { key: 'epic-battle',             label: 'Epische Schlacht',         cat: 'Kampf & Verfolgung', sub: 'Schlacht',           url: m('francis_samuel-epic-battle-francisco-samuel-123469.mp3'),            Icon: IconLightning, mood: { danger: 0.90, energy: 0.90, mysticism: 0.50, tone: 0.40 } },
+  { key: 'powerful-battle',         label: 'Gewaltige Schlacht',       cat: 'Kampf & Verfolgung', sub: 'Schlacht',           url: m('tunetank-cinematic-powerful-battle-music-414692.mp3'),               Icon: IconLightning, mood: { danger: 0.95, energy: 0.95, mysticism: 0.40, tone: 0.35 } },
+  { key: 'forbidden-fire',          label: 'Verbotenes Feuer',         cat: 'Kampf & Verfolgung', sub: 'Verfolgung & Bann',  url: m('iuvenis-genesis-del-fuego-prohibido-509238.mp3'),                    Icon: IconLightning, mood: { danger: 0.70, energy: 0.65, mysticism: 0.80, tone: 0.40 } },
+  { key: 'action-chase',            label: 'Wilde Verfolgung',         cat: 'Kampf & Verfolgung', sub: 'Verfolgung & Bann',  url: m('lilliben-action-chase-adrenaline-soundtrack-364888.mp3'),            Icon: IconLightning, mood: { danger: 0.80, energy: 1.00, mysticism: 0.20, tone: 0.40 } },
+
+  // ── Mystik & Kosmos ───────────────────────────────────────────────────
+  { key: 'forbidden-spell',         label: 'Verbotener Zauber',        cat: 'Mystik & Kosmos', sub: 'Zauber & Magie',  url: m('40173586-forbidden-spell-awakening-dark-fantasy-488140.mp3'),        Icon: IconStar, mood: { danger: 0.70, energy: 0.30, mysticism: 0.90, tone: 0.15 } },
+  { key: 'magic-in-air',            label: 'Magie in der Luft',        cat: 'Mystik & Kosmos', sub: 'Zauber & Magie',  url: m('geoffharvey-magic-in-the-air-43177.mp3'),                            Icon: IconStar, mood: { danger: 0.05, energy: 0.30, mysticism: 0.85, tone: 0.85 } },
+  { key: 'dark-fairytale',          label: 'Dunkles Märchen',          cat: 'Mystik & Kosmos', sub: 'Zauber & Magie',  url: m('denis-pavlov-music-mysterious-esoteric-magical-shadowy-dark-fairytale-music-369257.mp3'), Icon: IconStar, mood: { danger: 0.40, energy: 0.25, mysticism: 0.90, tone: 0.25 } },
+  { key: 'blessings-forest',        label: 'Segen des Waldes',         cat: 'Mystik & Kosmos', sub: 'Zauber & Magie',  url: m('whatssmooth-blessings-from-the-forest-fairies-of-the-magic-woods-426366.mp3'), Icon: IconTrees, mood: { danger: 0.05, energy: 0.30, mysticism: 0.95, tone: 0.90 } },
+  { key: 'lost-dreams',             label: 'Verlorene Träume',         cat: 'Mystik & Kosmos', sub: 'Traum & Aura',    url: m('dreaming_music.mp3'),                                                Icon: IconMoon, mood: { danger: 0.05, energy: 0.15, mysticism: 0.60, tone: 0.50 } },
+  { key: 'echoes-of-aura',          label: 'Echos der Aura',           cat: 'Mystik & Kosmos', sub: 'Traum & Aura',    url: m('gnosticbliss-432-hz-echoes-of-the-aura-331610.mp3'),                 Icon: IconStar, mood: { danger: 0.05, energy: 0.10, mysticism: 1.00, tone: 0.60 } },
+
+  // ── Handwerk ──────────────────────────────────────────────────────────
+  { key: 'dwarven-forges',          label: 'Zwergenschmieden',         cat: 'Handwerk', sub: null, url: m('bizinbars_tome-dwarven-forges-213935.mp3'),                          Icon: IconDungeon, mood: { danger: 0.20, energy: 0.50, mysticism: 0.40, tone: 0.50 } },
+]
+
+// Gruppiert MUSIC_TRACKS nach Kategorie -> Unterkategorie (Reihenfolge wie im Array).
+export function getMusicGroups() {
+  const cats = []
+  for (const track of MUSIC_TRACKS) {
+    let cat = cats.find(c => c.name === track.cat)
+    if (!cat) { cat = { name: track.cat, subs: [] }; cats.push(cat) }
+    let sub = cat.subs.find(s => s.name === (track.sub ?? ''))
+    if (!sub) { sub = { name: track.sub ?? '', tracks: [] }; cat.subs.push(sub) }
+    sub.tracks.push(track)
+  }
+  return cats
+}
 
 export const EFFECT_TRACKS = [
   { key: 'cheer', label: 'Jubel', url: cheerUrl, Icon: IconStar },

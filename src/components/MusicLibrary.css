@@ -1,0 +1,107 @@
+.music-lib {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ml-cat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ml-cat-label {
+  font-family: var(--font-title);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(201, 162, 39, 0.3);
+}
+
+.ml-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ml-sub-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.ml-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.ml-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 12px;
+  min-height: 44px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+  color: var(--text-main);
+  background: linear-gradient(180deg, #2c2114, #1d160d);
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, color 0.15s;
+}
+
+.ml-btn:hover,
+.ml-btn:active {
+  border-color: var(--border-gold);
+  box-shadow: 0 0 10px rgba(201, 162, 39, 0.25);
+  color: var(--gold);
+}
+
+.ml-playing {
+  border-color: var(--border-gold);
+  color: var(--gold);
+  background: linear-gradient(180deg, #3a2c12, #2a1e0c);
+  box-shadow: 0 0 14px rgba(201, 162, 39, 0.4);
+}
+
+.ml-playing-dot {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  line-height: 1;
+  color: var(--gold);
+}
+
+.ml-btn-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Compact (Kampf-Panel) ────────────────────────────────────────────── */
+.music-lib-compact {
+  gap: 12px;
+}
+
+.music-lib-compact .ml-cat-label {
+  font-size: 0.85rem;
+}
+
+.music-lib-compact .ml-grid {
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 6px;
+}
+
+.music-lib-compact .ml-btn {
+  padding: 9px 10px;
+  min-height: 38px;
+  font-size: 0.82rem;
+}
