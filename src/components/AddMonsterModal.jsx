@@ -34,6 +34,7 @@ export default function AddMonsterModal({ onAdd, onClose, title = 'Monster hinzu
             <label>Initiative</label>
             <input
               type="number"
+              inputMode="numeric"
               value={initiative}
               onChange={e => setInitiative(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') submit() }}
@@ -46,6 +47,7 @@ export default function AddMonsterModal({ onAdd, onClose, title = 'Monster hinzu
             <label>Max HP (optional)</label>
             <input
               type="number"
+              inputMode="numeric"
               value={hp}
               onChange={e => setHp(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') submit() }}

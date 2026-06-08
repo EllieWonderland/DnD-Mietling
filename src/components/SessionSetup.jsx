@@ -82,6 +82,7 @@ export default function SessionSetup({
                     <span className="profile-edit-label">Max HP</span>
                     <input
                       type="number"
+                      inputMode="numeric"
                       className="profile-edit-hp"
                       value={editMaxHp}
                       onChange={e => setEditMaxHp(e.target.value)}
@@ -110,6 +111,7 @@ export default function SessionSetup({
                         <span className="init-label">Initiative</span>
                         <input
                           type="number"
+                          inputMode="numeric"
                           className="init-input"
                           value={initiatives[p.id] ?? ''}
                           onChange={e => setInit(p.id, e.target.value)}

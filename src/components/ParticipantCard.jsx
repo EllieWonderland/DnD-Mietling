@@ -160,6 +160,7 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
               <span className="card-edit-label">Init</span>
               <input
                 type="number"
+                inputMode="numeric"
                 className="card-edit-num"
                 value={editInit}
                 onChange={e => setEditInit(e.target.value)}
@@ -171,6 +172,7 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
               <span className="card-edit-label">Max HP</span>
               <input
                 type="number"
+                inputMode="numeric"
                 className="card-edit-num"
                 value={editMaxHp}
                 onChange={e => setEditMaxHp(e.target.value)}
@@ -300,6 +302,7 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
               </div>
               <input
                 type="number"
+                inputMode="numeric"
                 className="ally-hp-input"
                 value={allyHpInput}
                 onChange={e => setAllyHpInput(e.target.value)}
@@ -366,6 +369,7 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
             </div>
             <input
               type="number"
+              inputMode="numeric"
               className="damage-input"
               value={damageInput}
               onChange={e => setDamageInput(e.target.value)}
@@ -415,6 +419,7 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
             <div className="conc-modal-input-row">
               <input
                 type="number"
+                inputMode="numeric"
                 className="conc-dmg-input"
                 value={concDmgInput}
                 onChange={e => setConcDmgInput(e.target.value)}

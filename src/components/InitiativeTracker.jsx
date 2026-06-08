@@ -24,8 +24,8 @@ export default function InitiativeTracker({
   const [showSoundboard, setShowSoundboard] = useState(false)
   const [cTab, setCTab] = useState(null) // 'music' | 'effects' | 'scenes' | null
   const [canDrag, setCanDrag] = useState(!displayOnly)
+  const [dragOverIdx, setDragOverIdx] = useState(null)
   const dragItem = useRef(null)
-  const dragOver = useRef(null)
   const cardRefs = useRef([])
   const listRef = useRef(null)
 
@@ -165,25 +165,30 @@ export default function InitiativeTracker({
     dragItem.current = idx
     e.dataTransfer.effectAllowed = 'move'
   }
-  function onDragEnter(e, idx) {
+  function onDragOverRow(e, idx) {
     if (!canDrag) return
-    dragOver.current = idx
     e.preventDefault()
+    if (dragOverIdx !== idx) setDragOverIdx(idx)
   }
-  function onDragEnd() {
+  function onDrop(e, toIdx) {
     if (!canDrag) return
+    e.preventDefault()
     const from = dragItem.current
-    const to = dragOver.current
     dragItem.current = null
-    dragOver.current = null
-    if (from === null || to === null || from === to) return
+    setDragOverIdx(null)
+    if (from === null || from === toIdx) return
+    // Echter Platztausch: gezogener Charakter und Ziel-Charakter tauschen die Plätze
     const fromP = visible[from]
-    const toP = visible[to]
+    const toP = visible[toIdx]
     const newList = [...participants]
-    const fromGlobal = participants.findIndex(p => p.id === fromP.id)
-    const toGlobal = participants.findIndex(p => p.id === toP.id)
+    const fromGlobal = newList.findIndex(p => p.id === fromP.id)
+    const toGlobal = newList.findIndex(p => p.id === toP.id)
     ;[newList[fromGlobal], newList[toGlobal]] = [newList[toGlobal], newList[fromGlobal]]
     setParticipants(newList)
+  }
+  function onDragEnd() {
+    dragItem.current = null
+    setDragOverIdx(null)
   }
 
   return (
@@ -298,10 +303,10 @@ export default function InitiativeTracker({
               ref={el => { cardRefs.current[idx] = el }}
               draggable={canDrag}
               onDragStart={e => onDragStart(e, idx)}
-              onDragEnter={e => onDragEnter(e, idx)}
+              onDragOver={e => onDragOverRow(e, idx)}
+              onDrop={e => onDrop(e, idx)}
               onDragEnd={onDragEnd}
-              onDragOver={e => { if (canDrag) e.preventDefault() }}
-              className={canDrag ? 'draggable-row' : ''}
+              className={[canDrag ? 'draggable-row' : '', dragOverIdx === idx ? 'drag-over-target' : ''].filter(Boolean).join(' ')}
             >
               <ParticipantCard
                 participant={p}
