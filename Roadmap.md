@@ -30,17 +30,18 @@ Diese Features sind vollständig im Code und im Praxiseinsatz:
 
 ### 1. WebSocket-Server: Deploy auf Cloudflare Workers + Durable Objects
 - Ziel: `server.js` (Express + ws, läuft nicht auf Vercel) durch einen Cloudflare Worker mit Durable Object ersetzen. Der Worker hält die WebSocket-Verbindung zwischen Controller (Tablet) und Display (Tisch-TV), leitet State weiter und cached den letzten State für neu verbindende Displays.
-- Status: **IN PROGRESS** — Code komplett & validiert; es fehlt nur noch der **eigentliche Deploy** (braucht interaktiven Browser-Login, daher manuell). Bis dahin hängt `?mode=display` bei „Verbindung wird hergestellt".
+- Status: **DEPLOYED & VERIFIZIERT** — Worker läuft unter `wss://dnd-mietling-ws.janafisenko.workers.dev`. End-to-end-Test bestanden (2 Clients: State-Relay + gecachter State für später verbundenes Display funktionieren). Es fehlt nur noch die QA am echten Tisch-Setup.
 
-  **Bereits erledigt:**
-  - [x] Worker + Durable Object (`worker/src/index.js`) — `lastState` wird im **DO-Storage** persistiert, übersteht damit Hibernation (neu verbindende Displays bekommen sofort den letzten State)
-  - [x] `worker/wrangler.toml` konfiguriert; `wrangler deploy --dry-run` validiert sauber durch (Binding `GAME_SESSION` löst auf)
-  - [x] App-Seite fertig: WS-URL kommt zur Laufzeit aus `public/config.json` (`wsUrl`), kein Rebuild/Env-Var nötig. Steht bereits auf `wss://dnd-mietling-ws.janafisenko.workers.dev` und ist eingecheckt → Vercel liefert es automatisch aus.
+  **Erledigt:**
+  - [x] Worker + Durable Object (`worker/src/index.js`) — `lastState` im **DO-Storage** persistiert, übersteht Hibernation (neu verbindende Displays bekommen sofort den letzten State)
+  - [x] `worker/wrangler.toml` konfiguriert, `wrangler deploy` erfolgreich
+  - [x] App-Seite: WS-URL zur Laufzeit aus `public/config.json` (`wsUrl`), eingecheckt → Vercel liefert es automatisch aus
+  - [x] End-to-end-Test gegen Live-Worker: Verbindung, STATE-Broadcast und State-Caching für später verbundenes Display ✓
 
-  **Offene Schritte (manuell, interaktiv):**
-  - [ ] `npx wrangler login` (öffnet Browser, Cloudflare-OAuth)
-  - [ ] `npx wrangler deploy --cwd worker` → muss exakt den Worker-Namen `dnd-mietling-ws` unter Account `janafisenko` deployen (sonst `config.json` anpassen)
-  - [ ] QA: Controller (Tab/Tablet) + Display (`?mode=display`, TV) → State-Sync, Musik/Videos, Reconnect (Display-Tab schließen/öffnen → bekommt sofort letzten State), Stabilität über eine ganze Session
+  **Offene QA (am echten Setup):**
+  - [ ] Controller (Tablet) + Display (`?mode=display`, TV) → State-Sync, Musik/Videos spielen korrekt
+  - [ ] Reconnect: Display-Tab schließen/öffnen → bekommt sofort letzten State
+  - [ ] Stabilität über eine ganze Spielsession (2–4 h)
 
   **Ergebnis:** WebSocket am Cloudflare Edge, kein VM/Einschlafen, $0 im Free Tier. `server.js` bleibt nur lokaler Dev-Fallback.
 
