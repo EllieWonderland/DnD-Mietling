@@ -25,9 +25,20 @@ export default function InitiativeTracker({
   const [cTab, setCTab] = useState(null) // 'music' | 'effects' | 'scenes' | null
   const [canDrag, setCanDrag] = useState(!displayOnly)
   const [dragOverIdx, setDragOverIdx] = useState(null)
+  const [draggingIdx, setDraggingIdx] = useState(null)
   const dragItem = useRef(null)
+  const longPressTimer = useRef(null)
+  const preventTouchScroll = useRef(e => e.preventDefault()).current
   const cardRefs = useRef([])
   const listRef = useRef(null)
+
+  // Drag-Aufräumen beim Unmount (Timer + Scroll-Sperre lösen)
+  useEffect(() => {
+    return () => {
+      if (longPressTimer.current) clearTimeout(longPressTimer.current)
+      document.removeEventListener('touchmove', preventTouchScroll, { passive: false })
+    }
+  }, [preventTouchScroll])
 
   // Auto-scroll active card into view
   useEffect(() => {
@@ -160,35 +171,107 @@ export default function InitiativeTracker({
     }
   }
 
-  function onDragStart(e, idx) {
-    if (!canDrag) { e.preventDefault(); return }
-    dragItem.current = idx
-    e.dataTransfer.effectAllowed = 'move'
+  // ── Pointer-basiertes Drag&Drop (Maus + Touch) ──
+  // Long-Press-Schwelle, damit Scrollen am Tablet nicht versehentlich zieht.
+  const LONG_PRESS_MS = 250
+  const MOVE_CANCEL_PX = 12
+
+  function clearLongPress() {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
   }
-  function onDragOverRow(e, idx) {
-    if (!canDrag) return
-    e.preventDefault()
-    if (dragOverIdx !== idx) setDragOverIdx(idx)
+
+  // Beim aktiven Ziehen das native Scrollen unterbinden (non-passiv → preventDefault wirkt).
+  function activateDrag() {
+    const st = dragItem.current
+    if (!st || st.active) return
+    st.active = true
+    setDraggingIdx(st.fromIdx)
+    try { st.el.setPointerCapture(st.pointerId) } catch { /* ignore */ }
+    if (navigator.vibrate) navigator.vibrate(15)
+    document.addEventListener('touchmove', preventTouchScroll, { passive: false })
   }
-  function onDrop(e, toIdx) {
-    if (!canDrag) return
-    e.preventDefault()
-    const from = dragItem.current
+
+  function endDrag(doSwap) {
+    clearLongPress()
+    const st = dragItem.current
+    if (st && st.active) {
+      try { st.el.releasePointerCapture(st.pointerId) } catch { /* ignore */ }
+      document.removeEventListener('touchmove', preventTouchScroll, { passive: false })
+      if (doSwap) {
+        const from = st.fromIdx
+        const to = dragOverIdx
+        if (to !== null && from !== to) {
+          // Echter Platztausch: gezogener Charakter und Ziel-Charakter tauschen die Plätze
+          const fromP = visible[from]
+          const toP = visible[to]
+          if (fromP && toP) {
+            const newList = [...participants]
+            const fromGlobal = newList.findIndex(p => p.id === fromP.id)
+            const toGlobal = newList.findIndex(p => p.id === toP.id)
+            ;[newList[fromGlobal], newList[toGlobal]] = [newList[toGlobal], newList[fromGlobal]]
+            setParticipants(newList)
+          }
+        }
+      }
+    }
     dragItem.current = null
+    setDraggingIdx(null)
     setDragOverIdx(null)
-    if (from === null || from === toIdx) return
-    // Echter Platztausch: gezogener Charakter und Ziel-Charakter tauschen die Plätze
-    const fromP = visible[from]
-    const toP = visible[toIdx]
-    const newList = [...participants]
-    const fromGlobal = newList.findIndex(p => p.id === fromP.id)
-    const toGlobal = newList.findIndex(p => p.id === toP.id)
-    ;[newList[fromGlobal], newList[toGlobal]] = [newList[toGlobal], newList[fromGlobal]]
-    setParticipants(newList)
   }
-  function onDragEnd() {
-    dragItem.current = null
-    setDragOverIdx(null)
+
+  function onPointerDown(e, idx) {
+    if (!canDrag) return
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    // Nicht ziehen, wenn auf ein Bedienelement der Karte getippt wird
+    if (e.target.closest('button, input, select, textarea, label, a, [role="button"]')) return
+    dragItem.current = {
+      pointerId: e.pointerId,
+      fromIdx: idx,
+      startX: e.clientX,
+      startY: e.clientY,
+      active: false,
+      el: e.currentTarget,
+    }
+    if (e.pointerType === 'mouse') {
+      // Maus: sofort ziehen (kein Scroll-Konflikt)
+      activateDrag()
+    } else {
+      // Touch/Pen: erst nach Long-Press, damit Wischen weiterhin scrollt
+      longPressTimer.current = setTimeout(activateDrag, LONG_PRESS_MS)
+    }
+  }
+
+  function onPointerMove(e) {
+    const st = dragItem.current
+    if (!st) return
+    if (!st.active) {
+      // Vor Aktivierung: zu große Bewegung = Scroll-Geste → abbrechen
+      const dx = Math.abs(e.clientX - st.startX)
+      const dy = Math.abs(e.clientY - st.startY)
+      if (dx > MOVE_CANCEL_PX || dy > MOVE_CANCEL_PX) {
+        clearLongPress()
+        dragItem.current = null
+      }
+      return
+    }
+    // Aktives Ziehen: Zielzeile unter dem Zeiger bestimmen
+    const target = document.elementFromPoint(e.clientX, e.clientY)
+    const rowEl = target && target.closest('[data-row-idx]')
+    if (rowEl) {
+      const overIdx = Number(rowEl.dataset.rowIdx)
+      if (overIdx !== dragOverIdx) setDragOverIdx(overIdx)
+    }
+  }
+
+  function onPointerUp() {
+    endDrag(true)
+  }
+
+  function onPointerCancel() {
+    endDrag(false)
   }
 
   return (
@@ -301,12 +384,16 @@ export default function InitiativeTracker({
             <div
               key={p.id}
               ref={el => { cardRefs.current[idx] = el }}
-              draggable={canDrag}
-              onDragStart={e => onDragStart(e, idx)}
-              onDragOver={e => onDragOverRow(e, idx)}
-              onDrop={e => onDrop(e, idx)}
-              onDragEnd={onDragEnd}
-              className={[canDrag ? 'draggable-row' : '', dragOverIdx === idx ? 'drag-over-target' : ''].filter(Boolean).join(' ')}
+              data-row-idx={idx}
+              onPointerDown={e => onPointerDown(e, idx)}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+              onPointerCancel={onPointerCancel}
+              className={[
+                canDrag ? 'draggable-row' : '',
+                dragOverIdx === idx ? 'drag-over-target' : '',
+                draggingIdx === idx ? 'dragging' : '',
+              ].filter(Boolean).join(' ')}
             >
               <ParticipantCard
                 participant={p}

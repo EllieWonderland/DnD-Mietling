@@ -60,9 +60,15 @@ Diese Features sind vollständig im Code und im Praxiseinsatz:
 ### 3. Drag&Drop touchfähig machen (Pointer-Events)
 - Problem: Der Platztausch nutzt HTML5-Drag&Drop (`draggable` + drag-Events). Das funktioniert auf **Touchscreens nativ nicht** — am Tablet (Primärgerät!) lässt sich per Finger keine Kachel ziehen.
 - Ziel: Drag&Drop auf **Pointer-Events** (`onPointerDown/Move/Up`) umstellen, sodass Maus *und* Touch funktionieren. Tausch-Logik (Swap zweier Kacheln) bleibt; nur die Eingabeerkennung wechselt.
-- [ ] Pointer-basiertes Dragging mit Long-Press-Schwelle (damit Scrollen nicht versehentlich zieht)
-- [ ] Drop-Ziel weiterhin per Highlight markieren (`.drag-over-target` wiederverwenden)
-- [ ] Auf echtem Tablet testen (Touch) + Desktop (Maus)
+- Status: **UMGESETZT** (Build grün). HTML5-Drag&Drop komplett durch Pointer-Events ersetzt in `InitiativeTracker.jsx`.
+
+  **Erledigt:**
+  - [x] Pointer-basiertes Dragging mit Long-Press-Schwelle (250 ms) für Touch; Maus zieht sofort. Bewegung > 12 px vor Aktivierung = Scroll-Geste → bricht ab. Aktives Ziehen sperrt natives Scrollen via non-passivem `touchmove`-`preventDefault` + `setPointerCapture`. Haptik (`navigator.vibrate`) beim Anheben.
+  - [x] Drop-Ziel per Highlight markiert — `.drag-over-target` wiederverwendet; Zielzeile via `document.elementFromPoint` + `data-row-idx` ermittelt. Gezogene Kachel bekommt `.dragging` (Lift-Effekt).
+  - [x] Guard: Taps auf Bedienelemente (`button/input/select/textarea/label/a`) starten kein Drag → HP-/Toggle-Buttons bleiben bedienbar.
+
+  **Offene QA (am echten Setup):**
+  - [ ] Auf echtem Tablet testen (Touch) + Desktop (Maus)
 
 ### 4. Ambience-Video: Darstellungsoptionen
 - `object-fit` steht jetzt auf `contain` (keine abgeschnittenen Ränder mehr, ggf. schwarze Balken).
