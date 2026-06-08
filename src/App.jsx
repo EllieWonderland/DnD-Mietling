@@ -70,6 +70,9 @@ export default function App() {
   const [playingMusicKey, setPlayingMusicKey] = useState(null)
   const [masterVolume, setMasterVolume] = useState(0.72)
   const [ambienceScene, setAmbienceScene] = useState(null)
+  const [ambienceFits, setAmbienceFits] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('dnd-ambience-fits')) || {} } catch { return {} }
+  })
   const [effectTrigger, setEffectTrigger] = useState(null)
   const [audioUnlocked, setAudioUnlocked] = useState(false)
   const [playerProfiles, setPlayerProfiles] = useState(() => loadPlayerProfiles() || PLAYER_DEFAULTS)
@@ -144,7 +147,7 @@ export default function App() {
     if (APP_MODE !== 'controller') return
     const str = JSON.stringify({
       type: 'STATE',
-      state: { phase, participants, round, activeIndex, victory, defeat, ambienceScene, playingMusicKey, masterVolume, effectTrigger },
+      state: { phase, participants, round, activeIndex, victory, defeat, ambienceScene, ambienceFits, playingMusicKey, masterVolume, effectTrigger },
     })
     pendingStateRef.current = str
     const ws = wsRef.current
@@ -152,7 +155,7 @@ export default function App() {
       ws.send(str)
       pendingStateRef.current = null
     }
-  }, [phase, participants, round, activeIndex, victory, defeat, ambienceScene, playingMusicKey, masterVolume, effectTrigger])
+  }, [phase, participants, round, activeIndex, victory, defeat, ambienceScene, ambienceFits, playingMusicKey, masterVolume, effectTrigger])
 
   // PWA install prompt
   useEffect(() => {
@@ -289,6 +292,18 @@ export default function App() {
     setAmbienceScene(null)
   }
 
+  // Darstellung der aktuellen Szene zwischen 'contain' (Balken, nichts beschnitten)
+  // und 'cover' (formatfüllend, Ränder ggf. abgeschnitten) umschalten. Pro Szene
+  // gemerkt und in localStorage persistiert.
+  function toggleSceneFit(sceneKey) {
+    if (!sceneKey) return
+    setAmbienceFits(prev => {
+      const next = { ...prev, [sceneKey]: (prev[sceneKey] === 'cover' ? 'contain' : 'cover') }
+      try { localStorage.setItem('dnd-ambience-fits', JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
+
   function updatePlayerProfile(id, name, maxHp) {
     setPlayerProfiles(prev => {
       const next = prev.map(p => p.id === id ? { ...p, name, maxHp } : p)
@@ -384,8 +399,9 @@ export default function App() {
       )
     }
 
-    const { phase: dp, participants: dPart, round: dRound, activeIndex: dIdx, ambienceScene: dSceneKey, victory: dVictory, defeat: dDefeat } = displayState
+    const { phase: dp, participants: dPart, round: dRound, activeIndex: dIdx, ambienceScene: dSceneKey, ambienceFits: dFits, victory: dVictory, defeat: dDefeat } = displayState
     const dScene = dSceneKey ? VIDEO_SCENES.find(s => s.key === dSceneKey) ?? null : null
+    const dSceneFit = (dFits && dSceneKey && dFits[dSceneKey]) || 'contain'
 
     return (
       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -409,6 +425,7 @@ export default function App() {
         ) : dScene ? (
           <AmbienceScene
             scene={dScene}
+            fit={dSceneFit}
             onPlayEffect={() => {}}
             onBack={() => {}}
             displayOnly
@@ -501,6 +518,8 @@ export default function App() {
           onOpenScene={openAmbienceScene}
           onStopScene={stopAmbienceScene}
           activeSceneKey={ambienceScene}
+          activeSceneFit={(ambienceScene && ambienceFits[ambienceScene]) || 'contain'}
+          onToggleSceneFit={toggleSceneFit}
           mood={mood}
           onMoodChange={setMood}
           onSelectMusic={selectMusic}

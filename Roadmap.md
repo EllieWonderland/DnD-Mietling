@@ -71,8 +71,16 @@ Diese Features sind vollständig im Code und im Praxiseinsatz:
   - [ ] Auf echtem Tablet testen (Touch) + Desktop (Maus)
 
 ### 4. Ambience-Video: Darstellungsoptionen
-- `object-fit` steht jetzt auf `contain` (keine abgeschnittenen Ränder mehr, ggf. schwarze Balken).
-- [ ] Optional: pro Szene zwischen `cover`/`contain` umschaltbar, falls einzelne Loops mit Balken stören.
+- `object-fit`-Default ist `contain` (keine abgeschnittenen Ränder, ggf. schwarze Balken).
+- Status: **UMGESETZT** (Build grün). Pro Szene zwischen `cover`/`contain` umschaltbar.
+
+  **Erledigt:**
+  - [x] Toggle-Button („Anpassen"/„Vollbild") in der Live-Leiste des Soundboards, sobald eine Szene auf dem TV läuft.
+  - [x] Fit-Wert wird **pro Szene** gemerkt, in `localStorage` (`dnd-ambience-fits`) persistiert und über den WebSocket-State zum Display synchronisiert.
+  - [x] `AmbienceScene` wendet den Fit per Inline-`objectFit` an (überschreibt CSS-Default `contain`).
+
+  **Offene QA (am echten Setup):**
+  - [ ] Am TV prüfen: Umschalten wirkt sofort, einzelne Loops mit Balken sehen formatfüllend sauber aus.
 
 ---
 

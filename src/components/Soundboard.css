@@ -129,6 +129,26 @@
   color: var(--text-main);
 }
 
+.sb-live-fit {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid var(--border-gold);
+  background: #1a1510;
+  color: #d8b34a;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.sb-live-fit:hover {
+  border-color: var(--gold);
+  background: #2a2016;
+}
+
 .sb-live-stop {
   display: inline-flex;
   align-items: center;

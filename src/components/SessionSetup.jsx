@@ -14,6 +14,8 @@ export default function SessionSetup({
   onOpenScene,
   onStopScene,
   activeSceneKey,
+  activeSceneFit,
+  onToggleSceneFit,
   mood,
   onMoodChange,
   onSelectMusic,
@@ -151,6 +153,8 @@ export default function SessionSetup({
             onOpenScene={onOpenScene}
             onStopScene={onStopScene}
             activeSceneKey={activeSceneKey}
+            activeSceneFit={activeSceneFit}
+            onToggleSceneFit={onToggleSceneFit}
             mood={mood}
             onMoodChange={onMoodChange}
             onSelectMusic={onSelectMusic}

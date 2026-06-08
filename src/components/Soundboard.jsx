@@ -22,6 +22,8 @@ export default function Soundboard({
   onOpenScene,
   onStopScene,
   activeSceneKey,
+  activeSceneFit = 'contain',
+  onToggleSceneFit,
   mood,
   onMoodChange,
   onSelectMusic,
@@ -126,6 +128,16 @@ export default function Soundboard({
             <div className="sb-live-bar">
               <span className="sb-live-dot">●</span>
               <span className="sb-live-text">{activeScene.label} läuft auf dem TV</span>
+              {onToggleSceneFit && (
+                <button
+                  className="sb-live-fit"
+                  onClick={() => onToggleSceneFit(activeSceneKey)}
+                  title={activeSceneFit === 'cover' ? 'Formatfüllend (Ränder ggf. beschnitten) — tippen für Anpassen' : 'Angepasst (ggf. schwarze Balken) — tippen für Formatfüllend'}
+                  aria-label="Darstellung der Szene umschalten"
+                >
+                  {activeSceneFit === 'cover' ? 'Vollbild' : 'Anpassen'}
+                </button>
+              )}
               {onStopScene && (
                 <button
                   className="sb-live-stop"

@@ -29,7 +29,7 @@ function makePoster(label) {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
 }
 
-export default function AmbienceScene({ scene, onPlayEffect, onBack, displayOnly = false }) {
+export default function AmbienceScene({ scene, onPlayEffect, onBack, displayOnly = false, fit = 'contain' }) {
   const [videoStatus, setVideoStatus] = useState('loading')
   const videoRef = useRef(null)
 
@@ -50,6 +50,7 @@ export default function AmbienceScene({ scene, onPlayEffect, onBack, displayOnly
           ref={videoRef}
           key={scene.key}
           className="ambience-video"
+          style={{ objectFit: fit }}
           src={scene.url}
           autoPlay
           loop
