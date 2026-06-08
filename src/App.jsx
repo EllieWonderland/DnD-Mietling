@@ -487,7 +487,7 @@ export default function App() {
         <button
           onClick={handleInstall}
           style={{
-            position: 'fixed', top: '16px', right: '16px', zIndex: 2000,
+            position: 'fixed', bottom: '16px', left: '16px', zIndex: 2000,
             padding: '12px 16px', borderRadius: '999px',
             border: '1px solid var(--border-gold)',
             background: 'linear-gradient(180deg, #2f2418, #1f1812)',
