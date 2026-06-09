@@ -2,16 +2,16 @@ import { useState } from 'react'
 import { getMusicGroups } from './soundboardData.jsx'
 import './MusicLibrary.css'
 
-// Kaskadierende Auswahl: Oberkategorie -> Unterkategorie -> Titel.
-// Jedes Dropdown erscheint erst, wenn das vorherige gewählt wurde.
-// variant 'compact' = kleinere Schrift/Abstände für das Kampf-Panel.
+// Cascading selection: Main category -> Subcategory -> Title.
+// Each dropdown only appears when the previous one is selected.
+// variant 'compact' = smaller font/spacing for the combat panel.
 export default function MusicLibrary({ playingMusicKey, onPlayMusic, variant = 'default' }) {
   const groups = getMusicGroups()
   const [catName, setCatName] = useState('')
   const [subName, setSubName] = useState('')
 
   const cat = groups.find(c => c.name === catName)
-  // Manche Kategorien (z. B. Handwerk) haben keine benannten Unterkategorien.
+  // Some categories (e.g. Handwerk) do not have named subcategories.
   const hasNamedSubs = cat ? cat.subs.some(s => s.name) : false
   const sub = cat ? (hasNamedSubs ? cat.subs.find(s => s.name === subName) : cat.subs[0]) : null
   const tracks = sub ? sub.tracks : []

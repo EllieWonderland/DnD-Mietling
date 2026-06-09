@@ -32,7 +32,7 @@ export default function InitiativeTracker({
   const cardRefs = useRef([])
   const listRef = useRef(null)
 
-  // Drag-Aufräumen beim Unmount (Timer + Scroll-Sperre lösen)
+  // Drag cleanup on unmount (clear timer + scroll lock)
   useEffect(() => {
     return () => {
       if (longPressTimer.current) clearTimeout(longPressTimer.current)
@@ -46,14 +46,14 @@ export default function InitiativeTracker({
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }, [activeIndex])
 
-  // Victory/Defeat: react to any participant change. Das zuerst eingetretene
-  // Ergebnis wird fixiert (Guard), damit nicht beide Overlays/Sounds laufen.
+  // Victory/Defeat: react to any participant change. The first result
+  // is locked (guard) so both overlays/sounds don't play.
   useEffect(() => {
     if (victory || defeat) return
     const monsters = participants.filter(p => p.type === 'monster')
     const players = participants.filter(p => p.type === 'player')
     const allMonstersDead = monsters.length > 0 && monsters.every(m => m.dead)
-    // Spieler gilt als ausgeschaltet bei 0 HP ODER aktivem Todeswurf (dying).
+    // Player is down if HP is 0 OR death save is active (dying).
     const allPlayersDown = players.length > 0 && players.every(p => p.hp <= 0 || p.dying)
     if (allMonstersDead) {
       setVictory(true)
@@ -179,8 +179,8 @@ export default function InitiativeTracker({
     }
   }
 
-  // ── Pointer-basiertes Drag&Drop (Maus + Touch) ──
-  // Long-Press-Schwelle, damit Scrollen am Tablet nicht versehentlich zieht.
+  // ── Pointer-based Drag&Drop (Mouse + Touch) ──
+  // Long-press threshold to prevent accidental dragging while scrolling on tablets.
   const LONG_PRESS_MS = 250
   const MOVE_CANCEL_PX = 12
 
@@ -191,7 +191,7 @@ export default function InitiativeTracker({
     }
   }
 
-  // Beim aktiven Ziehen das native Scrollen unterbinden (non-passiv → preventDefault wirkt).
+  // Prevent native scrolling during active drag (non-passive -> preventDefault works).
   function activateDrag() {
     const st = dragItem.current
     if (!st || st.active) return
@@ -212,7 +212,7 @@ export default function InitiativeTracker({
         const from = st.fromIdx
         const to = dragOverIdx
         if (to !== null && from !== to) {
-          // Echter Platztausch: gezogener Charakter und Ziel-Charakter tauschen die Plätze
+          // Swap places: dragged character and target character swap positions
           const fromP = visible[from]
           const toP = visible[to]
           if (fromP && toP) {
@@ -233,7 +233,7 @@ export default function InitiativeTracker({
   function onPointerDown(e, idx) {
     if (!canDrag) return
     if (e.pointerType === 'mouse' && e.button !== 0) return
-    // Nicht ziehen, wenn auf ein Bedienelement der Karte getippt wird
+    // Do not drag if an interactive element on the card is tapped
     if (e.target.closest('button, input, select, textarea, label, a, [role="button"]')) return
     dragItem.current = {
       pointerId: e.pointerId,
@@ -244,10 +244,10 @@ export default function InitiativeTracker({
       el: e.currentTarget,
     }
     if (e.pointerType === 'mouse') {
-      // Maus: sofort ziehen (kein Scroll-Konflikt)
+      // Mouse: drag immediately (no scroll conflict)
       activateDrag()
     } else {
-      // Touch/Pen: erst nach Long-Press, damit Wischen weiterhin scrollt
+      // Touch/Pen: wait for long-press so swiping still scrolls
       longPressTimer.current = setTimeout(activateDrag, LONG_PRESS_MS)
     }
   }
@@ -256,7 +256,7 @@ export default function InitiativeTracker({
     const st = dragItem.current
     if (!st) return
     if (!st.active) {
-      // Vor Aktivierung: zu große Bewegung = Scroll-Geste → abbrechen
+      // Before activation: too much movement = scroll gesture -> cancel
       const dx = Math.abs(e.clientX - st.startX)
       const dy = Math.abs(e.clientY - st.startY)
       if (dx > MOVE_CANCEL_PX || dy > MOVE_CANCEL_PX) {
@@ -265,7 +265,7 @@ export default function InitiativeTracker({
       }
       return
     }
-    // Aktives Ziehen: Zielzeile unter dem Zeiger bestimmen
+    // Active drag: determine target row under pointer
     const target = document.elementFromPoint(e.clientX, e.clientY)
     const rowEl = target && target.closest('[data-row-idx]')
     if (rowEl) {

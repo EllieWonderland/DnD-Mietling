@@ -1,31 +1,31 @@
-import cheerUrl from '../Effects/cheer.mp3'
-import disappointmentUrl from '../Effects/disappointment.mp3'
-import whipUrl from '../Effects/whip.mp3'
-import faustschlagUrl from '../Effects/Faustschlag.mp3'
-import explosionUrl from '../Effects/explosion.mp3'
-import glasbruchUrl from '../Effects/glasbruch.mp3'
-import trommelwirbelUrl from '../Effects/trommelwirbel.mp3'
-import drachenbruellenUrl from '../Effects/drachenbrüllen.mp3'
-import drachengrummelnUrl from '../Effects/Drachengrummeln.mp3'
-import monsterbruellenUrl from '../Effects/monsterbrüllen.mp3'
-import wolfsgeheulUrl from '../Effects/wolfsgeheul.mp3'
-import zombieUrl from '../Effects/zombie.mp3'
-import win1Url from '../Effects/win1.mp3'
-import win2Url from '../Effects/win2.mp3'
-import fail1Url from '../Effects/fail1.mp3'
-import fail2Url from '../Effects/fail2.mp3'
-import applausUrl from '../Effects/applaus.mp3'
-import gelaechterUrl from '../Effects/gelaechter.mp3'
-import glockeUrl from '../Effects/Glocke.mp3'
-import tuerAufUrl from '../Effects/tür öffnen.mp3'
-import tuerZuUrl from '../Effects/tür schließen.mp3'
-import abgeschlossenUrl from '../Effects/abgeschlossen.mp3'
-import geldUrl from '../Effects/geld.mp3'
-import holySpellUrl from '../Effects/Holy Spell.mp3'
+import cheerUrl from '../assets/effects/cheer.mp3'
+import disappointmentUrl from '../assets/effects/disappointment.mp3'
+import whipUrl from '../assets/effects/whip.mp3'
+import punchUrl from '../assets/effects/Faustschlag.mp3'
+import explosionUrl from '../assets/effects/explosion.mp3'
+import glassShatterUrl from '../assets/effects/glasbruch.mp3'
+import drumrollUrl from '../assets/effects/trommelwirbel.mp3'
+import dragonRoarUrl from '../assets/effects/drachenbrüllen.mp3'
+import dragonGrumbleUrl from '../assets/effects/Drachengrummeln.mp3'
+import monsterRoarUrl from '../assets/effects/monsterbrüllen.mp3'
+import wolfHowlUrl from '../assets/effects/wolfsgeheul.mp3'
+import zombieUrl from '../assets/effects/zombie.mp3'
+import win1Url from '../assets/effects/win1.mp3'
+import win2Url from '../assets/effects/win2.mp3'
+import fail1Url from '../assets/effects/fail1.mp3'
+import fail2Url from '../assets/effects/fail2.mp3'
+import applauseUrl from '../assets/effects/applaus.mp3'
+import laughterUrl from '../assets/effects/gelaechter.mp3'
+import bellUrl from '../assets/effects/Glocke.mp3'
+import doorOpenUrl from '../assets/effects/tür öffnen.mp3'
+import doorCloseUrl from '../assets/effects/tür schließen.mp3'
+import lockedDoorUrl from '../assets/effects/abgeschlossen.mp3'
+import coinsUrl from '../assets/effects/geld.mp3'
+import holySpellUrl from '../assets/effects/Holy Spell.mp3'
 
 const CDN = 'https://pub-28096ab7cf5d497990bc972094f05721.r2.dev'
 
-// Helfer: baut die R2-URL für einen Musik-Dateinamen
+// Helper: builds the R2 URL for a music filename
 const m = (file) => `${CDN}/Music/${file}`
 
 const campfireVideo     = `${CDN}/Videos/Lagerfeuer.mp4`
@@ -239,7 +239,7 @@ export function IconRuins() {
   )
 }
 
-// ── Effekt-Icons ──────────────────────────────────────────────────────────
+// ── Effect Icons ──────────────────────────────────────────────────────────
 export function IconBurst() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -361,15 +361,15 @@ export function IconBook() {
   )
 }
 
-// JINGLES / EVENT SOUNDS (kein Stimmungsprofil — werden NICHT vom Regler-Selektor gewählt)
+// JINGLES / EVENT SOUNDS (no mood profile - NOT selected by sliders)
 export const EVENT_SOUNDS = [
   { key: 'defeat',    label: 'Defeat Outro',       url: m('defeat_outro.mp3') },
   { key: 'victory',   label: 'Victory Fanfare',    url: m('orchestral_win.mp3') },
   { key: 'war-intro', label: 'War Conflict Intro', url: m('amaksi-war-conflict-intro-272503.mp3') },
 ]
 
-// cat = Kategorie, sub = Unterkategorie (für die geordnete Songliste).
-// Reihenfolge im Array bestimmt die Reihenfolge in der Anzeige.
+// cat = category, sub = subcategory (for ordered song list).
+// Array order determines display order.
 export const MUSIC_TRACKS = [
   // ── Siedlung & Hof ────────────────────────────────────────────────────
   { key: 'peasant-folk',            label: 'Bauernvolk',  cat: 'Siedlung & Hof', sub: 'Dorf & Taverne',  url: m('dueg-oth-musik-bauern-142722.mp3'),                                  Icon: IconMug,   mood: { danger: 0.00, energy: 0.65, mysticism: 0.10, tone: 0.85 } },
@@ -423,7 +423,7 @@ export const MUSIC_TRACKS = [
   { key: 'dwarven-forges',          label: 'Schmiede',    cat: 'Handwerk', sub: null, url: m('bizinbars_tome-dwarven-forges-213935.mp3'),                          Icon: IconDungeon, mood: { danger: 0.20, energy: 0.50, mysticism: 0.40, tone: 0.50 } },
 ]
 
-// Gruppiert MUSIC_TRACKS nach Kategorie -> Unterkategorie (Reihenfolge wie im Array).
+// Groups MUSIC_TRACKS by category -> subcategory (array order).
 export function getMusicGroups() {
   const cats = []
   for (const track of MUSIC_TRACKS) {
@@ -436,21 +436,21 @@ export function getMusicGroups() {
   return cats
 }
 
-// cat = Oberkategorie. Reihenfolge im Array bestimmt die Anzeige-Reihenfolge.
-// Bleibt eine flache Liste (App.jsx sucht Effekte per key) — Gruppierung via getEffectGroups().
+// cat = main category. Array order determines display order.
+// Remains flat (App.jsx searches effects by key) - grouping via getEffectGroups().
 export const EFFECT_TRACKS = [
   // ── Kampf & Action ────────────────────────────────────────────────────
-  { key: 'faustschlag',     label: 'Faustschlag',    cat: 'Kampf & Action', url: faustschlagUrl,    Icon: IconBurst },
+  { key: 'faustschlag',     label: 'Faustschlag',    cat: 'Kampf & Action', url: punchUrl,    Icon: IconBurst },
   { key: 'explosion',       label: 'Explosion',      cat: 'Kampf & Action', url: explosionUrl,      Icon: IconBurst },
-  { key: 'glasbruch',       label: 'Glasbruch',      cat: 'Kampf & Action', url: glasbruchUrl,      Icon: IconShatter },
-  { key: 'trommelwirbel',   label: 'Trommelwirbel',  cat: 'Kampf & Action', url: trommelwirbelUrl,  Icon: IconDrum },
+  { key: 'glasbruch',       label: 'Glasbruch',      cat: 'Kampf & Action', url: glassShatterUrl,      Icon: IconShatter },
+  { key: 'trommelwirbel',   label: 'Trommelwirbel',  cat: 'Kampf & Action', url: drumrollUrl,  Icon: IconDrum },
   { key: 'whip',            label: 'Peitsche',       cat: 'Kampf & Action', url: whipUrl,           Icon: IconLightning },
 
   // ── Kreaturen ─────────────────────────────────────────────────────────
-  { key: 'drachenbruellen', label: 'Drachenbrüllen', cat: 'Kreaturen', url: drachenbruellenUrl, Icon: IconDragon },
-  { key: 'drachengrummeln', label: 'Drachengrummeln',cat: 'Kreaturen', url: drachengrummelnUrl, Icon: IconDragon },
-  { key: 'monsterbruellen', label: 'Monsterbrüllen', cat: 'Kreaturen', url: monsterbruellenUrl, Icon: IconSkull },
-  { key: 'wolfsgeheul',     label: 'Wolfsgeheul',    cat: 'Kreaturen', url: wolfsgeheulUrl,     Icon: IconMoon },
+  { key: 'drachenbruellen', label: 'Drachenbrüllen', cat: 'Kreaturen', url: dragonRoarUrl, Icon: IconDragon },
+  { key: 'drachengrummeln', label: 'Drachengrummeln',cat: 'Kreaturen', url: dragonGrumbleUrl, Icon: IconDragon },
+  { key: 'monsterbruellen', label: 'Monsterbrüllen', cat: 'Kreaturen', url: monsterRoarUrl, Icon: IconSkull },
+  { key: 'wolfsgeheul',     label: 'Wolfsgeheul',    cat: 'Kreaturen', url: wolfHowlUrl,     Icon: IconMoon },
   { key: 'zombie',          label: 'Zombie',         cat: 'Kreaturen', url: zombieUrl,          Icon: IconSkull },
 
   // ── Erfolg & Misserfolg ───────────────────────────────────────────────
@@ -460,21 +460,21 @@ export const EFFECT_TRACKS = [
   { key: 'fail2', label: 'Patzer 2', cat: 'Erfolg & Misserfolg', url: fail2Url, Icon: IconSad },
 
   // ── Publikum & Reaktion ───────────────────────────────────────────────
-  { key: 'applaus',        label: 'Applaus',      cat: 'Publikum & Reaktion', url: applausUrl,        Icon: IconClap },
-  { key: 'gelaechter',     label: 'Gelächter',    cat: 'Publikum & Reaktion', url: gelaechterUrl,     Icon: IconClap },
+  { key: 'applaus',        label: 'Applaus',      cat: 'Publikum & Reaktion', url: applauseUrl,        Icon: IconClap },
+  { key: 'gelaechter',     label: 'Gelächter',    cat: 'Publikum & Reaktion', url: laughterUrl,     Icon: IconClap },
   { key: 'cheer',          label: 'Jubel',        cat: 'Publikum & Reaktion', url: cheerUrl,          Icon: IconStar },
   { key: 'disappointment', label: 'Enttäuschung', cat: 'Publikum & Reaktion', url: disappointmentUrl, Icon: IconSad },
 
   // ── Umgebung & Magie ──────────────────────────────────────────────────
-  { key: 'glocke',        label: 'Glocke',         cat: 'Umgebung & Magie', url: glockeUrl,        Icon: IconBell },
-  { key: 'tuer-auf',      label: 'Tür öffnen',     cat: 'Umgebung & Magie', url: tuerAufUrl,       Icon: IconDoor },
-  { key: 'tuer-zu',       label: 'Tür schließen',  cat: 'Umgebung & Magie', url: tuerZuUrl,        Icon: IconDoor },
-  { key: 'abgeschlossen', label: 'Abgeschlossen',  cat: 'Umgebung & Magie', url: abgeschlossenUrl, Icon: IconDoor },
-  { key: 'geld',          label: 'Münzen',         cat: 'Umgebung & Magie', url: geldUrl,          Icon: IconCoins },
+  { key: 'glocke',        label: 'Glocke',         cat: 'Umgebung & Magie', url: bellUrl,        Icon: IconBell },
+  { key: 'tuer-auf',      label: 'Tür öffnen',     cat: 'Umgebung & Magie', url: doorOpenUrl,       Icon: IconDoor },
+  { key: 'tuer-zu',       label: 'Tür schließen',  cat: 'Umgebung & Magie', url: doorCloseUrl,        Icon: IconDoor },
+  { key: 'abgeschlossen', label: 'Abgeschlossen',  cat: 'Umgebung & Magie', url: lockedDoorUrl, Icon: IconDoor },
+  { key: 'geld',          label: 'Münzen',         cat: 'Umgebung & Magie', url: coinsUrl,          Icon: IconCoins },
   { key: 'holy-spell',    label: 'Heiliger Zauber',cat: 'Umgebung & Magie', url: holySpellUrl,     Icon: IconSun },
 ]
 
-// Gruppiert EFFECT_TRACKS nach Oberkategorie (Reihenfolge wie im Array).
+// Groups EFFECT_TRACKS by main category (array order).
 export function getEffectGroups() {
   const cats = []
   for (const track of EFFECT_TRACKS) {

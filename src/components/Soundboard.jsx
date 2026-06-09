@@ -4,7 +4,7 @@ import { getEffectGroups, VIDEO_SCENES } from './soundboardData.jsx'
 import MoodMixer from './MoodMixer.jsx'
 import MusicLibrary from './MusicLibrary.jsx'
 
-// Stop-Symbol (für Szene-stoppen)
+// Stop icon (for stopping scene)
 function StopIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden>
@@ -29,7 +29,7 @@ export default function Soundboard({
   onSelectMusic,
   onStopMusic,
 }) {
-  // Akkordeon: nur eine Kategorie ist gleichzeitig geöffnet (oder keine).
+  // Accordion: only one category is open at a time (or none).
   const [openTab, setOpenTab] = useState(null) // 'music' | 'effects' | 'scenes' | null
   const toggle = tab => setOpenTab(t => (t === tab ? null : tab))
 

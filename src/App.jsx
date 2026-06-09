@@ -3,7 +3,7 @@ import SessionSetup from './components/SessionSetup.jsx'
 import InitiativeTracker from './components/InitiativeTracker.jsx'
 import AmbienceScene from './components/AmbienceScene.jsx'
 import { MUSIC_TRACKS, EFFECT_TRACKS, VIDEO_SCENES } from './components/soundboardData.jsx'
-import mietlingLogo from './mietling.png'
+import mietlingLogo from './assets/images/mietling.png'
 
 const PLAYER_DEFAULTS = [
   { id: 'athania',     name: 'Athania',     maxHp: 30 },
@@ -41,10 +41,8 @@ function clearCombatState() {
   localStorage.removeItem('dnd-combat-state')
 }
 
-// Sanftes Ein-/Ausblenden der Lautstaerke auf EINEM Audio-Element (kein zweites
-// Element -> kein echter Crossfade, schont aber den Tablet-Speicher). Ein evtl.
-// laufendes Fade in fadeRef wird zuerst abgebrochen. onDone laeuft erst, wenn das
-// Ziel erreicht wurde und das Fade nicht zwischendurch ersetzt wurde.
+// Smoothly fade audio volume on a single element to save memory.
+// Cancels any running fade. onDone is called when target is reached.
 function fadeAudio(audio, fadeRef, target, durationMs, onDone) {
   if (fadeRef.current) clearInterval(fadeRef.current)
   const stepMs = 40
@@ -202,8 +200,8 @@ export default function App() {
     }
   }, [])
 
-  // Musik & Video laufen NUR auf dem TV (Display-Modus). Der Controller (Master)
-  // steuert nur und zeigt an, was läuft — kein lokales Abspielen hier.
+  // Music and Video only play on TV (Display Mode). The Controller (Master)
+  // only controls and shows what is playing - no local playback here.
 
   // TV: start/stop music when playingMusicKey changes (or after audio unlock)
   useEffect(() => {
@@ -211,9 +209,8 @@ export default function App() {
     const key = displayState?.playingMusicKey
     const volume = displayState?.masterVolume ?? 0.72
 
-    // EIN persistentes Audio-Element wiederverwenden statt pro Songwechsel ein
-    // neues zu erzeugen. Auf Tablets fuehrt das Anhaeufen mehrerer Media-Elemente
-    // (Streaming + Decoding, parallel zum Video) sonst zu Speicher-/Limit-Freezes.
+    // Reuse a single persistent audio element instead of creating new ones
+    // to prevent memory/limit freezes on tablets.
     let audio = tvMusicRef.current
     if (!audio) {
       audio = new Audio()
@@ -223,8 +220,7 @@ export default function App() {
 
     const FADE_MS = 600
 
-    // Quelle tauschen, leise starten und sanft einblenden (alter Stream wird
-    // durch load() freigegeben).
+    // Swap source, start quietly and fade in gently (old stream is released by load()).
     const startTrack = track => {
       audio.pause()
       audio.src = track.url
@@ -236,7 +232,7 @@ export default function App() {
     }
 
     if (!key) {
-      // Ausblenden, dann stoppen und Puffer/Stream explizit freigeben
+      // Fade out, then stop and explicitly release buffer/stream
       if (!audio.src || audio.paused) return
       fadeAudio(audio, fadeRef, 0, FADE_MS, () => {
         audio.pause()
@@ -249,7 +245,7 @@ export default function App() {
     const track = MUSIC_TRACKS.find(t => t.key === key)
     if (!track) return
 
-    // Laeuft bereits ein anderer Song -> erst ausblenden, dann wechseln
+    // If another song is already playing -> fade out first, then switch
     if (audio.src && !audio.paused) {
       fadeAudio(audio, fadeRef, 0, FADE_MS, () => startTrack(track))
     } else {
@@ -260,7 +256,7 @@ export default function App() {
   // TV: sync volume while music is playing
   useEffect(() => {
     if (APP_MODE !== 'display' || !audioUnlocked || !tvMusicRef.current) return
-    // Laeuft gerade ein Fade, nicht dazwischenfunken — es endet binnen ~600 ms.
+    // If a fade is currently running, do not interfere - it ends within ~600 ms.
     if (fadeRef.current) return
     tvMusicRef.current.volume = displayState?.masterVolume ?? 0.72
   }, [displayState?.masterVolume, audioUnlocked])
@@ -273,8 +269,7 @@ export default function App() {
     const audio = new Audio(track.url)
     audio.volume = displayState.masterVolume ?? 0.72
     audio.play().catch(() => {})
-    // Nach dem Abspielen Stream/Puffer freigeben, damit sich Effekt-Audios
-    // nicht ansammeln (sonst Speicherdruck auf dem Tablet)
+    // Release stream/buffer after playing so effect audios don't accumulate
     audio.onended = () => { audio.removeAttribute('src'); audio.load() }
   }, [displayState?.effectTrigger?.nonce, audioUnlocked])
 
@@ -294,15 +289,15 @@ export default function App() {
     setPlayingMusicKey(track.key)
   }
 
-  // Regler-Pfad: setzt Musik nur, wenn sie sich ändert (KEIN Toggle, anders als playMusic)
+  // Slider path: only sets music if it changes (NO toggle, unlike playMusic)
   function selectMusic(track) {
     if (!track || track.key === playingMusicKey) return
     setPlayingMusicKey(track.key)
   }
 
-  // Hybrid: manueller Klick im Soundboard -> Regler auf die Mood-Werte des Songs ziehen
+  // Hybrid: manual click in soundboard -> pull sliders to the song's mood values
   function playMusicAndSyncSliders(track) {
-    playMusic(track)                 // bestehende Toggle-Logik (Klick auf laufenden Song = Stop)
+    playMusic(track) // Existing toggle logic (click on playing song = stop)
     if (track?.mood) setMood(track.mood)
   }
 
@@ -322,8 +317,8 @@ export default function App() {
     setSavedCombat(null)
   }
 
-  // Szene starten: läuft nur auf dem TV. Controller wechselt NICHT in eine
-  // Vollbild-Ansicht, sondern zeigt im Soundboard nur an, dass sie live ist.
+  // Start scene: only runs on TV. Controller does NOT switch to a
+  // fullscreen view, but only shows in the soundboard that it's live.
   function openAmbienceScene(scene) {
     if (!scene) return
     setAmbienceScene(prev => prev === scene.key ? null : scene.key)
@@ -333,9 +328,8 @@ export default function App() {
     setAmbienceScene(null)
   }
 
-  // Darstellung der aktuellen Szene zwischen 'contain' (Balken, nichts beschnitten)
-  // und 'cover' (formatfüllend, Ränder ggf. abgeschnitten) umschalten. Pro Szene
-  // gemerkt und in localStorage persistiert.
+  // Toggle current scene display between 'contain' and 'cover'.
+  // Saved per scene in localStorage.
   function toggleSceneFit(sceneKey) {
     if (!sceneKey) return
     setAmbienceFits(prev => {
@@ -376,7 +370,7 @@ export default function App() {
     const monsters = next.filter(p => p.type === 'monster')
     const players = next.filter(p => p.type === 'player')
     const allMonstersDead = monsters.length > 0 && monsters.every(m => m.dead)
-    // Spieler gilt als ausgeschaltet bei 0 HP ODER aktivem Todeswurf (dying).
+    // Player counts as down at 0 HP OR active death save (dying).
     const allPlayersDown = players.length > 0 && players.every(p => p.hp <= 0 || p.dying)
     if (allMonstersDead) setVictory(true)
     else if (allPlayersDown && monsters.some(m => !m.dead)) setDefeat(true)
@@ -450,8 +444,8 @@ export default function App() {
 
     return (
       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-        {/* Der Kampfbildschirm hat immer Vorrang. Eine aktive Szene pausiert
-            während des Kampfes und läuft danach wieder (sofern nicht gestoppt). */}
+        {/* The combat screen always takes precedence. An active scene pauses
+            during combat and resumes afterwards (if not stopped). */}
         {dp === 'combat' ? (
           <InitiativeTracker
             participants={dPart}

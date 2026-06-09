@@ -9,11 +9,11 @@ const AXES = [
   { key: 'tone',      label: 'Tonalität' },
 ]
 
-// mood: { danger, energy, mysticism, tone } — kontrolliert vom Parent (Hybrid-Modus)
-// onCommit(track): wird NUR beim Loslassen aufgerufen (pointerup / Preset-Klick)
+// mood: { danger, energy, mysticism, tone } - controlled by parent (hybrid mode)
+// onCommit(track): ONLY called on release (pointerup / preset click)
 export default function MoodMixer({ mood, onMoodChange, onCommit, onStop, playingMusicKey }) {
-  // Preview direkt aus den (kontrollierten) Reglerwerten ableiten -> bleibt immer aktuell,
-  // auch wenn ein Song-Klick im Soundboard die Regler von außen verschiebt.
+  // Derive preview directly from (controlled) slider values -> always up-to-date,
+  // even if a song click in the soundboard shifts sliders externally.
   const preview = findBestTrack(mood.danger, mood.energy, mood.mysticism, mood.tone, MUSIC_TRACKS)
 
   function handleInput(axis, value) {
@@ -22,7 +22,7 @@ export default function MoodMixer({ mood, onMoodChange, onCommit, onStop, playin
 
   function commit() {
     const best = findBestTrack(mood.danger, mood.energy, mood.mysticism, mood.tone, MUSIC_TRACKS)
-    if (best) onCommit(best) // Parent wechselt nur, wenn best.key !== playingMusicKey
+    if (best) onCommit(best) // Parent only switches if best.key !== playingMusicKey
   }
 
   return (

@@ -1,7 +1,7 @@
 /**
- * Berechnet die euklidische Distanz zwischen den Reglerwerten und dem Stimmungsprofil
- * jedes Songs und gibt den Track mit dem geringsten Abstand zurück.
- * danger, energy, mysticism, tone müssen Werte zwischen 0.0 und 1.0 sein.
+ * Calculates the Euclidean distance between slider values and the mood profile
+ * of each song, returning the track with the smallest distance.
+ * danger, energy, mysticism, tone must be values between 0.0 and 1.0.
  */
 export function findBestTrack(danger, energy, mysticism, tone, tracks) {
   let bestTrack = null
