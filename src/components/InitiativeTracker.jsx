@@ -46,13 +46,21 @@ export default function InitiativeTracker({
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }, [activeIndex])
 
-  // Victory: react to any participant change
+  // Victory/Defeat: react to any participant change. Das zuerst eingetretene
+  // Ergebnis wird fixiert (Guard), damit nicht beide Overlays/Sounds laufen.
   useEffect(() => {
+    if (victory || defeat) return
     const monsters = participants.filter(p => p.type === 'monster')
-    if (monsters.length > 0 && monsters.every(m => m.dead)) {
+    const players = participants.filter(p => p.type === 'player')
+    const allMonstersDead = monsters.length > 0 && monsters.every(m => m.dead)
+    // Spieler gilt als ausgeschaltet bei 0 HP ODER aktivem Todeswurf (dying).
+    const allPlayersDown = players.length > 0 && players.every(p => p.hp <= 0 || p.dying)
+    if (allMonstersDead) {
       setVictory(true)
+    } else if (allPlayersDown && monsters.some(m => !m.dead)) {
+      setDefeat(true)
     }
-  }, [participants, setVictory])
+  }, [participants, victory, defeat, setVictory, setDefeat])
 
   const visible = participants.filter(p => !(p.type === 'monster' && p.dead))
 
@@ -146,7 +154,7 @@ export default function InitiativeTracker({
     }
     const hadMonsters = participants.some(p => p.type === 'monster')
     const hasAliveMonsters = next.some(p => p.type === 'monster' && !p.dead)
-    if (hadMonsters && !hasAliveMonsters) setVictory(true)
+    if (hadMonsters && !hasAliveMonsters && !defeat) setVictory(true)
   }
 
   function handleNextTurn() {
@@ -479,7 +487,7 @@ export default function InitiativeTracker({
         </div>
       )}
 
-      {victory && (
+      {victory && !defeat && (
         <VictoryOverlay onClose={() => { setVictory(false); onEndCombat() }} muted={!displayOnly} />
       )}
 

@@ -372,10 +372,14 @@ export default function App() {
   function updateParticipants(next) {
     setParticipants(next)
     savePlayerHP(next)
+    if (victory || defeat) return
     const monsters = next.filter(p => p.type === 'monster')
-    if (monsters.length > 0 && monsters.every(m => m.dead)) setVictory(true)
     const players = next.filter(p => p.type === 'player')
-    if (players.length > 0 && players.every(p => p.hp <= 0)) setDefeat(true)
+    const allMonstersDead = monsters.length > 0 && monsters.every(m => m.dead)
+    // Spieler gilt als ausgeschaltet bei 0 HP ODER aktivem Todeswurf (dying).
+    const allPlayersDown = players.length > 0 && players.every(p => p.hp <= 0 || p.dying)
+    if (allMonstersDead) setVictory(true)
+    else if (allPlayersDown && monsters.some(m => !m.dead)) setDefeat(true)
   }
 
   function nextTurn() {
