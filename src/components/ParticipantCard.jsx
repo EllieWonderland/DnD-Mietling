@@ -141,6 +141,7 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
     p.bloodied ? 'card-bloodied' : '',
     p.dying ? 'card-dying' : '',
     p.color ? `card-monster-has-color` : '',
+    displayOnly ? 'card-display-only' : '',
   ].filter(Boolean).join(' ')
 
   const exhaustionCond = p.conditions?.find(c => c.name === 'Exhaustion')
@@ -204,16 +205,27 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
         <div className="card-body">
           <div className="card-name-row">
             <span className="card-name">{p.name}</span>
-            {p.conditions && p.conditions.length > 0 && (
-              <span className="conditions-inline">
-                {p.conditions.map(c => (
-                  <span key={c.name} className="condition-icon" title={c.name}>
-                    {CONDITION_ICONS[c.name] || '●'}
-                    {c.name === 'Exhaustion' && c.level && <sup>{c.level}</sup>}
-                  </span>
-                ))}
-              </span>
-            )}
+            <span className="conditions-inline">
+              {p.bloodied && (
+                <span className="condition-icon condition-bloodied" title="Verwundet">
+                  🩸
+                </span>
+              )}
+              {p.conditions && p.conditions.map(c => (
+                <span key={c.name} className="condition-icon" title={c.name}>
+                  {CONDITION_ICONS[c.name] || '●'}
+                  {c.name === 'Exhaustion' && c.level && <sup>{c.level}</sup>}
+                </span>
+              ))}
+              {displayOnly && (
+                <>
+                  {p.concentration && <span className="condition-icon status-tag" title="Konzentration aktiv">🔮</span>}
+                  {p.hidden && <span className="condition-icon status-tag" title="Versteckt">👻</span>}
+                  {p.blessed && <span className="condition-icon status-tag" title="Gesegnet">⭐</span>}
+                  {p.flying && <span className="condition-icon status-tag" title="Fliegend">🪽</span>}
+                </>
+              )}
+            </span>
             {exhaustionLevel > 0 && (
               <span className="exhaustion-badge">EX{exhaustionLevel}&nbsp;(-{exhaustionLevel * 2})</span>
             )}
@@ -227,7 +239,8 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                     <button
                       key={i}
                       className={`ds-circle ds-circle-success${(p.deathSaves?.successes || 0) > i ? ' ds-filled' : ''}`}
-                      onClick={() => toggleDeathSave('success', i)}
+                      onClick={!displayOnly ? () => toggleDeathSave('success', i) : undefined}
+                      style={displayOnly ? { cursor: 'default' } : undefined}
                     />
                   ))}
                 </div>
@@ -239,19 +252,22 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                     <button
                       key={i}
                       className={`ds-circle ds-circle-failure${(p.deathSaves?.failures || 0) > i ? ' ds-filled' : ''}`}
-                      onClick={() => toggleDeathSave('failure', i)}
+                      onClick={!displayOnly ? () => toggleDeathSave('failure', i) : undefined}
+                      style={displayOnly ? { cursor: 'default' } : undefined}
                     />
                   ))}
                 </div>
               </div>
-              <button
-                className="monster-btn"
-                style={{ marginLeft: 'auto' }}
-                title="Wieder stabil"
-                onClick={() => onUpdate({ dying: false, deathSaves: { successes: 0, failures: 0 } })}
-              >💚</button>
+              {!displayOnly && (
+                <button
+                  className="monster-btn"
+                  style={{ marginLeft: 'auto' }}
+                  title="Wieder stabil"
+                  onClick={() => onUpdate({ dying: false, deathSaves: { successes: 0, failures: 0 } })}
+                >💚</button>
+              )}
             </div>
-          ) : (
+          ) : !displayOnly ? (
             <div className="player-status-row">
               <button
                 className={`status-icon ${p.concentration ? 'active-conc' : ''}`}
@@ -289,22 +305,25 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                 onClick={() => onUpdate({ dying: true, deathSaves: { successes: 0, failures: 0 } })}
               >☠</button>
             </div>
-          )}
+          ) : null}
         </div>
       ) : p.type === 'ally' ? (
         /* ── ALLY LAYOUT ── */
         <div className="card-body ally-body">
           <div className="card-name-row">
             <span className="card-name ally-name">{p.name}</span>
-            {p.conditions && p.conditions.length > 0 && (
-              <span className="conditions-inline">
-                {p.conditions.map(c => (
-                  <span key={c.name} className="condition-icon" title={c.name}>
-                    {CONDITION_ICONS[c.name] || '●'}
-                  </span>
-                ))}
-              </span>
-            )}
+            <span className="conditions-inline">
+              {p.bloodied && (
+                <span className="condition-icon condition-bloodied" title="Verwundet">
+                  🩸
+                </span>
+              )}
+              {p.conditions && p.conditions.map(c => (
+                <span key={c.name} className="condition-icon" title={c.name}>
+                  {CONDITION_ICONS[c.name] || '●'}
+                </span>
+              ))}
+            </span>
           </div>
           {p.hp > 0 ? (
             <div className="ally-controls-row">
@@ -313,21 +332,25 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                 <span className="ally-hp-value">{p.hp}</span>
                 {p.maxHp > 0 && <span className="ally-hp-max">/ {p.maxHp}</span>}
               </div>
-              <input
-                type="number"
-                inputMode="numeric"
-                className="ally-hp-input"
-                value={allyHpInput}
-                onChange={e => setAllyHpInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') applyAllyDamage() }}
-                placeholder="HP"
-                min="1"
-              />
-              <button className="ally-btn ally-dmg-btn" onClick={applyAllyDamage}>-Dmg</button>
-              <button className="ally-btn ally-heal-btn" onClick={applyAllyHeal}>+Heil</button>
-              <div className="monster-sep" />
-              <button className="monster-btn" title="Zustände" onClick={() => setShowConditions(!showConditions)}>🎭</button>
-              <button className="monster-btn remove-btn" onClick={onRemove} title="Entfernen">✕</button>
+              {!displayOnly && (
+                <>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    className="ally-hp-input"
+                    value={allyHpInput}
+                    onChange={e => setAllyHpInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') applyAllyDamage() }}
+                    placeholder="HP"
+                    min="1"
+                  />
+                  <button className="ally-btn ally-dmg-btn" onClick={applyAllyDamage}>-Dmg</button>
+                  <button className="ally-btn ally-heal-btn" onClick={applyAllyHeal}>+Heil</button>
+                  <div className="monster-sep" />
+                  <button className="monster-btn" title="Zustände" onClick={() => setShowConditions(!showConditions)}>🎭</button>
+                  <button className="monster-btn remove-btn" onClick={onRemove} title="Entfernen">✕</button>
+                </>
+              )}
             </div>
           ) : (
             <div className="death-saves-row">
@@ -338,7 +361,8 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                     <button
                       key={i}
                       className={`ds-circle ds-circle-success${(p.deathSaves?.successes || 0) > i ? ' ds-filled' : ''}`}
-                      onClick={() => toggleDeathSave('success', i)}
+                      onClick={!displayOnly ? () => toggleDeathSave('success', i) : undefined}
+                      style={displayOnly ? { cursor: 'default' } : undefined}
                     />
                   ))}
                 </div>
@@ -350,12 +374,15 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                     <button
                       key={i}
                       className={`ds-circle ds-circle-failure${(p.deathSaves?.failures || 0) > i ? ' ds-filled' : ''}`}
-                      onClick={() => toggleDeathSave('failure', i)}
+                      onClick={!displayOnly ? () => toggleDeathSave('failure', i) : undefined}
+                      style={displayOnly ? { cursor: 'default' } : undefined}
                     />
                   ))}
                 </div>
               </div>
-              <button className="monster-btn remove-btn" style={{ marginLeft: 'auto' }} onClick={onRemove} title="Entfernen">✕</button>
+              {!displayOnly && (
+                <button className="monster-btn remove-btn" style={{ marginLeft: 'auto' }} onClick={onRemove} title="Entfernen">✕</button>
+              )}
             </div>
           )}
         </div>
@@ -374,15 +401,18 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
               />
             )}
             <span className="card-name monster-name">{p.name}</span>
-            {p.conditions && p.conditions.length > 0 && (
-              <span className="conditions-inline">
-                {p.conditions.map(c => (
-                  <span key={c.name} className="condition-icon" title={c.name}>
-                    {CONDITION_ICONS[c.name] || '●'}
-                  </span>
-                ))}
-              </span>
-            )}
+            <span className="conditions-inline">
+              {p.bloodied && (
+                <span className="condition-icon condition-bloodied" title="Verwundet">
+                  🩸
+                </span>
+              )}
+              {p.conditions && p.conditions.map(c => (
+                <span key={c.name} className="condition-icon" title={c.name}>
+                  {CONDITION_ICONS[c.name] || '●'}
+                </span>
+              ))}
+            </span>
           </div>
           <div className="monster-controls-row">
             <div className="damage-group">
@@ -390,34 +420,40 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
               <span className="damage-value">{p.damage || 0}</span>
               {p.maxHp > 0 && <span className="damage-max">/ {p.maxHp}</span>}
             </div>
-            <input
-              type="number"
-              inputMode="numeric"
-              className="damage-input"
-              value={damageInput}
-              onChange={e => setDamageInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') applyDamage() }}
-              placeholder="Dmg"
-              min="1"
-            />
-            <button className="dmg-btn" onClick={applyDamage}>+Dmg</button>
+            {!displayOnly && (
+              <>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  className="damage-input"
+                  value={damageInput}
+                  onChange={e => setDamageInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') applyDamage() }}
+                  placeholder="Dmg"
+                  min="1"
+                />
+                <button className="dmg-btn" onClick={applyDamage}>+Dmg</button>
+              </>
+            )}
           </div>
-          <div className="monster-toggles-row">
-            <button
-              className={`monster-btn ${p.bloodied ? 'bloodied-active' : ''}`}
-              onClick={() => onUpdate({ bloodied: !p.bloodied })}
-              title="Verwundet"
-            >🩸</button>
-            <button
-              className="monster-btn"
-              title="Zustände"
-              onClick={() => setShowConditions(!showConditions)}
-            >🎭</button>
-            <div className="monster-sep" />
-            <button className="monster-btn" onClick={onDuplicate} title="Duplizieren">⧉</button>
-            <button className="monster-btn kill-btn" onClick={onKill} title="Besiegt">☠</button>
-            <button className="monster-btn remove-btn" onClick={onRemove} title="Entfernen">✕</button>
-          </div>
+          {!displayOnly && (
+            <div className="monster-toggles-row">
+              <button
+                className={`monster-btn ${p.bloodied ? 'bloodied-active' : ''}`}
+                onClick={() => onUpdate({ bloodied: !p.bloodied })}
+                title="Verwundet"
+              >🩸</button>
+              <button
+                className="monster-btn"
+                title="Zustände"
+                onClick={() => setShowConditions(!showConditions)}
+              >🎭</button>
+              <div className="monster-sep" />
+              <button className="monster-btn" onClick={onDuplicate} title="Duplizieren">⧉</button>
+              <button className="monster-btn kill-btn" onClick={onKill} title="Besiegt">☠</button>
+              <button className="monster-btn remove-btn" onClick={onRemove} title="Entfernen">✕</button>
+            </div>
+          )}
         </div>
       )}
 
@@ -425,7 +461,7 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
         <button className="card-edit-btn" onClick={enterEdit} title="Bearbeiten">✏️</button>
       )}
 
-      {showConditions && (
+      {!displayOnly && showConditions && (
         <ConditionsMenu
           conditions={p.conditions || []}
           onToggle={toggleCondition}

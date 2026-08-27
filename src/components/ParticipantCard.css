@@ -97,11 +97,25 @@
 
 .conditions-inline {
   display: flex;
-  gap: 4px;
+  gap: 6px;
+  align-items: center;
   flex-wrap: wrap;
 }
 
 .condition-icon { font-size: 1.05rem; line-height: 1; }
+
+.condition-bloodied {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 4px #ff3333aa);
+  animation: bloodied-glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes bloodied-glow {
+  from { filter: drop-shadow(0 0 2px #ff222266); transform: scale(1); }
+  to   { filter: drop-shadow(0 0 6px #ff4444dd); transform: scale(1.08); }
+}
 
 .exhaustion-badge {
   font-size: 0.72rem;
@@ -588,4 +602,54 @@
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.35);
 }
+
+/* ── DISPLAY MODE SPECIFIC CARD STYLES ── */
+.card-display-only {
+  padding: 16px 22px;
+  gap: 18px;
+  border-radius: 12px;
+}
+
+.card-display-only .card-initiative {
+  font-size: 2.3rem;
+  min-width: 52px;
+}
+
+.card-display-only .card-name {
+  font-size: 1.55rem;
+  font-weight: 700;
+}
+
+.card-display-only .condition-icon {
+  font-size: 1.35rem;
+}
+
+.card-display-only .damage-group,
+.card-display-only .ally-hp-group {
+  margin-top: 2px;
+  gap: 8px;
+}
+
+.card-display-only .damage-label,
+.card-display-only .ally-hp-label {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+}
+
+.card-display-only .damage-value,
+.card-display-only .ally-hp-value {
+  font-size: 1.9rem;
+}
+
+.card-display-only .damage-max,
+.card-display-only .ally-hp-max {
+  font-size: 1.15rem;
+}
+
+.card-display-only .monster-color-token {
+  width: 22px;
+  height: 22px;
+  border-width: 2.5px;
+}
+
 

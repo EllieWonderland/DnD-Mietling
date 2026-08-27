@@ -103,12 +103,36 @@ export default function App() {
   const fadeRef = useRef(null)
 
   const wsRef = useRef(null)
+  const bcRef = useRef(null)
   const pendingStateRef = useRef(null)
   const [displayState, setDisplayState] = useState(null)
+  const [displayCompactScroll, setDisplayCompactScroll] = useState(null)
 
-  // WebSocket: load URL from config.json at runtime (not baked at build time)
+  // Clear display compact scroll when turn changes in display mode
+  useEffect(() => {
+    if (APP_MODE === 'display') {
+      setDisplayCompactScroll(null)
+    }
+  }, [displayState?.activeIndex, displayState?.round])
+
+  // WebSocket & BroadcastChannel: sync state & scroll events
   useEffect(() => {
     let closed = false
+    const bc = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('dnd-mietling') : null
+    bcRef.current = bc
+
+    if (bc) {
+      bc.onmessage = event => {
+        if (APP_MODE === 'display') {
+          const msg = event.data
+          if (msg?.type === 'STATE') {
+            setDisplayState(msg.state)
+          } else if (msg?.type === 'COMPACT_SCROLL') {
+            setDisplayCompactScroll(msg.scroll)
+          }
+        }
+      }
+    }
 
     async function init() {
       let wsUrl
@@ -142,7 +166,11 @@ export default function App() {
           if (APP_MODE === 'display') {
             try {
               const msg = JSON.parse(event.data)
-              if (msg.type === 'STATE') setDisplayState(msg.state)
+              if (msg.type === 'STATE') {
+                setDisplayState(msg.state)
+              } else if (msg.type === 'COMPACT_SCROLL') {
+                setDisplayCompactScroll(msg.scroll)
+              }
             } catch {}
           }
         }
@@ -157,6 +185,7 @@ export default function App() {
     init()
     return () => {
       closed = true
+      if (bc) bc.close()
       if (wsRef.current) {
         wsRef.current.onclose = null
         wsRef.current.close()
@@ -167,17 +196,38 @@ export default function App() {
   // Controller: broadcast full state on every change
   useEffect(() => {
     if (APP_MODE !== 'controller') return
-    const str = JSON.stringify({
+    const payload = {
       type: 'STATE',
       state: { phase, participants, round, activeIndex, victory, defeat, ambienceScene, ambienceFits, playingMusicKey, masterVolume, effectTrigger },
-    })
+    }
+    const str = JSON.stringify(payload)
     pendingStateRef.current = str
     const ws = wsRef.current
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(str)
       pendingStateRef.current = null
     }
+    if (bcRef.current) {
+      bcRef.current.postMessage(payload)
+    }
   }, [phase, participants, round, activeIndex, victory, defeat, ambienceScene, ambienceFits, playingMusicKey, masterVolume, effectTrigger])
+
+  // Controller: broadcast right panel scroll position
+  function sendCompactScroll(scrollData) {
+    if (APP_MODE !== 'controller') return
+    const payload = {
+      type: 'COMPACT_SCROLL',
+      scroll: scrollData,
+    }
+    const str = JSON.stringify(payload)
+    const ws = wsRef.current
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(str)
+    }
+    if (bcRef.current) {
+      bcRef.current.postMessage(payload)
+    }
+  }
 
   // PWA install prompt
   useEffect(() => {
@@ -404,7 +454,7 @@ export default function App() {
   if (APP_MODE === 'display') {
     if (!audioUnlocked) {
       return (
-        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '32px' }}>
+        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '32px', padding: 'clamp(20px, 4vh, 48px)', boxSizing: 'border-box' }}>
           <img src={mietlingLogo} alt="DnD Mietling" style={{ maxWidth: '320px', width: '60vw', objectFit: 'contain' }} />
           <button
             onClick={() => {
@@ -432,7 +482,7 @@ export default function App() {
 
     if (!displayState) {
       return (
-        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '20px', padding: 'clamp(20px, 4vh, 48px)', boxSizing: 'border-box' }}>
           <img src={mietlingLogo} alt="DnD Mietling" style={{ maxWidth: '320px', width: '60vw', objectFit: 'contain' }} />
           <div style={{ color: 'var(--text-dim)', fontSize: '0.9rem', letterSpacing: '0.05em' }}>Verbindung wird hergestellt …</div>
         </div>
@@ -461,6 +511,7 @@ export default function App() {
             setVictory={() => {}}
             defeat={dDefeat ?? false}
             setDefeat={() => {}}
+            compactScroll={displayCompactScroll}
             displayOnly
           />
         ) : dScene ? (
@@ -591,6 +642,7 @@ export default function App() {
           onMoodChange={setMood}
           onSelectMusic={selectMusic}
           onStopMusic={stopMusic}
+          onCompactScroll={sendCompactScroll}
         />
       )}
     </div>

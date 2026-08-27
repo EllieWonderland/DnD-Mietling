@@ -19,6 +19,7 @@ export default function InitiativeTracker({
   displayOnly = false,
   playingMusicKey, volume, onVolumeChange, onPlayMusic, onPlayEffect,
   mood, onMoodChange, onSelectMusic, onStopMusic,
+  onCompactScroll, compactScroll,
 }) {
   const [showAddMonster, setShowAddMonster] = useState(false)
   const [showAddAlly, setShowAddAlly] = useState(false)
@@ -36,6 +37,7 @@ export default function InitiativeTracker({
   const listRef = useRef(null)
   const compactPanelRef = useRef(null)
   const compactRowRefs = useRef([])
+  const isProgrammaticScroll = useRef(false)
 
   // Drag cleanup on unmount (clear timer + scroll lock)
   useEffect(() => {
@@ -47,9 +49,23 @@ export default function InitiativeTracker({
 
   const visible = participants.filter(p => !(p.type === 'monster' && p.dead))
 
+  // In display mode: sync manual scroll from controller
+  useEffect(() => {
+    if (!displayOnly || !compactScroll || !compactPanelRef.current) return
+    const el = compactPanelRef.current
+    const maxScroll = el.scrollHeight - el.clientHeight
+    if (maxScroll > 0 && typeof compactScroll.scrollRatio === 'number') {
+      el.scrollTop = compactScroll.scrollRatio * maxScroll
+    } else if (typeof compactScroll.scrollTop === 'number') {
+      el.scrollTop = compactScroll.scrollTop
+    }
+  }, [compactScroll, displayOnly])
+
   // Auto-scroll active card and sidebar into view at 2nd position
   useEffect(() => {
     const timer = setTimeout(() => {
+      isProgrammaticScroll.current = true
+
       // 1. Participant List: active element at 2nd position (previous element at top)
       if (listRef.current) {
         if (activeIndex <= 0) {
@@ -79,10 +95,26 @@ export default function InitiativeTracker({
           }
         }
       }
+
+      setTimeout(() => {
+        isProgrammaticScroll.current = false
+      }, 350)
     }, 40)
 
     return () => clearTimeout(timer)
   }, [activeIndex, participants, round])
+
+  function handleCompactPanelScroll(e) {
+    if (displayOnly || isProgrammaticScroll.current) return
+    const el = e.currentTarget
+    const maxScroll = el.scrollHeight - el.clientHeight
+    const ratio = maxScroll > 0 ? el.scrollTop / maxScroll : 0
+    onCompactScroll?.({
+      scrollRatio: ratio,
+      scrollTop: el.scrollTop,
+      timestamp: Date.now(),
+    })
+  }
 
   // Victory/Defeat: react to any participant change. The first result
   // is locked (guard) so both overlays/sounds don't play.
@@ -328,7 +360,7 @@ export default function InitiativeTracker({
   }
 
   return (
-    <div className="tracker-layout">
+    <div className={`tracker-layout ${displayOnly ? 'tracker-display-mode' : ''}`}>
       <header className="tracker-header">
         {displayOnly
           ? <div />
@@ -461,7 +493,7 @@ export default function InitiativeTracker({
           ))}
         </div>
 
-        <div className="compact-order-panel" ref={compactPanelRef}>
+        <div className="compact-order-panel" ref={compactPanelRef} onScroll={handleCompactPanelScroll}>
           {[...participants]
             .sort((a, b) => b.initiative - a.initiative)
             .map((p, cIdx) => {
@@ -480,7 +512,6 @@ export default function InitiativeTracker({
                     isDead ? 'compact-dead' : '',
                   ].filter(Boolean).join(' ')}
                 >
-                  <span className="compact-init">{p.initiative}</span>
                   {monsterCol && (
                     <span
                       className="compact-color-dot"

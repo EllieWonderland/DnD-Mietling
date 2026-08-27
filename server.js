@@ -32,9 +32,9 @@ wss.on('connection', ws => {
       const msg = JSON.parse(str)
       if (msg.type === 'STATE') {
         lastState = str
-        for (const client of wss.clients) {
-          if (client !== ws && client.readyState === 1) client.send(str)
-        }
+      }
+      for (const client of wss.clients) {
+        if (client !== ws && client.readyState === 1) client.send(str)
       }
     } catch {}
   })

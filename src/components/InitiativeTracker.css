@@ -329,7 +329,7 @@
 
 /* ── COMPACT INITIATIVE STRIP (right column) ── */
 .compact-order-panel {
-  width: 148px;
+  width: 170px;
   flex-shrink: 0;
   border-left: 2px solid var(--border-gold);
   background: #0b0906;
@@ -337,16 +337,17 @@
   display: flex;
   flex-direction: column;
   padding: 6px 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .compact-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 8px 6px 10px;
+  gap: 8px;
+  padding: 8px 10px 8px 12px;
   border-left: 3px solid transparent;
   transition: background 0.15s;
-  min-height: 30px;
+  min-height: 36px;
 }
 
 .compact-player  { border-left-color: var(--border-gold); }
@@ -368,31 +369,17 @@
 
 .compact-dead { opacity: 0.3; }
 
-.compact-init {
-  font-family: var(--font-title);
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--gold);
-  min-width: 20px;
-  text-align: center;
-  flex-shrink: 0;
-  line-height: 1;
-}
-.compact-monster .compact-init { color: #cc5555; }
-.compact-ally    .compact-init { color: #66aadd; }
-
 .compact-color-dot {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   border: 1.5px solid #ffffff;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
   flex-shrink: 0;
-  margin-right: 2px;
 }
 
 .compact-name {
-  font-size: 0.75rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: var(--text-dim);
   overflow: hidden;
@@ -407,16 +394,89 @@
 .compact-active  .compact-name { color: var(--text-main); }
 
 .compact-skull {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   flex-shrink: 0;
   opacity: 0.8;
 }
 
 .compact-dying {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: #cc3333;
   flex-shrink: 0;
   animation: compact-dying-blink 1s ease-in-out infinite alternate;
+}
+
+/* ── DISPLAY MODE (TV) RIGHT PANEL STYLING ── */
+/* ── DISPLAY MODE (TV) SAFE AREA & LAYOUT ── */
+.tracker-display-mode {
+  padding: clamp(16px, 2.5vh, 36px) clamp(16px, 2.5vw, 40px);
+  box-sizing: border-box;
+  background: var(--bg-dark);
+}
+
+.tracker-display-mode .tracker-header {
+  border-radius: 12px 12px 0 0;
+  padding: 12px 24px;
+  border: 2px solid var(--border-gold);
+  border-bottom: 1px solid var(--border-gold);
+}
+
+.tracker-display-mode .tracker-body {
+  border-radius: 0 0 12px 12px;
+  border: 2px solid var(--border-gold);
+  border-top: none;
+  overflow: hidden;
+}
+
+.tracker-display-mode .participant-list {
+  padding: 14px 20px 28px 20px;
+}
+
+.tracker-display-mode .compact-order-panel {
+  width: clamp(280px, 24vw, 380px);
+  border-left: 3px solid var(--border-gold);
+  background: #090805;
+  padding: 10px 0 28px 0;
+}
+
+.tracker-display-mode .compact-row {
+  padding: 12px 16px;
+  min-height: 52px;
+  gap: 12px;
+  border-left-width: 5px;
+}
+
+.tracker-display-mode .compact-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.tracker-display-mode .compact-color-dot {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+}
+
+.tracker-display-mode .compact-skull,
+.tracker-display-mode .compact-dying {
+  font-size: 1.2rem;
+}
+
+.tracker-display-mode .compact-active {
+  background: #342817;
+  box-shadow: inset 0 0 20px rgba(201, 162, 39, 0.25);
+}
+
+.tracker-display-mode .compact-monster.compact-active {
+  background: #301616;
+  box-shadow: inset 0 0 20px rgba(204, 34, 34, 0.25);
+}
+
+.tracker-display-mode .compact-ally.compact-active {
+  background: #162438;
+  box-shadow: inset 0 0 20px rgba(102, 170, 238, 0.25);
 }
 
 @keyframes compact-dying-blink {
