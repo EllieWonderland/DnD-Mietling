@@ -128,31 +128,154 @@
   flex-shrink: 0;
 }
 
-/* ── PLAYER STATUS ROW ── */
-.player-status-row {
+/* ── CONDITION & STATUS CHIPS ROW ── */
+.card-chips-row {
   display: flex;
-  gap: 6px;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 2px;
 }
 
-.status-icon {
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: #1e1814;
+  border: 1px solid var(--border-gold);
+  color: var(--text-main);
+  line-height: 1.2;
+  transition: all 0.15s ease;
+  user-select: none;
+  cursor: pointer;
+}
+
+.status-chip:hover {
+  border-color: var(--gold-light);
+  transform: translateY(-1px);
+}
+
+/* Specific chip variations */
+.chip-bloodied {
+  background: #2a1010;
+  border-color: var(--red-bright);
+  color: #ff9999;
+  box-shadow: 0 0 8px rgba(204, 34, 34, 0.4);
+  cursor: default;
+}
+
+.chip-conc {
+  background: #1e142e;
+  border-color: #9060d0;
+  color: #d8b4fe;
+}
+.chip-conc.chip-active {
+  background: #2e1a4a;
+  border-color: #c090ff;
+  color: #f3e8ff;
+  box-shadow: 0 0 10px rgba(144, 96, 208, 0.5);
+}
+
+.chip-blessed {
+  background: #1e1814;
+  border-color: #7a6215;
+  color: var(--text-dim);
+}
+.chip-blessed.chip-active {
+  background: #2e2210;
+  border-color: var(--gold);
+  color: #fef08a;
+  box-shadow: 0 0 10px var(--active-glow);
+}
+
+.chip-hidden {
+  background: #141c1c;
+  border-color: #3a5555;
+  color: var(--text-dim);
+}
+.chip-hidden.chip-active {
+  background: #122828;
+  border-color: #2dd4bf;
+  color: #99f6e4;
+  box-shadow: 0 0 10px rgba(45, 212, 191, 0.4);
+}
+
+.chip-flying {
+  background: #141a28;
+  border-color: #3b5070;
+  color: var(--text-dim);
+}
+.chip-flying.chip-active {
+  background: #142238;
+  border-color: #60a5fa;
+  color: #bfdbfe;
+  box-shadow: 0 0 10px rgba(96, 165, 250, 0.4);
+}
+
+.chip-reaction-ready {
+  background: #1a2216;
+  border-color: #4ade8080;
+  color: #86efac;
+}
+
+.chip-reaction-spent {
+  background: #201c18;
+  border-color: #57534e;
+  color: #a8a29e;
+  opacity: 0.65;
+}
+
+.chip-condition {
+  background: #241d14;
+  border-color: rgba(201, 162, 39, 0.45);
+  color: var(--gold-light);
+  cursor: default;
+}
+
+.chip-add {
   background: transparent;
-  border: 1px solid rgba(201,162,39,0.25);
-  border-radius: 6px;
-  padding: 5px 8px;
-  font-size: 1.05rem;
-  line-height: 1;
-  transition: all 0.15s;
-  opacity: 0.7;
+  border: 1px dashed var(--border-gold);
+  color: var(--gold-light);
+  padding: 4px 8px;
+  font-size: 0.76rem;
+}
+.chip-add:hover {
+  background: #2a2016;
+  border-color: var(--gold);
+  border-style: solid;
 }
 
-.status-icon:hover { opacity: 1; border-color: var(--text-dim); }
-.active-conc    { opacity: 1; border-color: #9060d0; background: #2a1a4a; box-shadow: 0 0 8px #9060d050; }
-.active-blessed { opacity: 1; border-color: var(--gold); background: #2e2010; box-shadow: 0 0 8px var(--active-glow); }
-.active-hidden  { opacity: 1; border-color: #558888; background: #1a2a2a; box-shadow: 0 0 8px #33888850; }
-.active-flying  { opacity: 1; border-color: #6699dd; background: #1a2035; box-shadow: 0 0 8px #3366bb50; }
+.chip-skull {
+  background: #221212;
+  border-color: #7a2a2a;
+  color: #ff8888;
+  font-size: 0.76rem;
+}
+.chip-skull:hover {
+  background: #3a1515;
+  border-color: var(--red-bright);
+}
 
-.skull-btn { color: #cc5555; border-color: #7a2a2a !important; opacity: 0.8; }
+.chip-remove-btn {
+  background: transparent;
+  color: inherit;
+  font-size: 0.72rem;
+  margin-left: 3px;
+  opacity: 0.55;
+  padding: 0 3px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.chip-remove-btn:hover {
+  opacity: 1;
+  color: #ff8888;
+}
 
 /* ── CONCENTRATION MODAL ── */
 .conc-modal-overlay {

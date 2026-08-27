@@ -193,6 +193,11 @@ export default function App() {
     }
   }, [])
 
+  const latestStateRef = useRef({})
+  useEffect(() => {
+    latestStateRef.current = { phase, participants, round, activeIndex, victory, defeat, ambienceScene, ambienceFits, playingMusicKey, masterVolume, effectTrigger }
+  }, [phase, participants, round, activeIndex, victory, defeat, ambienceScene, ambienceFits, playingMusicKey, masterVolume, effectTrigger])
+
   // Controller: broadcast full state on every change
   useEffect(() => {
     if (APP_MODE !== 'controller') return
@@ -215,17 +220,32 @@ export default function App() {
   // Controller: broadcast right panel scroll position
   function sendCompactScroll(scrollData) {
     if (APP_MODE !== 'controller') return
-    const payload = {
-      type: 'COMPACT_SCROLL',
-      scroll: scrollData,
+    const scrollObj = {
+      scrollRatio: scrollData.scrollRatio,
+      scrollTop: scrollData.scrollTop,
+      timestamp: scrollData.timestamp || Date.now(),
     }
-    const str = JSON.stringify(payload)
+    const statePayload = {
+      type: 'STATE',
+      state: {
+        ...latestStateRef.current,
+        compactScroll: scrollObj,
+      },
+    }
+    const scrollPayload = {
+      type: 'COMPACT_SCROLL',
+      scroll: scrollObj,
+    }
+    const stateStr = JSON.stringify(statePayload)
+    const scrollStr = JSON.stringify(scrollPayload)
     const ws = wsRef.current
     if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(str)
+      ws.send(stateStr)
+      ws.send(scrollStr)
     }
     if (bcRef.current) {
-      bcRef.current.postMessage(payload)
+      bcRef.current.postMessage(statePayload)
+      bcRef.current.postMessage(scrollPayload)
     }
   }
 
