@@ -1,14 +1,16 @@
 import { useState } from 'react'
+import ColorPicker from './ColorPicker.jsx'
 import './AddMonsterModal.css'
 
 export default function AddMonsterModal({ onAdd, onClose, title = 'Monster hinzufügen', isAlly = false }) {
   const [name, setName] = useState('')
   const [initiative, setInitiative] = useState('')
   const [hp, setHp] = useState('')
+  const [color, setColor] = useState(null)
 
   function submit() {
     if (!name.trim()) return
-    onAdd(name.trim(), initiative, hp)
+    onAdd(name.trim(), initiative, hp, color)
   }
 
   return (
@@ -24,7 +26,7 @@ export default function AddMonsterModal({ onAdd, onClose, title = 'Monster hinzu
             value={name}
             onChange={e => setName(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') submit() }}
-            placeholder="z.B. Goblin"
+            placeholder={isAlly ? 'z.B. Stadtwache' : 'z.B. Goblin'}
             className="modal-input"
           />
         </div>
@@ -56,6 +58,13 @@ export default function AddMonsterModal({ onAdd, onClose, title = 'Monster hinzu
             />
           </div>
         </div>
+
+        {!isAlly && (
+          <div className="modal-field modal-field--color">
+            <label>Farbring (optional)</label>
+            <ColorPicker selectedColor={color} onChange={setColor} />
+          </div>
+        )}
 
         <div className="modal-actions">
           <button className="modal-cancel" onClick={onClose}>Abbrechen</button>

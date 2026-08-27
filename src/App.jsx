@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import SessionSetup from './components/SessionSetup.jsx'
 import InitiativeTracker from './components/InitiativeTracker.jsx'
 import AmbienceScene from './components/AmbienceScene.jsx'
+import ScreenKeepAlive from './components/ScreenKeepAlive.jsx'
 import { MUSIC_TRACKS, EFFECT_TRACKS, VIDEO_SCENES } from './components/soundboardData.jsx'
 import mietlingLogo from './assets/images/mietling.png'
 
@@ -444,6 +445,7 @@ export default function App() {
 
     return (
       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <ScreenKeepAlive enabled={true} />
         {/* The combat screen always takes precedence. An active scene pauses
             during combat and resumes afterwards (if not stopped). */}
         {dp === 'combat' ? (
@@ -481,6 +483,7 @@ export default function App() {
   // ── CONTROLLER MODE (Tablet) ───────────────────────────────────────────────
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <ScreenKeepAlive enabled={true} />
       {!isStandalone && installPrompt && (
         <button
           onClick={handleInstall}

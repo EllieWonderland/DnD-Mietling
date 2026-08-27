@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
 import ParticipantCard from './ParticipantCard.jsx'
 import AddMonsterModal from './AddMonsterModal.jsx'
+import DuplicateMonsterModal from './DuplicateMonsterModal.jsx'
 import VictoryOverlay from './VictoryOverlay.jsx'
 import DefeatOverlay from './DefeatOverlay.jsx'
 import { getEffectGroups } from './soundboardData.jsx'
 import MoodMixer from './MoodMixer.jsx'
 import MusicLibrary from './MusicLibrary.jsx'
+import { getMonsterColor } from '../utils/monsterColors.js'
 import './InitiativeTracker.css'
 
 let monsterIdCounter = Date.now()
@@ -20,6 +22,7 @@ export default function InitiativeTracker({
 }) {
   const [showAddMonster, setShowAddMonster] = useState(false)
   const [showAddAlly, setShowAddAlly] = useState(false)
+  const [duplicateTarget, setDuplicateTarget] = useState(null)
   const [concentrationAlert, setConcentrationAlert] = useState(null)
   const [showSoundboard, setShowSoundboard] = useState(false)
   const [cTab, setCTab] = useState(null) // 'music' | 'effects' | 'scenes' | null
@@ -31,6 +34,8 @@ export default function InitiativeTracker({
   const preventTouchScroll = useRef(e => e.preventDefault()).current
   const cardRefs = useRef([])
   const listRef = useRef(null)
+  const compactPanelRef = useRef(null)
+  const compactRowRefs = useRef([])
 
   // Drag cleanup on unmount (clear timer + scroll lock)
   useEffect(() => {
@@ -40,11 +45,44 @@ export default function InitiativeTracker({
     }
   }, [preventTouchScroll])
 
-  // Auto-scroll active card into view
+  const visible = participants.filter(p => !(p.type === 'monster' && p.dead))
+
+  // Auto-scroll active card and sidebar into view at 2nd position
   useEffect(() => {
-    const el = cardRefs.current[activeIndex]
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-  }, [activeIndex])
+    const timer = setTimeout(() => {
+      // 1. Participant List: active element at 2nd position (previous element at top)
+      if (listRef.current) {
+        if (activeIndex <= 0) {
+          listRef.current.scrollTo({ top: 0, behavior: 'smooth' })
+        } else {
+          const prevEl = cardRefs.current[activeIndex - 1]
+          if (prevEl) {
+            const top = prevEl.offsetTop - listRef.current.offsetTop
+            listRef.current.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+          }
+        }
+      }
+
+      // 2. Compact Order Panel: active element at 2nd position
+      if (compactPanelRef.current) {
+        const sorted = [...participants].sort((a, b) => b.initiative - a.initiative)
+        const activeParticipant = visible[activeIndex]
+        const compactActiveIdx = sorted.findIndex(p => p.id === activeParticipant?.id)
+
+        if (compactActiveIdx <= 0) {
+          compactPanelRef.current.scrollTo({ top: 0, behavior: 'smooth' })
+        } else {
+          const prevRow = compactRowRefs.current[compactActiveIdx - 1]
+          if (prevRow) {
+            const top = prevRow.offsetTop - compactPanelRef.current.offsetTop
+            compactPanelRef.current.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+          }
+        }
+      }
+    }, 40)
+
+    return () => clearTimeout(timer)
+  }, [activeIndex, participants, round])
 
   // Victory/Defeat: react to any participant change. The first result
   // is locked (guard) so both overlays/sounds don't play.
@@ -62,9 +100,7 @@ export default function InitiativeTracker({
     }
   }, [participants, victory, defeat, setVictory, setDefeat])
 
-  const visible = participants.filter(p => !(p.type === 'monster' && p.dead))
-
-  function addMonster(name, initiative, hp) {
+  function addMonster(name, initiative, hp, color = null) {
     const id = `monster-${monsterIdCounter++}`
     const newMonster = {
       id, name, type: 'monster',
@@ -75,6 +111,7 @@ export default function InitiativeTracker({
       bloodied: false, dead: false,
       reaction: false,
       conditions: [],
+      color: color || null,
     }
     const next = [...participants, newMonster].sort((a, b) => b.initiative - a.initiative)
     setParticipants(next)
@@ -107,10 +144,18 @@ export default function InitiativeTracker({
     }
   }
 
-  function duplicateMonster(monster) {
+  function duplicateMonsterWithColor(monster, color) {
     const id = `monster-${monsterIdCounter++}`
-    const copy = { ...monster, id, damage: 0, bloodied: false, dead: false, conditions: [] }
-    copy.reaction = false
+    const copy = {
+      ...monster,
+      id,
+      color: color ?? null,
+      damage: 0,
+      bloodied: false,
+      dead: false,
+      conditions: [],
+      reaction: false,
+    }
     const next = [...participants, copy].sort((a, b) => b.initiative - a.initiative)
     setParticipants(next)
   }
@@ -409,38 +454,50 @@ export default function InitiativeTracker({
                 onUpdate={(changes, alertData) => updateParticipant(p.id, changes, alertData)}
                 onKill={p.type === 'monster' ? () => killMonster(p.id) : undefined}
                 onRemove={p.type === 'monster' ? () => removeMonster(p.id) : () => removeAlly(p.id)}
-                onDuplicate={p.type === 'monster' ? () => duplicateMonster(p) : undefined}
+                onDuplicate={p.type === 'monster' ? () => setDuplicateTarget(p) : undefined}
                 displayOnly={displayOnly}
               />
             </div>
           ))}
         </div>
 
-        <div className="compact-order-panel">
-            {[...participants]
-              .sort((a, b) => b.initiative - a.initiative)
-              .map(p => {
-                const isDead = p.type === 'monster' && p.dead
-                const visibleIdx = visible.findIndex(v => v.id === p.id)
-                const isActive = !isDead && visibleIdx === activeIndex
-                return (
-                  <div
-                    key={p.id}
-                    className={[
-                      'compact-row',
-                      p.type === 'player' ? 'compact-player' : p.type === 'ally' ? 'compact-ally' : 'compact-monster',
-                      isActive ? 'compact-active' : '',
-                      isDead ? 'compact-dead' : '',
-                    ].filter(Boolean).join(' ')}
-                  >
-                    <span className="compact-init">{p.initiative}</span>
-                    <span className="compact-name">{p.name}</span>
-                    {p.dying && <span className="compact-dying">♥</span>}
-                    {isDead && <span className="compact-skull">☠</span>}
-                  </div>
-                )
-              })}
-          </div>
+        <div className="compact-order-panel" ref={compactPanelRef}>
+          {[...participants]
+            .sort((a, b) => b.initiative - a.initiative)
+            .map((p, cIdx) => {
+              const isDead = p.type === 'monster' && p.dead
+              const visibleIdx = visible.findIndex(v => v.id === p.id)
+              const isActive = !isDead && visibleIdx === activeIndex
+              const monsterCol = p.color ? getMonsterColor(p.color) : null
+              return (
+                <div
+                  key={p.id}
+                  ref={el => { compactRowRefs.current[cIdx] = el }}
+                  className={[
+                    'compact-row',
+                    p.type === 'player' ? 'compact-player' : p.type === 'ally' ? 'compact-ally' : 'compact-monster',
+                    isActive ? 'compact-active' : '',
+                    isDead ? 'compact-dead' : '',
+                  ].filter(Boolean).join(' ')}
+                >
+                  <span className="compact-init">{p.initiative}</span>
+                  {monsterCol && (
+                    <span
+                      className="compact-color-dot"
+                      style={{
+                        backgroundColor: monsterCol.hex,
+                        borderColor: monsterCol.border,
+                      }}
+                      title={`Farbring: ${monsterCol.label}`}
+                    />
+                  )}
+                  <span className="compact-name">{p.name}</span>
+                  {p.dying && <span className="compact-dying">♥</span>}
+                  {isDead && <span className="compact-skull">☠</span>}
+                </div>
+              )
+            })}
+        </div>
       </div>
 
       {!displayOnly && (
@@ -460,7 +517,7 @@ export default function InitiativeTracker({
 
       {!displayOnly && showAddMonster && (
         <AddMonsterModal
-          onAdd={(name, initiative, hp) => { addMonster(name, initiative, hp); setShowAddMonster(false) }}
+          onAdd={(name, initiative, hp, color) => { addMonster(name, initiative, hp, color); setShowAddMonster(false) }}
           onClose={() => setShowAddMonster(false)}
         />
       )}
@@ -471,6 +528,17 @@ export default function InitiativeTracker({
           isAlly
           onAdd={(name, initiative, hp) => { addAlly(name, initiative, hp); setShowAddAlly(false) }}
           onClose={() => setShowAddAlly(false)}
+        />
+      )}
+
+      {!displayOnly && duplicateTarget && (
+        <DuplicateMonsterModal
+          monster={duplicateTarget}
+          onSelectColor={newColor => {
+            duplicateMonsterWithColor(duplicateTarget, newColor)
+            setDuplicateTarget(null)
+          }}
+          onClose={() => setDuplicateTarget(null)}
         />
       )}
 

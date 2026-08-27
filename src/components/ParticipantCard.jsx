@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import ConditionsMenu from './ConditionsMenu.jsx'
+import ColorPicker from './ColorPicker.jsx'
+import { getMonsterColor } from '../utils/monsterColors.js'
 import './ParticipantCard.css'
 
 const CONDITION_ICONS = {
@@ -20,11 +22,13 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
   const [editName, setEditName] = useState('')
   const [editInit, setEditInit] = useState('')
   const [editMaxHp, setEditMaxHp] = useState('')
+  const [editColor, setEditColor] = useState(null)
 
   function enterEdit() {
     setEditName(p.name)
     setEditInit(String(p.initiative))
     setEditMaxHp(String(p.maxHp || 0))
+    setEditColor(p.color || null)
     setEditMode(true)
     setShowConditions(false)
   }
@@ -39,6 +43,7 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
     }
     if (p.type === 'monster') {
       changes.bloodied = maxHp > 0 && (p.damage || 0) >= maxHp / 2
+      changes.color = editColor
     }
     onUpdate(changes)
     setEditMode(false)
@@ -135,10 +140,12 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
     isActive ? 'card-active' : '',
     p.bloodied ? 'card-bloodied' : '',
     p.dying ? 'card-dying' : '',
+    p.color ? `card-monster-has-color` : '',
   ].filter(Boolean).join(' ')
 
   const exhaustionCond = p.conditions?.find(c => c.name === 'Exhaustion')
   const exhaustionLevel = exhaustionCond?.level || p.exhaustion || 0
+  const monsterColor = p.type === 'monster' ? getMonsterColor(p.color) : null
 
   return (
     <div className={cardClass}>
@@ -181,6 +188,12 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
               />
             </div>
           </div>
+          {p.type === 'monster' && (
+            <div className="card-edit-color-field">
+              <span className="card-edit-label">Farbring</span>
+              <ColorPicker selectedColor={editColor} onChange={setEditColor} />
+            </div>
+          )}
           <div className="card-edit-actions">
             <button className="card-edit-confirm" onClick={confirmEdit}>✓ Speichern</button>
             <button className="card-edit-cancel" onClick={() => setEditMode(false)}>Abbrechen</button>
@@ -350,6 +363,16 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
         /* ── MONSTER LAYOUT ── */
         <div className="card-body monster-body">
           <div className="card-name-row">
+            {monsterColor && (
+              <span
+                className="monster-color-token"
+                style={{
+                  backgroundColor: monsterColor.hex,
+                  borderColor: monsterColor.border,
+                }}
+                title={`Farbring: ${monsterColor.label}`}
+              />
+            )}
             <span className="card-name monster-name">{p.name}</span>
             {p.conditions && p.conditions.length > 0 && (
               <span className="conditions-inline">

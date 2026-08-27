@@ -381,6 +381,16 @@
 .compact-monster .compact-init { color: #cc5555; }
 .compact-ally    .compact-init { color: #66aadd; }
 
+.compact-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+
 .compact-name {
   font-size: 0.75rem;
   font-weight: 600;

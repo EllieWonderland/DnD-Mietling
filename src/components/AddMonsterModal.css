@@ -10,7 +10,7 @@
   border: 1px solid var(--border-red);
   border-radius: 12px;
   padding: 28px 32px;
-  width: min(400px, 90vw);
+  width: min(440px, 92vw);
   display: flex; flex-direction: column; gap: 16px;
   box-shadow: 0 8px 40px #000a;
 }
@@ -34,6 +34,10 @@
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+
+.modal-field--color {
+  margin-top: 2px;
 }
 
 .modal-input {
@@ -61,7 +65,7 @@
   display: flex;
   gap: 10px;
   justify-content: flex-end;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .modal-cancel {
@@ -71,6 +75,7 @@
   border-radius: 6px;
   color: var(--text-dim);
   font-size: 0.9rem;
+  cursor: pointer;
 }
 
 .modal-cancel:hover { border-color: var(--text-dim); color: var(--text-main); }
@@ -86,6 +91,7 @@
   font-weight: 600;
   letter-spacing: 0.05em;
   transition: all 0.15s;
+  cursor: pointer;
 }
 
 .modal-add:hover:not(:disabled) { background: var(--red-mid); }

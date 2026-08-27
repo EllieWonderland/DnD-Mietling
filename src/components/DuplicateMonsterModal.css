@@ -1,0 +1,118 @@
+.dup-modal-box {
+  background: linear-gradient(180deg, #241a12, #16100c);
+  border: 2px solid var(--border-gold);
+  border-radius: 12px;
+  padding: 24px 28px;
+  width: 92%;
+  max-width: 480px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(201, 162, 39, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: modal-enter 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dup-modal-title {
+  font-family: var(--font-title);
+  font-size: 1.4rem;
+  color: var(--gold);
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+.dup-modal-subtitle {
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.dup-modal-subtitle strong {
+  color: var(--text-main);
+}
+
+.dup-color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.dup-color-ball {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  padding: 4px 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  position: relative;
+}
+
+.dup-color-ball:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.6);
+  border-color: #ffffff;
+  z-index: 2;
+}
+
+.dup-color-ball:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.dup-color-ball--current {
+  outline: 2px dashed #f2d36f;
+  outline-offset: 2px;
+}
+
+.dup-color-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.dup-modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(201, 162, 39, 0.2);
+}
+
+.dup-modal-none-btn {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid rgba(201, 162, 39, 0.4);
+  color: var(--text-dim);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dup-modal-none-btn:hover {
+  border-color: var(--gold);
+  color: var(--text-main);
+  background: rgba(201, 162, 39, 0.1);
+}
+
+.dup-modal-cancel-btn {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--gray-dim);
+  color: var(--text-dim);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dup-modal-cancel-btn:hover {
+  border-color: var(--text-dim);
+  color: var(--text-main);
+}
