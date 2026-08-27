@@ -79,8 +79,8 @@ export default function InitiativeTracker({
         }
       }
 
-      // 2. Compact Order Panel: active element at 2nd position
-      if (compactPanelRef.current) {
+      // 2. Compact Order Panel: active element at 2nd position (only when not manually scrolled on display)
+      if (compactPanelRef.current && (!displayOnly || !compactScroll)) {
         const sorted = [...participants].sort((a, b) => b.initiative - a.initiative)
         const activeParticipant = visible[activeIndex]
         const compactActiveIdx = sorted.findIndex(p => p.id === activeParticipant?.id)
@@ -102,7 +102,7 @@ export default function InitiativeTracker({
     }, 40)
 
     return () => clearTimeout(timer)
-  }, [activeIndex, participants, round])
+  }, [activeIndex, round])
 
   function handleCompactPanelScroll(e) {
     if (displayOnly || isProgrammaticScroll.current) return

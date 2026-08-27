@@ -218,35 +218,41 @@ export default function App() {
   }, [phase, participants, round, activeIndex, victory, defeat, ambienceScene, ambienceFits, playingMusicKey, masterVolume, effectTrigger])
 
   // Controller: broadcast right panel scroll position
-  function sendCompactScroll(scrollData) {
-    if (APP_MODE !== 'controller') return
-    const scrollObj = {
-      scrollRatio: scrollData.scrollRatio,
-      scrollTop: scrollData.scrollTop,
-      timestamp: scrollData.timestamp || Date.now(),
-    }
-    const statePayload = {
-      type: 'STATE',
-      state: {
-        ...latestStateRef.current,
-        compactScroll: scrollObj,
+  const scrollThrottleRef = useRef(null)
+  const pendingScrollRef = useRef(null)
+
+  function dispatchCompactScroll(scrollData) {
+    const payload = {
+      type: 'COMPACT_SCROLL',
+      scroll: {
+        scrollRatio: scrollData.scrollRatio,
+        scrollTop: scrollData.scrollTop,
+        timestamp: scrollData.timestamp || Date.now(),
       },
     }
-    const scrollPayload = {
-      type: 'COMPACT_SCROLL',
-      scroll: scrollObj,
-    }
-    const stateStr = JSON.stringify(statePayload)
-    const scrollStr = JSON.stringify(scrollPayload)
+    const str = JSON.stringify(payload)
     const ws = wsRef.current
     if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(stateStr)
-      ws.send(scrollStr)
+      ws.send(str)
     }
     if (bcRef.current) {
-      bcRef.current.postMessage(statePayload)
-      bcRef.current.postMessage(scrollPayload)
+      bcRef.current.postMessage(payload)
     }
+  }
+
+  function sendCompactScroll(scrollData) {
+    if (APP_MODE !== 'controller') return
+    pendingScrollRef.current = scrollData
+    if (scrollThrottleRef.current) return
+
+    dispatchCompactScroll(scrollData)
+    scrollThrottleRef.current = setTimeout(() => {
+      scrollThrottleRef.current = null
+      if (pendingScrollRef.current) {
+        dispatchCompactScroll(pendingScrollRef.current)
+        pendingScrollRef.current = null
+      }
+    }, 40)
   }
 
   // PWA install prompt
@@ -431,6 +437,8 @@ export default function App() {
     setActiveIndex(0)
     setVictory(false)
     setDefeat(false)
+    setPlayingMusicKey(null)
+    setAmbienceScene(null)
     setPhase('combat')
   }
 

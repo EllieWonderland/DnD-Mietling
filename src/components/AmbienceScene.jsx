@@ -36,6 +36,9 @@ export default function AmbienceScene({ scene, onPlayEffect, onBack, displayOnly
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
+    video.muted = true
+    video.playsInline = true
+    video.defaultMuted = true
     video.play().catch(() => {})
   }, [scene?.key])
 
@@ -56,7 +59,7 @@ export default function AmbienceScene({ scene, onPlayEffect, onBack, displayOnly
           loop
           muted
           playsInline
-          preload="none"
+          preload="auto"
           poster={poster}
           onPlaying={() => setVideoStatus('ready')}
           onError={() => setVideoStatus('error')}
