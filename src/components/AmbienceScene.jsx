@@ -40,6 +40,17 @@ export default function AmbienceScene({ scene, onPlayEffect, onBack, displayOnly
     video.playsInline = true
     video.defaultMuted = true
     video.play().catch(() => {})
+
+    return () => {
+      // Release the video before React detaches it. TV browsers have very few
+      // decoder slots and can keep a detached element playing, which is what
+      // blocked the switch into the combat screen.
+      try {
+        video.pause()
+        video.removeAttribute('src')
+        video.load()
+      } catch { /* ignore */ }
+    }
   }, [scene?.key])
 
   if (!scene) return null

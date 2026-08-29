@@ -105,6 +105,7 @@ export default function App() {
   const wsRef = useRef(null)
   const bcRef = useRef(null)
   const pendingStateRef = useRef(null)
+  const lastMsgAtRef = useRef(Date.now())
   const [displayState, setDisplayState] = useState(null)
   const [displayCompactScroll, setDisplayCompactScroll] = useState(null)
 
@@ -124,6 +125,7 @@ export default function App() {
     if (bc) {
       bc.onmessage = event => {
         if (APP_MODE === 'display') {
+          lastMsgAtRef.current = Date.now()
           const msg = event.data
           if (msg?.type === 'STATE') {
             setDisplayState(msg.state)
@@ -164,6 +166,7 @@ export default function App() {
 
         ws.onmessage = event => {
           if (APP_MODE === 'display') {
+            lastMsgAtRef.current = Date.now()
             try {
               const msg = JSON.parse(event.data)
               if (msg.type === 'STATE') {
@@ -198,14 +201,13 @@ export default function App() {
     latestStateRef.current = { phase, participants, round, activeIndex, victory, defeat, ambienceScene, ambienceFits, playingMusicKey, masterVolume, effectTrigger }
   }, [phase, participants, round, activeIndex, victory, defeat, ambienceScene, ambienceFits, playingMusicKey, masterVolume, effectTrigger])
 
-  // Controller: broadcast full state on every change
-  useEffect(() => {
-    if (APP_MODE !== 'controller') return
-    const payload = {
-      type: 'STATE',
-      state: { phase, participants, round, activeIndex, victory, defeat, ambienceScene, ambienceFits, playingMusicKey, masterVolume, effectTrigger },
-    }
+  // Controller: push the current state to the TV. Reads from latestStateRef so
+  // the heartbeat below can reuse it without stale-closure trouble.
+  const lastStateSentRef = useRef(0)
+  function broadcastState() {
+    const payload = { type: 'STATE', state: latestStateRef.current }
     const str = JSON.stringify(payload)
+    lastStateSentRef.current = Date.now()
     pendingStateRef.current = str
     const ws = wsRef.current
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -215,7 +217,42 @@ export default function App() {
     if (bcRef.current) {
       bcRef.current.postMessage(payload)
     }
+  }
+
+  // Controller: broadcast full state on every change
+  useEffect(() => {
+    if (APP_MODE !== 'controller') return
+    broadcastState()
   }, [phase, participants, round, activeIndex, victory, defeat, ambienceScene, ambienceFits, playingMusicKey, masterVolume, effectTrigger])
+
+  // Controller: idle heartbeat. If the TV ever misses a single message - a
+  // socket dying unnoticed while a fullscreen video keeps the browser busy is
+  // the usual cause - it catches up within a few seconds instead of being
+  // stuck on the previous screen.
+  useEffect(() => {
+    if (APP_MODE !== 'controller') return
+    const id = setInterval(() => {
+      if (Date.now() - lastStateSentRef.current < 4000) return
+      broadcastState()
+    }, 4000)
+    return () => clearInterval(id)
+  }, [])
+
+  // Display: watchdog. With the heartbeat above, silence means the socket is
+  // dead even though it never fired onclose. Closing it starts the reconnect,
+  // and the relay replays the last state on connect.
+  useEffect(() => {
+    if (APP_MODE !== 'display') return
+    const id = setInterval(() => {
+      if (Date.now() - lastMsgAtRef.current < 15000) return
+      const ws = wsRef.current
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        lastMsgAtRef.current = Date.now()
+        ws.close()
+      }
+    }, 5000)
+    return () => clearInterval(id)
+  }, [])
 
   // Controller: broadcast right panel scroll position
   const scrollThrottleRef = useRef(null)
@@ -390,6 +427,9 @@ export default function App() {
     setActiveIndex(savedCombat.activeIndex)
     setVictory(savedCombat.victory ?? false)
     setDefeat(savedCombat.defeat ?? false)
+    // Same as startCombat: the combat screen takes over the TV, so a scene
+    // left running must not pop back up when the combat ends.
+    setAmbienceScene(null)
     setPhase('combat')
     setSavedCombat(null)
   }
