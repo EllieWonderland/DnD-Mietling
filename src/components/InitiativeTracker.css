@@ -495,20 +495,82 @@
   cursor: grabbing;
 }
 
-.draggable-row.dragging {
-  opacity: 0.85;
-  transform: scale(1.03);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+/* ── SWAP PREVIEW ──
+   The list already shows the result while dragging; these markers name the
+   two cards being exchanged so nothing gets swapped by accident. */
+.draggable-row.swap-source,
+.draggable-row.swap-target {
   position: relative;
+  border-radius: 12px;
   z-index: 5;
   cursor: grabbing;
 }
 
-.drag-over-target {
+.draggable-row.swap-source {
+  outline: 3px solid var(--gold-light, #e8c547);
+  outline-offset: -3px;
+  background: rgba(201, 162, 39, 0.16);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.draggable-row.swap-target {
+  outline: 3px dashed var(--gold-light, #e8c547);
+  outline-offset: -3px;
+  background: rgba(201, 162, 39, 0.08);
+  animation: swap-target-pulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes swap-target-pulse {
+  from { outline-color: rgba(232, 197, 71, 0.4); }
+  to   { outline-color: rgba(232, 197, 71, 1); }
+}
+
+.draggable-row.swap-source::after,
+.draggable-row.swap-target::after {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  z-index: 6;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-family: var(--font-title);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.draggable-row.swap-source::after {
+  content: 'Tauscht';
+  background: var(--gold-light, #e8c547);
+  color: #1a1410;
+}
+
+.draggable-row.swap-target::after {
+  content: 'Mit diesem';
+  background: rgba(26, 20, 16, 0.92);
+  color: var(--gold-light, #e8c547);
+  border: 1px solid var(--gold-light, #e8c547);
+}
+
+/* The same two partners, highlighted in the right-hand turn-order strip. */
+.compact-row.compact-swap-source,
+.compact-row.compact-swap-target {
+  background: rgba(201, 162, 39, 0.22);
+}
+
+.compact-row.compact-swap-source .compact-name,
+.compact-row.compact-swap-target .compact-name {
+  color: var(--gold-light, #e8c547);
+  font-weight: 700;
+}
+
+.compact-row.compact-swap-target {
   outline: 2px dashed var(--gold-light, #e8c547);
   outline-offset: -2px;
-  border-radius: 12px;
-  background: rgba(201, 162, 39, 0.08);
+  animation: swap-target-pulse 0.9s ease-in-out infinite alternate;
 }
 
 .tracker-footer {

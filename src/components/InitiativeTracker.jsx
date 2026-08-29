@@ -27,25 +27,39 @@ export default function InitiativeTracker({
   const [concentrationAlert, setConcentrationAlert] = useState(null)
   const [showSoundboard, setShowSoundboard] = useState(false)
   const [cTab, setCTab] = useState(null) // 'music' | 'effects' | 'scenes' | null
-  const [canDrag, setCanDrag] = useState(!displayOnly)
+  // Swapping places is only allowed before the first action of a combat. A
+  // combat resumed mid-fight is therefore already locked.
+  const [canDrag, setCanDrag] = useState(!displayOnly && round === 1 && activeIndex === 0)
   const [dragOverIdx, setDragOverIdx] = useState(null)
   const [draggingIdx, setDraggingIdx] = useState(null)
   const dragItem = useRef(null)
   const longPressTimer = useRef(null)
   const preventTouchScroll = useRef(e => e.preventDefault()).current
+  // Reordering the list for the swap preview makes React move the dragged DOM
+  // node, which can drop its pointer capture. Window-level listeners guarantee
+  // the drag always ends, capture or not.
+  const endDragRef = useRef(null)
+  const windowPointerUp = useRef(() => endDragRef.current?.(true)).current
+  const windowPointerCancel = useRef(() => endDragRef.current?.(false)).current
   const cardRefs = useRef([])
   const listRef = useRef(null)
   const compactPanelRef = useRef(null)
   const compactRowRefs = useRef([])
   const isProgrammaticScroll = useRef(false)
 
+  useEffect(() => {
+    endDragRef.current = endDrag
+  })
+
   // Drag cleanup on unmount (clear timer + scroll lock)
   useEffect(() => {
     return () => {
       if (longPressTimer.current) clearTimeout(longPressTimer.current)
       document.removeEventListener('touchmove', preventTouchScroll, { passive: false })
+      window.removeEventListener('pointerup', windowPointerUp)
+      window.removeEventListener('pointercancel', windowPointerCancel)
     }
-  }, [preventTouchScroll])
+  }, [preventTouchScroll, windowPointerUp, windowPointerCancel])
 
   const visible = participants.filter(p => !(p.type === 'monster' && p.dead))
 
@@ -81,9 +95,9 @@ export default function InitiativeTracker({
 
       // 2. Compact Order Panel: active element at 2nd position (only when not manually scrolled on display)
       if (compactPanelRef.current && (!displayOnly || !compactScroll)) {
-        const sorted = [...participants].sort((a, b) => b.initiative - a.initiative)
+        // Mirrors the turn order of the main list so manual swaps land here too.
         const activeParticipant = visible[activeIndex]
-        const compactActiveIdx = sorted.findIndex(p => p.id === activeParticipant?.id)
+        const compactActiveIdx = participants.findIndex(p => p.id === activeParticipant?.id)
 
         if (compactActiveIdx <= 0) {
           compactPanelRef.current.scrollTo({ top: 0, behavior: 'smooth' })
@@ -235,6 +249,7 @@ export default function InitiativeTracker({
   }
 
   function handleNextTurn() {
+    // First turn taken -> the order is fixed for the rest of the combat.
     setCanDrag(false)
     const alive = participants.filter(p => !(p.type === 'monster' && p.dead))
     const nextIdx = activeIndex + 1
@@ -258,8 +273,9 @@ export default function InitiativeTracker({
 
   // ── Pointer-based Drag&Drop (Mouse + Touch) ──
   // Long-press threshold to prevent accidental dragging while scrolling on tablets.
-  const LONG_PRESS_MS = 250
+  const LONG_PRESS_MS = 450
   const MOVE_CANCEL_PX = 12
+  const MOUSE_START_PX = 6
 
   function clearLongPress() {
     if (longPressTimer.current) {
@@ -277,6 +293,8 @@ export default function InitiativeTracker({
     try { st.el.setPointerCapture(st.pointerId) } catch { /* ignore */ }
     if (navigator.vibrate) navigator.vibrate(15)
     document.addEventListener('touchmove', preventTouchScroll, { passive: false })
+    window.addEventListener('pointerup', windowPointerUp)
+    window.addEventListener('pointercancel', windowPointerCancel)
   }
 
   function endDrag(doSwap) {
@@ -285,6 +303,8 @@ export default function InitiativeTracker({
     if (st && st.active) {
       try { st.el.releasePointerCapture(st.pointerId) } catch { /* ignore */ }
       document.removeEventListener('touchmove', preventTouchScroll, { passive: false })
+      window.removeEventListener('pointerup', windowPointerUp)
+      window.removeEventListener('pointercancel', windowPointerCancel)
       if (doSwap) {
         const from = st.fromIdx
         const to = dragOverIdx
@@ -314,41 +334,45 @@ export default function InitiativeTracker({
     if (e.target.closest('button, input, select, textarea, label, a, [role="button"]')) return
     dragItem.current = {
       pointerId: e.pointerId,
+      pointerType: e.pointerType,
       fromIdx: idx,
       startX: e.clientX,
       startY: e.clientY,
       active: false,
       el: e.currentTarget,
     }
-    if (e.pointerType === 'mouse') {
-      // Mouse: drag immediately (no scroll conflict)
-      activateDrag()
-    } else {
+    if (e.pointerType !== 'mouse') {
       // Touch/Pen: wait for long-press so swiping still scrolls
       longPressTimer.current = setTimeout(activateDrag, LONG_PRESS_MS)
     }
+    // Mouse drags start in onPointerMove after a few pixels, so a plain click
+    // on a card can never turn into a swap.
   }
 
   function onPointerMove(e) {
     const st = dragItem.current
     if (!st) return
     if (!st.active) {
-      // Before activation: too much movement = scroll gesture -> cancel
       const dx = Math.abs(e.clientX - st.startX)
       const dy = Math.abs(e.clientY - st.startY)
+      if (st.pointerType === 'mouse') {
+        if (dx > MOUSE_START_PX || dy > MOUSE_START_PX) activateDrag()
+        return
+      }
+      // Touch/Pen before activation: too much movement = scroll gesture -> cancel
       if (dx > MOVE_CANCEL_PX || dy > MOVE_CANCEL_PX) {
         clearLongPress()
         dragItem.current = null
       }
       return
     }
-    // Active drag: determine target row under pointer
+    // Active drag: determine target row under pointer. Leaving the list clears
+    // the target again, so releasing outside cancels instead of swapping with
+    // whatever happened to be hovered last.
     const target = document.elementFromPoint(e.clientX, e.clientY)
     const rowEl = target && target.closest('[data-row-idx]')
-    if (rowEl) {
-      const overIdx = Number(rowEl.dataset.rowIdx)
-      if (overIdx !== dragOverIdx) setDragOverIdx(overIdx)
-    }
+    const overIdx = rowEl ? Number(rowEl.dataset.rowIdx) : null
+    if (overIdx !== dragOverIdx) setDragOverIdx(overIdx)
   }
 
   function onPointerUp() {
@@ -358,6 +382,37 @@ export default function InitiativeTracker({
   function onPointerCancel() {
     endDrag(false)
   }
+
+  // While a swap is being aimed, render the list exactly as it will look once
+  // released, and keep both partners clearly marked. Indices stay tied to
+  // positions (not to cards), so hovering does not oscillate.
+  const swapActive =
+    draggingIdx !== null && dragOverIdx !== null && dragOverIdx !== draggingIdx
+  const swapSourceId = draggingIdx !== null ? visible[draggingIdx]?.id ?? null : null
+  const swapTargetId = swapActive ? visible[dragOverIdx]?.id ?? null : null
+
+  const previewRows = swapActive
+    ? (() => {
+        const rows = [...visible]
+        ;[rows[draggingIdx], rows[dragOverIdx]] = [rows[dragOverIdx], rows[draggingIdx]]
+        return rows
+      })()
+    : visible
+
+  // Whoever ends up acting at the active position - during a preview that is
+  // already the swap partner, so both columns agree.
+  const activeRowId = previewRows[activeIndex]?.id ?? null
+
+  // Right-hand strip shows the same turn order, dead monsters included.
+  const compactRows = (() => {
+    const rows = [...participants]
+    if (swapActive && swapSourceId && swapTargetId) {
+      const a = rows.findIndex(p => p.id === swapSourceId)
+      const b = rows.findIndex(p => p.id === swapTargetId)
+      if (a >= 0 && b >= 0) [rows[a], rows[b]] = [rows[b], rows[a]]
+    }
+    return rows
+  })()
 
   return (
     <div className={`tracker-layout ${displayOnly ? 'tracker-display-mode' : ''}`}>
@@ -465,7 +520,7 @@ export default function InitiativeTracker({
 
       <div className="tracker-body">
         <div className="participant-list" ref={listRef}>
-          {visible.map((p, idx) => (
+          {previewRows.map((p, idx) => (
             <div
               key={p.id}
               ref={el => { cardRefs.current[idx] = el }}
@@ -476,8 +531,8 @@ export default function InitiativeTracker({
               onPointerCancel={onPointerCancel}
               className={[
                 canDrag ? 'draggable-row' : '',
-                dragOverIdx === idx ? 'drag-over-target' : '',
-                draggingIdx === idx ? 'dragging' : '',
+                p.id === swapSourceId ? 'swap-source' : '',
+                p.id === swapTargetId ? 'swap-target' : '',
               ].filter(Boolean).join(' ')}
             >
               <ParticipantCard
@@ -494,12 +549,9 @@ export default function InitiativeTracker({
         </div>
 
         <div className="compact-order-panel" ref={compactPanelRef} onScroll={handleCompactPanelScroll}>
-          {[...participants]
-            .sort((a, b) => b.initiative - a.initiative)
-            .map((p, cIdx) => {
+          {compactRows.map((p, cIdx) => {
               const isDead = p.type === 'monster' && p.dead
-              const visibleIdx = visible.findIndex(v => v.id === p.id)
-              const isActive = !isDead && visibleIdx === activeIndex
+              const isActive = !isDead && p.id === activeRowId
               const monsterCol = p.color ? getMonsterColor(p.color) : null
               return (
                 <div
@@ -510,6 +562,8 @@ export default function InitiativeTracker({
                     p.type === 'player' ? 'compact-player' : p.type === 'ally' ? 'compact-ally' : 'compact-monster',
                     isActive ? 'compact-active' : '',
                     isDead ? 'compact-dead' : '',
+                    p.id === swapSourceId ? 'compact-swap-source' : '',
+                    p.id === swapTargetId ? 'compact-swap-target' : '',
                   ].filter(Boolean).join(' ')}
                 >
                   {monsterCol && (
