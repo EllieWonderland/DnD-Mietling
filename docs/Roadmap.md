@@ -63,7 +63,7 @@ Diese Features sind vollständig im Code und im Praxiseinsatz:
 - Status: **UMGESETZT** (Build grün). HTML5-Drag&Drop komplett durch Pointer-Events ersetzt in `InitiativeTracker.jsx`.
 
   **Erledigt:**
-  - [x] Pointer-basiertes Dragging mit Long-Press-Schwelle (250 ms) für Touch; Maus zieht sofort. Bewegung > 12 px vor Aktivierung = Scroll-Geste → bricht ab. Aktives Ziehen sperrt natives Scrollen via non-passivem `touchmove`-`preventDefault` + `setPointerCapture`. Haptik (`navigator.vibrate`) beim Anheben.
+  - [x] Pointer-basiertes Dragging mit Long-Press-Schwelle (450 ms) für Touch; Maus zieht sofort. Bewegung > 12 px vor Aktivierung = Scroll-Geste → bricht ab. Aktives Ziehen sperrt natives Scrollen via non-passivem `touchmove`-`preventDefault` + `setPointerCapture`. Haptik (`navigator.vibrate`) beim Anheben.
   - [x] Drop-Ziel per Highlight markiert — `.drag-over-target` wiederverwendet; Zielzeile via `document.elementFromPoint` + `data-row-idx` ermittelt. Gezogene Kachel bekommt `.dragging` (Lift-Effekt).
   - [x] Guard: Taps auf Bedienelemente (`button/input/select/textarea/label/a`) starten kein Drag → HP-/Toggle-Buttons bleiben bedienbar.
 
@@ -116,17 +116,23 @@ Checkliste, welche Szenarien bereits Video + Musik haben. Fehlende bei Bedarf er
 | Stadt / Großstadt | City | ❌ | ❌ | Urbane Umgebung, Gassen, Nacht |
 | Hafen | Harbor | ❌ | ❌ | Küstenstadt, Schiffe, Meer |
 | Schloss (Innen) | Castle Interior | ❌ | ❌ | Thronsaal, Hallen, Wachen |
-| Schloss (Außen) | Castle Exterior | ❌ | ❌ | Burgmauern, Tor, Belagerung |
+| Schloss (Außen) | Castle Exterior | ✅ burg.mp4 | ❌ | Burgmauern, Tor, Belagerung |
 | Thronsaal | Throne Room | ❌ | ❌ | Royal Court, feierlich |
 | Tempel | Temple | ❌ | ❌ | Heilig, mystisch, Götteranbetung |
 | Krypta | Crypt | ❌ | ❌ | Untote, Horror, düster |
-| Höhle | Cave | ❌ | ❌ | Unterirdisch, eng, Tropfstein |
+| Höhle | Cave | ✅ höhle.mp4 | ❌ | Unterirdisch, eng, Tropfstein |
 | Sumpf | Swamp | ❌ | ❌ | Dunkel, giftig, bedrohlich |
 | Schnee / Gebirge | Snow / Mountains | ❌ | ❌ | Arktisch, Hochland, Sturm |
 | Wüste | Desert | ❌ | ❌ | Heiß, trocken, Sandstürme |
 | Schlachtfeld | Battlefield | ❌ | ✅ epic | Krieg, Massenkampf, nach der Schlacht |
 | Arena | Arena | ❌ | ✅ epic | Gladiatorenkampf, Schaukampf |
-| Bibliothek / Archiv | Library / Archive | ❌ | ✅ dreaming | Akademisch, Forschung, ruhig |
+| Bibliothek / Archiv | Library / Archive | ✅ bibliothek.mp4 | ✅ dreaming | Akademisch, Forschung, ruhig |
 | Magierturm | Wizard Tower | ❌ | ✅ dreaming, epic | Mystisch, Labor, Experimente |
-| Schiff / Meer | Ship / Sea | ❌ | ❌ | Reise, Sturm, Piraten |
+| Schiff / Meer | Ship / Sea | ✅ piratenschiff.mp4 | ❌ | Reise, Sturm, Piraten |
 | Unterwelt / Hölle | Underworld / Hell | ❌ | ❌ | Dramatisch, düster, Endkampf |
+| Friedhof | Graveyard | ✅ friedhof.mp4 | ❌ | Gräber, Nebel, Untote |
+| Kerker (Zelle) | Cell | ✅ kerker.mp4 | ✅ epic | Gefangenschaft, Verhör |
+| Waldrand | Forest Edge | ✅ waldrand.mp4 | ✅ walking | Übergang Wald/Offenland |
+| Mondnacht | Moonlit Night | ✅ mond.mp4 | ✅ dreaming | Nachtlager, ruhige Nachtszene |
+| Mondmeer | Moonlit Sea | ✅ mond_meer.mp4 | ✅ dreaming | Küste bei Nacht, Seereise |
+| Nachtregen | Night Rain | ✅ nachtregen.mp4 | ✅ dreaming | Regen, Melancholie, Unterschlupf |

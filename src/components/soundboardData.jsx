@@ -23,7 +23,11 @@ import lockedDoorUrl from '../assets/effects/abgeschlossen.mp3'
 import coinsUrl from '../assets/effects/geld.mp3'
 import holySpellUrl from '../assets/effects/Holy Spell.mp3'
 
-const CDN = 'https://pub-28096ab7cf5d497990bc972094f05721.r2.dev'
+// Basis-URL fuer Musik und Videos aus dem R2-Bucket.
+// `pub-*.r2.dev` ist Cloudflares Entwicklungs-Domain: rate-limitiert und
+// nicht fuer Produktion gedacht. Sobald eine Custom Domain am Bucket haengt,
+// reicht `VITE_CDN_URL=https://<domain>` beim Build — kein Code-Aenderung.
+const CDN = import.meta.env.VITE_CDN_URL || 'https://pub-28096ab7cf5d497990bc972094f05721.r2.dev'
 
 // Helper: builds the R2 URL for a music filename
 const m = (file) => `${CDN}/Music/${file}`

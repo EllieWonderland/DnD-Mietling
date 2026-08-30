@@ -43,7 +43,19 @@ function isAllowedOrigin(origin) {
 
 const app = express()
 app.use(express.static(join(__dirname, 'dist')))
-app.use((req, res) => res.sendFile(join(__dirname, 'dist', 'index.html')))
+
+// SPA fallback — but only for navigations. A missing .js or .mp3 used to come
+// back as index.html with status 200, which the browser then reported as a
+// cryptic MIME type error instead of a plain 404.
+app.use((req, res) => {
+  const looksLikeFile = /\.[a-z0-9]+$/i.test(req.path)
+  const wantsHtml = (req.headers.accept || '').includes('text/html')
+  if (looksLikeFile || !wantsHtml) {
+    res.status(404).type('text/plain').send('Not found')
+    return
+  }
+  res.sendFile(join(__dirname, 'dist', 'index.html'))
+})
 
 const server = createServer(app)
 const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_PAYLOAD_BYTES })

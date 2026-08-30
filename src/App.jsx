@@ -9,7 +9,7 @@ import ConnectionBadge from './components/ConnectionBadge.jsx'
 import { readJSON, writeJSON, storageRemove } from './utils/safeStorage.js'
 import { getRoomId } from './utils/session.js'
 import { MUSIC_TRACKS, EFFECT_TRACKS, VIDEO_SCENES } from './components/soundboardData.jsx'
-import mietlingLogo from './assets/images/mietling.png'
+import mietlingLogo from './assets/images/mietling.webp'
 
 // Players have no HP in this app: the DM tracks damage at the table, the
 // tracker only shows death saves and who has fallen. Monsters and allies do

@@ -19,7 +19,7 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 | 3 | 🟡 Logik & Stabilität | 10–16 | ✅ erledigt |
 | 4 | 🔵 UX / UI | 17–25 | ✅ erledigt |
 | 5 | 🧹 Aufräumen & Spielrunde | 26–31 | ✅ erledigt |
-| 6 | ⚪ Build, Deploy & Performance | 32–37 | offen |
+| 6 | ⚪ Build, Deploy & Performance | 32–37 | ⚠️ bis auf 36 erledigt |
 
 ---
 
@@ -178,25 +178,28 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 
 ## ⚪ Kategorie 6 — Build, Deploy & Performance
 
-- [ ] **32. Logo ist 2048×2048 px / 3,8 MB PNG**
+- [x] **32. Logo ist 2048×2048 px / 3,8 MB PNG**
   `src/assets/images/mietling.png` wird auf max. 400 px gerendert und ist größer als der gesamte restliche Build.
   **Fix:** Auf ~400–512 px skalieren und als WebP ausliefern (spart ~3,8 MB beim ersten TV-Start).
+  **Erledigt:** `mietling.webp`, 512×512, 83 kB. Die PNG-Datei ist gelöscht, Service-Worker-Cache auf `v6` angehoben.
 
-- [ ] **33. `vite` und `@vitejs/plugin-react` stehen in `dependencies`**
+- [x] **33. `vite` und `@vitejs/plugin-react` stehen in `dependencies`**
   Gehören in `devDependencies` — bläht die Produktions-Installation auf.
 
-- [ ] **34. `server.js` Catch-all liefert `index.html` mit Status 200 für *jeden* Pfad**
+- [x] **34. `server.js` Catch-all liefert `index.html` mit Status 200 für *jeden* Pfad**
   Auch für fehlende `.js`/`.mp3` — führt zu kryptischen MIME-Type-Fehlern statt einem klaren 404.
   **Fix:** Nur bei `Accept: text/html` bzw. für Nicht-Asset-Pfade ausliefern, sonst 404.
 
-- [ ] **35. `vercel.json` setzt kein `Cache-Control` für `/config.json`**
+- [x] **35. `vercel.json` setzt kein `Cache-Control` für `/config.json`**
   Die Datei kann am CDN veralten, obwohl der Service Worker sie korrekt network-first behandelt.
   **Fix:** Header-Regel analog zu `/sw.js` ergänzen.
 
 - [ ] **36. `pub-*.r2.dev` ist Cloudflares Entwicklungs-Domain**
   Rate-limitiert, nicht für Produktion gedacht.
   **Fix:** Custom Domain am R2-Bucket, `CDN`-Konstante in `soundboardData.jsx:26` anpassen.
+  **Vorbereitet, aber offen:** Die Konstante liest jetzt `VITE_CDN_URL` und fällt auf die bisherige `pub-*.r2.dev`-Adresse zurück. **Noch zu tun (nur im Cloudflare-Konto möglich):** Custom Domain am R2-Bucket einrichten und `VITE_CDN_URL=https://<domain>` als Build-Variable in Vercel setzen. Danach kann dieser Punkt abgehakt werden.
 
-- [ ] **37. Roadmap-Drift**
+- [x] **37. Roadmap-Drift**
   `docs/Roadmap.md` nennt Long-Press = 250 ms, im Code sind es 450 ms (`InitiativeTracker.jsx:274`). Die Szenen-Tabelle listet Höhle/Bibliothek/Schiff/Friedhof als ❌, obwohl alle vier in `VIDEO_SCENES` stehen.
   **Fix:** Roadmap mit dem Code abgleichen.
+  **Erledigt:** Long-Press auf 450 ms korrigiert; Höhle, Bibliothek, Schiff und Burg auf ✅ gesetzt; Friedhof, Kerker, Waldrand, Mondnacht, Mondmeer und Nachtregen als fehlende Zeilen ergänzt.
