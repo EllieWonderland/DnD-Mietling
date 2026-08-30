@@ -4,6 +4,8 @@ import InitiativeTracker from './components/InitiativeTracker.jsx'
 import AmbienceScene from './components/AmbienceScene.jsx'
 import ScreenKeepAlive from './components/ScreenKeepAlive.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import ResumeCombatDialog from './components/ResumeCombatDialog.jsx'
+import ConnectionBadge from './components/ConnectionBadge.jsx'
 import { readJSON, writeJSON, storageRemove } from './utils/safeStorage.js'
 import { getRoomId } from './utils/session.js'
 import { MUSIC_TRACKS, EFFECT_TRACKS, VIDEO_SCENES } from './components/soundboardData.jsx'
@@ -173,6 +175,17 @@ export default function App() {
   const lastMsgAtRef = useRef(Date.now())
   const [displayState, setDisplayState] = useState(null)
   const [displayCompactScroll, setDisplayCompactScroll] = useState(null)
+  // Relay connection, shown as a dot in the header (todo.md, Punkt 17).
+  const [wsStatus, setWsStatus] = useState(ROOM ? 'connecting' : 'off')
+  const [wsSince, setWsSince] = useState(() => Date.now())
+  const [displayStale, setDisplayStale] = useState(false)
+
+  function changeWsStatus(next) {
+    setWsStatus(prev => {
+      if (prev !== next) setWsSince(Date.now())
+      return next
+    })
+  }
 
   function applyDisplayState(raw) {
     const state = normalizeDisplayState(raw)
@@ -227,17 +240,22 @@ export default function App() {
           : null
       }
 
-      if (!wsUrl) return // no server configured — silently skip WebSocket
+      if (!wsUrl) {
+        changeWsStatus('off') // no relay configured — local use only
+        return
+      }
 
       // The room travels in the query string; the relay never forwards across rooms.
       const roomUrl = `${wsUrl}${wsUrl.includes('?') ? '&' : '?'}room=${encodeURIComponent(ROOM)}`
 
       function connect() {
         if (closed) return
+        changeWsStatus('connecting')
         const ws = new WebSocket(roomUrl)
         wsRef.current = ws
 
         ws.onopen = () => {
+          changeWsStatus('open')
           if (pendingStateRef.current) {
             ws.send(pendingStateRef.current)
             pendingStateRef.current = null
@@ -258,7 +276,11 @@ export default function App() {
           }
         }
 
-        ws.onclose = () => { if (!closed) setTimeout(connect, 3000) }
+        ws.onclose = () => {
+          if (closed) return
+          changeWsStatus('closed')
+          setTimeout(connect, 3000)
+        }
         ws.onerror = () => {}
       }
 
@@ -315,6 +337,16 @@ export default function App() {
       if (Date.now() - lastStateSentRef.current < 4000) return
       broadcastState()
     }, 4000)
+    return () => clearInterval(id)
+  }, [])
+
+  // Display: the TV shows the last state forever if the relay goes quiet.
+  // A discreet hint says so instead of pretending the board is current.
+  useEffect(() => {
+    if (APP_MODE !== 'display') return
+    const id = setInterval(() => {
+      setDisplayStale(Date.now() - lastMsgAtRef.current > 15000)
+    }, 2000)
     return () => clearInterval(id)
   }, [])
 
@@ -664,6 +696,9 @@ export default function App() {
         {/* The combat screen always takes precedence. Starting or resuming a
             combat clears the scene for good — it does not come back when the
             combat ends (see startCombat/resumeCombat). */}
+        {displayStale && (
+          <div className="tv-stale">Keine Daten vom Tablet — Anzeige ist möglicherweise veraltet</div>
+        )}
         <ErrorBoundary label="TV-Anzeige">
         {dp === 'combat' ? (
           <InitiativeTracker
@@ -707,7 +742,9 @@ export default function App() {
         <button
           onClick={handleInstall}
           style={{
-            position: 'fixed', bottom: '16px', left: '16px', zIndex: 2000,
+            position: 'fixed', zIndex: 2000,
+            bottom: 'max(16px, env(safe-area-inset-bottom))',
+            left: 'max(16px, env(safe-area-inset-left))',
             padding: '12px 16px', borderRadius: '999px',
             border: '1px solid var(--border-gold)',
             background: 'linear-gradient(180deg, #2f2418, #1f1812)',
@@ -719,57 +756,18 @@ export default function App() {
         </button>
       )}
       {savedCombat && phase === 'setup' && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 3000,
-          background: 'rgba(0,0,0,0.75)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <div style={{
-            background: 'linear-gradient(180deg, #2f2418, #1f1812)',
-            border: '2px solid var(--border-gold)',
-            borderRadius: '12px',
-            padding: '32px 40px',
-            display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center',
-            boxShadow: '0 0 64px rgba(201,162,39,0.3)',
-            maxWidth: '480px', width: '90%',
-          }}>
-            <div style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', color: 'var(--gold)', letterSpacing: '0.08em' }}>
-              Unterbrochener Kampf
-            </div>
-            <div style={{ color: 'var(--text-main)', textAlign: 'center', lineHeight: 1.6 }}>
-              Runde {savedCombat.round} &mdash; {savedCombat.participants?.length ?? 0} Teilnehmer
-            </div>
-            <div style={{ display: 'flex', gap: '16px' }}>
-              <button
-                onClick={resumeCombat}
-                style={{
-                  padding: '12px 28px', borderRadius: '8px', fontWeight: 700, fontSize: '1rem',
-                  background: 'linear-gradient(180deg, #3a2800, #2a1800)',
-                  color: 'var(--gold)', border: '2px solid var(--border-gold)',
-                  cursor: 'pointer',
-                }}
-              >
-                Fortsetzen
-              </button>
-              <button
-                onClick={() => { clearCombatState(); setSavedCombat(null) }}
-                style={{
-                  padding: '12px 28px', borderRadius: '8px', fontSize: '1rem',
-                  background: 'transparent',
-                  color: 'var(--text-dim)', border: '1px solid rgba(201,162,39,0.3)',
-                  cursor: 'pointer',
-                }}
-              >
-                Verwerfen
-              </button>
-            </div>
-          </div>
-        </div>
+        <ResumeCombatDialog
+          savedCombat={savedCombat}
+          onResume={resumeCombat}
+          onDiscard={() => { clearCombatState(); setSavedCombat(null) }}
+        />
       )}
       {phase === 'setup' && (
         <SessionSetup
           players={playerProfiles}
           room={ROOM}
+          connectionStatus={wsStatus}
+          connectionSince={wsSince}
           onUpdateProfile={updatePlayerProfile}
           onStart={startCombat}
           playingMusicKey={playingMusicKey}
@@ -799,6 +797,8 @@ export default function App() {
           onPrevTurn={prevTurn}
           onEndCombat={endCombat}
           onUpdateProfile={updatePlayerProfile}
+          connectionStatus={wsStatus}
+          connectionSince={wsSince}
           victory={victory}
           setVictory={setVictory}
           defeat={defeat}

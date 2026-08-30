@@ -1,0 +1,70 @@
+.conn-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--gray-dim);
+  background: rgba(0, 0, 0, 0.28);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.conn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gray-text);
+  flex-shrink: 0;
+}
+
+.conn-open   { border-color: #2f6b3a; color: #9fd6ac; }
+.conn-open .conn-dot { background: #4ec26a; box-shadow: 0 0 8px #4ec26a80; }
+
+.conn-connecting { border-color: #7a6215; color: var(--gold-light); }
+.conn-connecting .conn-dot {
+  background: var(--gold);
+  animation: connPulse 1.2s ease-in-out infinite;
+}
+
+.conn-closed { border-color: var(--red-mid); color: #ff9999; }
+.conn-closed .conn-dot { background: var(--red-bright); }
+
+.conn-off { opacity: 0.65; }
+
+@keyframes connPulse {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conn-connecting .conn-dot { animation: none; opacity: 0.8; }
+}
+
+/* Auf schmalen Tablets bleibt nur der Punkt */
+@media (max-width: 640px) {
+  .conn-label { display: none; }
+  .conn-badge { padding: 4px 6px; }
+}
+
+/* Hinweis auf dem TV, wenn nichts mehr ankommt */
+.tv-stale {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--red-mid);
+  background: rgba(20, 8, 8, 0.85);
+  color: #ff9999;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}

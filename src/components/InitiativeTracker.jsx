@@ -1,5 +1,7 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useId } from 'react'
 import ParticipantCard from './ParticipantCard.jsx'
+import Modal from './Modal.jsx'
+import ConnectionBadge from './ConnectionBadge.jsx'
 import AddMonsterModal from './AddMonsterModal.jsx'
 import DuplicateMonsterModal from './DuplicateMonsterModal.jsx'
 import VictoryOverlay from './VictoryOverlay.jsx'
@@ -42,6 +44,7 @@ export default function InitiativeTracker({
   round, activeIndex, setActiveIndex,
   onNextTurn, onPrevTurn, onEndCombat, victory, setVictory, defeat, setDefeat,
   onUpdateProfile,
+  connectionStatus, connectionSince,
   displayOnly = false,
   playingMusicKey, volume, onVolumeChange, onPlayMusic, onPlayEffect,
   mood, onMoodChange, onSelectMusic, onStopMusic,
@@ -56,6 +59,7 @@ export default function InitiativeTracker({
   // "Doch weiterkämpfen" must not re-announce the same result on the next
   // render. The lock lifts as soon as the board no longer meets the condition.
   const [dismissedResult, setDismissedResult] = useState(null) // 'victory' | 'defeat' | null
+  const concAlertTitleId = useId()
   // Swapping places is only allowed before the first action of a combat. A
   // combat resumed mid-fight is therefore already locked.
   const [canDrag, setCanDrag] = useState(!displayOnly && round === 1 && activeIndex === 0)
@@ -257,6 +261,20 @@ export default function InitiativeTracker({
       onUpdateProfile?.(id, changes.name)
     }
     if (!displayOnly && alertData) setConcentrationAlert(alertData)
+  }
+
+  // Keyboard/touch alternative to the drag gesture (todo.md, Punkt 24). Moves
+  // within the visible list so a hidden dead monster cannot swallow a step.
+  function moveParticipant(id, delta) {
+    const idx = visible.findIndex(p => p.id === id)
+    const target = idx + delta
+    if (idx < 0 || target < 0 || target >= visible.length) return
+    const rows = orderedList(participants)
+    const a = rows.findIndex(p => p.id === visible[idx].id)
+    const b = rows.findIndex(p => p.id === visible[target].id)
+    if (a < 0 || b < 0) return
+    ;[rows[a], rows[b]] = [rows[b], rows[a]]
+    setParticipants(renumber(rows))
   }
 
   function killMonster(id) {
@@ -461,6 +479,9 @@ export default function InitiativeTracker({
           : (
             <div className="tracker-header-left">
               <button className="end-btn" onClick={onEndCombat}>← Beenden</button>
+              {connectionStatus && (
+                <ConnectionBadge status={connectionStatus} since={connectionSince} />
+              )}
               {onPlayMusic && (
                 <button
                   className={`sb-toggle-btn${showSoundboard ? ' sb-toggle-active' : ''}`}
@@ -581,6 +602,9 @@ export default function InitiativeTracker({
                 onKill={p.type === 'monster' ? () => killMonster(p.id) : undefined}
                 onRemove={p.type === 'monster' ? () => removeMonster(p.id) : () => removeAlly(p.id)}
                 onDuplicate={p.type === 'monster' ? () => setDuplicateTarget(p) : undefined}
+                onMove={canDrag ? delta => moveParticipant(p.id, delta) : undefined}
+                canMoveUp={canDrag && idx > 0}
+                canMoveDown={canDrag && idx < previewRows.length - 1}
                 displayOnly={displayOnly}
               />
             </div>
@@ -668,16 +692,19 @@ export default function InitiativeTracker({
       )}
 
       {!displayOnly && concentrationAlert && (
-        <div className="concentration-overlay" onClick={() => setConcentrationAlert(null)}>
-          <div className="concentration-box">
-            <div className="concentration-title">Konzentrationswurf!</div>
+        <Modal
+          onClose={() => setConcentrationAlert(null)}
+          labelledBy={concAlertTitleId}
+          overlayClassName="concentration-overlay"
+          className="concentration-box"
+        >
+            <div id={concAlertTitleId} className="concentration-title">Konzentrationswurf!</div>
             <div className="concentration-dc">DC {concentrationAlert.dc}</div>
             <div className="concentration-info">
               {concentrationAlert.name} hat {concentrationAlert.damage} Schaden erhalten
             </div>
             <button className="concentration-close" onClick={() => setConcentrationAlert(null)}>OK</button>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {victory && !defeat && (

@@ -1,3 +1,5 @@
+import { useId } from 'react'
+import Modal from './Modal.jsx'
 import './ConditionsMenu.css'
 
 const ALL_CONDITIONS = [
@@ -15,14 +17,19 @@ const DE_NAMES = {
 }
 
 export default function ConditionsMenu({ conditions, onToggle, onSetExhaustionLevel, onClose }) {
+  const titleId = useId()
   const active = name => conditions.some(c => c.name === name)
   const exhaustionCond = conditions.find(c => c.name === 'Exhaustion')
   const exLevel = exhaustionCond?.level || 0
 
   return (
-    <div className="conditions-overlay" onClick={onClose}>
-      <div className="conditions-menu" onClick={e => e.stopPropagation()}>
-        <div className="conditions-title">Zustände</div>
+    <Modal
+      onClose={onClose}
+      labelledBy={titleId}
+      overlayClassName="conditions-overlay"
+      className="conditions-menu"
+    >
+        <div id={titleId} className="conditions-title">Zustände</div>
         <div className="conditions-grid">
           {ALL_CONDITIONS.map(cond => (
             <div key={cond}>
@@ -51,7 +58,6 @@ export default function ConditionsMenu({ conditions, onToggle, onSetExhaustionLe
           ))}
         </div>
         <button className="conditions-close" onClick={onClose}>Schließen</button>
-      </div>
-    </div>
+    </Modal>
   )
 }

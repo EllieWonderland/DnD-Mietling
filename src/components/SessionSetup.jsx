@@ -6,6 +6,8 @@ import './SessionSetup.css'
 export default function SessionSetup({
   players,
   room,
+  connectionStatus,
+  connectionSince,
   onStart,
   onUpdateProfile,
   playingMusicKey,
@@ -129,7 +131,11 @@ export default function SessionSetup({
           Kampf Beginnen
         </button>
 
-        <TvConnectPanel room={room} />
+        <TvConnectPanel
+          room={room}
+          connectionStatus={connectionStatus}
+          connectionSince={connectionSince}
+        />
 
         <div className="setup-soundboard">
           <Soundboard

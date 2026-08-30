@@ -17,7 +17,7 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 | 1 | 🔴 Kritisch — Datenverlust im Kampf | 1–4 | ✅ erledigt |
 | 2 | 🟠 Sicherheit | 5–9 | ✅ erledigt |
 | 3 | 🟡 Logik & Stabilität | 10–16 | ✅ erledigt |
-| 4 | 🔵 UX / UI | 17–25 | offen |
+| 4 | 🔵 UX / UI | 17–25 | ✅ erledigt |
 | 5 | 🧹 Aufräumen & Spielrunde | 26–31 | offen |
 | 6 | ⚪ Build, Deploy & Performance | 32–37 | offen |
 
@@ -104,40 +104,40 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 
 ## 🔵 Kategorie 4 — UX / UI
 
-- [ ] **17. Kein Verbindungsstatus — auf keiner Seite**
+- [x] **17. Kein Verbindungsstatus — auf keiner Seite**
   Der DM sieht am Tablet nicht, ob der TV überhaupt hört; der TV zeigt bei toter Verbindung stumm den alten Stand weiter. Bei einer Zwei-Geräte-App die wichtigste fehlende Anzeige.
   **Fix:** Punkt im Header aus `ws.readyState` + „letzter State vor Xs"; auf dem TV ein dezenter Hinweis, wenn > 15 s nichts kam.
 
-- [ ] **18. Der Display-Modus ist nirgends auffindbar**
+- [x] **18. Der Display-Modus ist nirgends auffindbar**
   `?mode=display` steht nur im Quelltext und in der Roadmap. Kein Button, kein QR-Code, kein Hinweis in der App.
   **Fix:** Im Setup ein „TV verbinden"-Panel mit vollständiger URL + QR-Code (kombinierbar mit dem Raum-Token aus Punkt 5).
-  **Teilweise erledigt (mit Punkt 5):** `TvConnectPanel` im Setup zeigt die vollständige Adresse inkl. Raum-Code mit Kopieren-Button. Offen bleibt der QR-Code.
+  **Erledigt:** `TvConnectPanel` im Setup zeigt QR-Code, vollständige Adresse inkl. Raum-Code, Kopieren-Button und „Neuer Raum-Code". QR über `qrcode-generator` (neue Abhängigkeit, ohne eigene Abhängigkeiten).
 
-- [ ] **19. „Verwerfen" im Fortsetzen-Dialog löscht sofort**
+- [x] **19. „Verwerfen" im Fortsetzen-Dialog löscht sofort**
   `App.jsx:657` — ein Tipp, keine Rückfrage, Kampf weg.
   **Fix:** Zweistufige Bestätigung oder „Rückgängig"-Toast für ein paar Sekunden.
 
-- [ ] **20. Keine Safe-Area-Behandlung**
+- [x] **20. Keine Safe-Area-Behandlung**
   `index.html` setzt `viewport-fit=cover`, aber in keiner CSS-Datei steht ein `env(safe-area-inset-*)`. Auf iPad/iPhone im Standalone-PWA-Modus liegt der Footer mit „Nächster Zug ▶" unter dem Home-Indicator.
   **Fix:** `padding-bottom: max(12px, env(safe-area-inset-bottom))` im Footer, analog oben/seitlich.
 
-- [ ] **21. Zoom ist gesperrt**
+- [x] **21. Zoom ist gesperrt**
   `maximum-scale=1.0, user-scalable=no` in `index.html`. Auf einem Tablet, das aus 1,5 m abgelesen wird, ein echtes Zugänglichkeitsproblem.
   **Fix:** `maximum-scale`/`user-scalable` entfernen; ungewolltes Scrollen ist bereits über `position: fixed` auf `html, body` abgefangen.
 
-- [ ] **22. Setup-Screen kann oben abschneiden**
+- [x] **22. Setup-Screen kann oben abschneiden**
   `SessionSetup.css:20` — `margin: auto` auf einem Flex-Item in einem `overflow-y: auto`-Container: wird der Inhalt höher als der Viewport (Tablet quer, Soundboard offen), ist der obere Überhang nicht scrollbar.
   **Fix:** `margin: auto` ersetzen durch `margin-block: auto` + `justify-content: safe center` oder schlicht Padding.
 
-- [ ] **23. Modals ohne Escape und ohne Fokus-Falle**
+- [x] **23. Modals ohne Escape und ohne Fokus-Falle**
   `AddMonsterModal`, `ConditionsMenu`, `DuplicateMonsterModal`, Konzentrations-Modal — Enter bestätigt teilweise, Escape schließt nie (nur die Inline-Edit-Felder reagieren darauf). Kein Fokus-Trap, kein `role="dialog"`.
   **Fix:** Gemeinsame `Modal`-Hülle mit Escape-Handler, `role="dialog"`, `aria-modal`, Fokus-Trap und Fokus-Rückgabe.
 
-- [ ] **24. Emoji-Buttons ohne `aria-label`**
+- [x] **24. Emoji-Buttons ohne `aria-label`**
   ✏️, ☠, ✕, ⧉, 🩸 haben nur `title`. Drag & Drop hat keine Tastatur-Alternative.
   **Fix:** `aria-label` überall ergänzen; für Reihenfolge zusätzlich „nach oben/unten"-Buttons im Edit-Modus.
 
-- [ ] **25. Monster bei `damage >= maxHp` bekommt keinerlei Hinweis**
+- [x] **25. Monster bei `damage >= maxHp` bekommt keinerlei Hinweis**
   Kein Auto-Vorschlag „besiegt?", nur der Zahlenvergleich in der Kachel.
   **Fix:** Kachel visuell markieren, sobald `damage >= maxHp` (z. B. pulsierender ☠-Button).
 

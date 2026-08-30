@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useId } from 'react'
 import ConditionsMenu from './ConditionsMenu.jsx'
+import Modal from './Modal.jsx'
 import ColorPicker from './ColorPicker.jsx'
 import { getMonsterColor } from '../utils/monsterColors.js'
 import './ParticipantCard.css'
@@ -22,7 +23,11 @@ const CONDITION_DATA = {
   Unconscious: { icon: '💤', label: 'Bewusstlos' },
 }
 
-export default function ParticipantCard({ participant: p, isActive, onUpdate, onKill, onRemove, onDuplicate, displayOnly = false }) {
+export default function ParticipantCard({
+  participant: p, isActive, onUpdate, onKill, onRemove, onDuplicate,
+  onMove, canMoveUp = false, canMoveDown = false,
+  displayOnly = false,
+}) {
   const [showConditions, setShowConditions] = useState(false)
   const [damageInput, setDamageInput] = useState('')
   const [allyHpInput, setAllyHpInput] = useState('')
@@ -36,6 +41,7 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
   const [editDamage, setEditDamage] = useState('')
   const [confirmRemove, setConfirmRemove] = useState(false)
   const confirmTimer = useRef(null)
+  const concTitleId = useId()
 
   useEffect(() => () => { if (confirmTimer.current) clearTimeout(confirmTimer.current) }, [])
 
@@ -184,6 +190,10 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
     onUpdate({ conditions: next, exhaustion: level })
   }
 
+  // Once the damage reaches max HP the monster is beaten on paper — the card
+  // says so, the DM still decides with ☠.
+  const monsterDown = p.type === 'monster' && p.maxHp > 0 && (p.damage || 0) >= p.maxHp
+
   const cardClass = [
     'participant-card',
     p.type === 'player' ? 'card-player' : p.type === 'ally' ? 'card-ally' : 'card-monster',
@@ -191,6 +201,7 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
     p.bloodied && !p.dead ? 'card-bloodied' : '',
     p.dying && !p.dead ? 'card-dying' : '',
     p.dead ? 'card-dead' : '',
+    monsterDown && !p.dead ? 'card-monster-down' : '',
     p.color ? `card-monster-has-color` : '',
     displayOnly ? 'card-display-only' : '',
   ].filter(Boolean).join(' ')
@@ -261,6 +272,25 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
             </div>
           )}
           <div className="card-edit-actions">
+            {onMove && (
+              // Keyboard/touch alternative to dragging a card into place.
+              <div className="card-move-group">
+                <button
+                  className="monster-btn card-move-btn"
+                  onClick={() => onMove(-1)}
+                  disabled={!canMoveUp}
+                  title="Eine Position nach oben"
+                  aria-label={`${p.name} eine Position nach oben`}
+                >▲</button>
+                <button
+                  className="monster-btn card-move-btn"
+                  onClick={() => onMove(1)}
+                  disabled={!canMoveDown}
+                  title="Eine Position nach unten"
+                  aria-label={`${p.name} eine Position nach unten`}
+                >▼</button>
+              </div>
+            )}
             <button className="card-edit-confirm" onClick={confirmEdit}>✓ Speichern</button>
             <button className="card-edit-cancel" onClick={() => setEditMode(false)}>Abbrechen</button>
           </div>
@@ -357,6 +387,7 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                       className="chip-remove-btn"
                       onClick={() => toggleCondition(c.name)}
                       title={`${info.label} entfernen`}
+                      aria-label={`${info.label} bei ${p.name} entfernen`}
                     >✕</button>
                   )}
                 </span>
@@ -369,6 +400,7 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                   className="status-chip chip-add"
                   onClick={() => setShowConditions(true)}
                   title="Zustand hinzufügen"
+                  aria-label={`Zustand für ${p.name} hinzufügen`}
                 >
                   + Zustand 🎭
                 </button>
@@ -396,6 +428,8 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                       className={`ds-circle ds-circle-success${(p.deathSaves?.successes || 0) > i ? ' ds-filled' : ''}`}
                       onClick={!displayOnly ? () => toggleDeathSave('success', i) : undefined}
                       style={displayOnly ? { cursor: 'default' } : undefined}
+                      aria-label={`Rettungswurf ${i + 1} von ${p.name} gelungen`}
+                      aria-pressed={(p.deathSaves?.successes || 0) > i}
                     />
                   ))}
                 </div>
@@ -409,6 +443,8 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                       className={`ds-circle ds-circle-failure${(p.deathSaves?.failures || 0) > i ? ' ds-filled' : ''}`}
                       onClick={!displayOnly ? () => toggleDeathSave('failure', i) : undefined}
                       style={displayOnly ? { cursor: 'default' } : undefined}
+                      aria-label={`Rettungswurf ${i + 1} von ${p.name} misslungen`}
+                      aria-pressed={(p.deathSaves?.failures || 0) > i}
                     />
                   ))}
                 </div>
@@ -449,6 +485,7 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                       className="chip-remove-btn"
                       onClick={() => toggleCondition(c.name)}
                       title={`${info.label} entfernen`}
+                      aria-label={`${info.label} bei ${p.name} entfernen`}
                     >✕</button>
                   )}
                 </span>
@@ -459,6 +496,7 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                 className="status-chip chip-add"
                 onClick={() => setShowConditions(true)}
                 title="Zustand hinzufügen"
+                aria-label={`Zustand für ${p.name} hinzufügen`}
               >
                 + Zustand 🎭
               </button>
@@ -484,13 +522,14 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                     placeholder="HP"
                     min="1"
                   />
-                  <button className="ally-btn ally-dmg-btn" onClick={applyAllyDamage}>-Dmg</button>
-                  <button className="ally-btn ally-heal-btn" onClick={applyAllyHeal}>+Heil</button>
+                  <button className="ally-btn ally-dmg-btn" onClick={applyAllyDamage} aria-label={`${p.name} Schaden zufügen`}>-Dmg</button>
+                  <button className="ally-btn ally-heal-btn" onClick={applyAllyHeal} aria-label={`${p.name} heilen`}>+Heil</button>
                   <div className="monster-sep" />
                   <button
                     className={`monster-btn remove-btn${confirmRemove ? ' remove-armed' : ''}`}
                     onClick={requestRemove}
                     title={confirmRemove ? 'Nochmal tippen zum Entfernen' : 'Entfernen'}
+                    aria-label={confirmRemove ? `${p.name} wirklich entfernen` : `${p.name} entfernen`}
                   >{confirmRemove ? 'Wirklich?' : '✕'}</button>
                 </>
               )}
@@ -506,6 +545,8 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                       className={`ds-circle ds-circle-success${(p.deathSaves?.successes || 0) > i ? ' ds-filled' : ''}`}
                       onClick={!displayOnly ? () => toggleDeathSave('success', i) : undefined}
                       style={displayOnly ? { cursor: 'default' } : undefined}
+                      aria-label={`Rettungswurf ${i + 1} von ${p.name} gelungen`}
+                      aria-pressed={(p.deathSaves?.successes || 0) > i}
                     />
                   ))}
                 </div>
@@ -519,6 +560,8 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                       className={`ds-circle ds-circle-failure${(p.deathSaves?.failures || 0) > i ? ' ds-filled' : ''}`}
                       onClick={!displayOnly ? () => toggleDeathSave('failure', i) : undefined}
                       style={displayOnly ? { cursor: 'default' } : undefined}
+                      aria-label={`Rettungswurf ${i + 1} von ${p.name} misslungen`}
+                      aria-pressed={(p.deathSaves?.failures || 0) > i}
                     />
                   ))}
                 </div>
@@ -529,6 +572,7 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                   style={{ marginLeft: 'auto' }}
                   onClick={requestRemove}
                   title={confirmRemove ? 'Nochmal tippen zum Entfernen' : 'Entfernen'}
+                  aria-label={confirmRemove ? `${p.name} wirklich entfernen` : `${p.name} entfernen`}
                 >{confirmRemove ? 'Wirklich?' : '✕'}</button>
               )}
             </div>
@@ -569,6 +613,7 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                       className="chip-remove-btn"
                       onClick={() => toggleCondition(c.name)}
                       title={`${info.label} entfernen`}
+                      aria-label={`${info.label} bei ${p.name} entfernen`}
                     >✕</button>
                   )}
                 </span>
@@ -579,6 +624,7 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                 className="status-chip chip-add"
                 onClick={() => setShowConditions(true)}
                 title="Zustand hinzufügen"
+                aria-label={`Zustand für ${p.name} hinzufügen`}
               >
                 + Zustand 🎭
               </button>
@@ -591,6 +637,11 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
               <span className="damage-value">{p.damage || 0}</span>
               {p.maxHp > 0 && <span className="damage-max">/ {p.maxHp}</span>}
             </div>
+            {monsterDown && (
+              <span className="monster-down-hint" title="Schaden erreicht die maximalen HP">
+                besiegt?
+              </span>
+            )}
             {!displayOnly && (
               <>
                 <input
@@ -603,20 +654,38 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                   placeholder="Dmg"
                   min="1"
                 />
-                <button className="dmg-btn" onClick={() => applyDamage(1)}>+Dmg</button>
-                <button className="dmg-btn dmg-btn-minus" onClick={() => applyDamage(-1)} title="Schaden zurücknehmen / heilen">-Dmg</button>
+                <button className="dmg-btn" onClick={() => applyDamage(1)} aria-label={`Schaden bei ${p.name} hinzufügen`}>+Dmg</button>
+                <button
+                  className="dmg-btn dmg-btn-minus"
+                  onClick={() => applyDamage(-1)}
+                  title="Schaden zurücknehmen / heilen"
+                  aria-label={`Schaden bei ${p.name} zurücknehmen`}
+                >-Dmg</button>
                 <button
                   className={`monster-btn ${p.bloodied ? 'bloodied-active' : ''}`}
                   onClick={() => onUpdate({ bloodied: !p.bloodied })}
                   title="Verwundet umschalten"
+                  aria-label={`${p.name} verwundet`}
+                  aria-pressed={!!p.bloodied}
                 >🩸</button>
                 <div className="monster-sep" />
-                <button className="monster-btn" onClick={onDuplicate} title="Duplizieren">⧉</button>
-                <button className="monster-btn kill-btn" onClick={onKill} title="Besiegt">☠</button>
+                <button
+                  className="monster-btn"
+                  onClick={onDuplicate}
+                  title="Duplizieren"
+                  aria-label={`${p.name} duplizieren`}
+                >⧉</button>
+                <button
+                  className={`monster-btn kill-btn${monsterDown ? ' kill-btn-suggested' : ''}`}
+                  onClick={onKill}
+                  title="Besiegt"
+                  aria-label={`${p.name} als besiegt markieren`}
+                >☠</button>
                 <button
                   className={`monster-btn remove-btn${confirmRemove ? ' remove-armed' : ''}`}
                   onClick={requestRemove}
                   title={confirmRemove ? 'Nochmal tippen zum Entfernen' : 'Entfernen'}
+                  aria-label={confirmRemove ? `${p.name} wirklich entfernen` : `${p.name} entfernen`}
                 >{confirmRemove ? 'Wirklich?' : '✕'}</button>
               </>
             )}
@@ -625,7 +694,12 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
       )}
 
       {!displayOnly && !editMode && (
-        <button className="card-edit-btn" onClick={enterEdit} title="Bearbeiten">✏️</button>
+        <button
+          className="card-edit-btn"
+          onClick={enterEdit}
+          title="Bearbeiten"
+          aria-label={`${p.name} bearbeiten`}
+        >✏️</button>
       )}
 
       {!displayOnly && showConditions && (
@@ -638,9 +712,13 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
       )}
 
       {showConcModal && (
-        <div className="conc-modal-overlay" onClick={closeConcModal}>
-          <div className="conc-modal-box" onClick={e => e.stopPropagation()}>
-            <div className="conc-modal-title">🔮 Konzentration – {p.name}</div>
+        <Modal
+          onClose={closeConcModal}
+          labelledBy={concTitleId}
+          overlayClassName="conc-modal-overlay"
+          className="conc-modal-box"
+        >
+            <div id={concTitleId} className="conc-modal-title">🔮 Konzentration – {p.name}</div>
             <div className="conc-modal-text">Schaden erhalten? DC berechnen:</div>
             <div className="conc-modal-input-row">
               <input
@@ -660,8 +738,7 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
               <button className="conc-lose-btn" onClick={loseConcentration}>Konzentration verloren</button>
               <button className="conc-cancel-btn" onClick={closeConcModal}>Abbrechen</button>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   )

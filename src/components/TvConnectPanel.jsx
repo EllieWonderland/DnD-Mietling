@@ -1,11 +1,13 @@
 import { useState } from 'react'
+import ConnectionBadge from './ConnectionBadge.jsx'
+import QrCode from './QrCode.jsx'
 import { buildDisplayUrl, rotateRoomId } from '../utils/session.js'
 import './TvConnectPanel.css'
 
 // The display URL is the only thing that lets a TV join this session, so it
-// has to be visible somewhere. Point 18 of the todo replaces the plain link
-// with a QR code; the room handling below stays the same either way.
-export default function TvConnectPanel({ room }) {
+// has to be reachable from the app itself — as a QR code for anything with a
+// camera, and as plain text for a TV browser typed in by hand.
+export default function TvConnectPanel({ room, connectionStatus, connectionSince }) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [confirmRotate, setConfirmRotate] = useState(false)
@@ -40,16 +42,24 @@ export default function TvConnectPanel({ room }) {
   return (
     <div className={`tv-connect${open ? ' tv-connect-open' : ''}`}>
       <button className="tv-connect-toggle" onClick={() => setOpen(o => !o)}>
-        📺 TV verbinden
-        <span className="tv-connect-room">Raum {room.slice(0, 6)}…</span>
+        <span>📺 TV verbinden</span>
+        <span className="tv-connect-meta">
+          {connectionStatus && (
+            <ConnectionBadge status={connectionStatus} since={connectionSince} />
+          )}
+          <span className="tv-connect-room">Raum {room.slice(0, 6)}…</span>
+        </span>
       </button>
 
       {open && (
         <div className="tv-connect-body">
           <p className="tv-connect-hint">
-            Diese Adresse am Fernseher öffnen. Sie enthält den Raum-Code —
-            nur wer sie hat, sieht die Session.
+            QR-Code scannen oder die Adresse am Fernseher öffnen. Sie enthält
+            den Raum-Code — nur wer sie hat, sieht die Session.
           </p>
+          <div className="tv-connect-qr">
+            <QrCode value={url} size={196} />
+          </div>
           <div className="tv-connect-url">{url}</div>
           <div className="tv-connect-actions">
             <button className="tv-connect-btn" onClick={copyUrl}>

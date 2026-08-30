@@ -1,0 +1,5 @@
+/* Der Kasten selbst bekommt beim Öffnen den Fokus — ohne sichtbaren Rahmen,
+   die einzelnen Bedienelemente zeigen ihren Fokus weiterhin an. */
+[role='dialog'][tabindex='-1']:focus {
+  outline: none;
+}

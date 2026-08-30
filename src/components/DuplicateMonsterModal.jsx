@@ -1,14 +1,15 @@
-import { useState } from 'react'
+import { useId } from 'react'
 import { MONSTER_COLORS } from '../utils/monsterColors.js'
+import Modal from './Modal.jsx'
 import './DuplicateMonsterModal.css'
 
 export default function DuplicateMonsterModal({ monster, onSelectColor, onClose }) {
+  const titleId = useId()
   if (!monster) return null
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="dup-modal-box" onClick={e => e.stopPropagation()}>
-        <h2 className="dup-modal-title">Monster duplizieren</h2>
+    <Modal onClose={onClose} labelledBy={titleId} className="dup-modal-box">
+        <h2 id={titleId} className="dup-modal-title">Monster duplizieren</h2>
         <p className="dup-modal-subtitle">
           Wähle die neue Farbe für den Farbring von <strong>{monster.name}</strong>:
         </p>
@@ -55,7 +56,6 @@ export default function DuplicateMonsterModal({ monster, onSelectColor, onClose 
             Abbrechen
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   )
 }

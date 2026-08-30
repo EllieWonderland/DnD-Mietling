@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useId } from 'react'
 import ColorPicker from './ColorPicker.jsx'
+import Modal from './Modal.jsx'
 import './AddMonsterModal.css'
 
 export default function AddMonsterModal({ onAdd, onClose, title = 'Monster hinzufügen', isAlly = false }) {
@@ -7,6 +8,7 @@ export default function AddMonsterModal({ onAdd, onClose, title = 'Monster hinzu
   const [initiative, setInitiative] = useState('')
   const [hp, setHp] = useState('')
   const [color, setColor] = useState(null)
+  const titleId = useId()
 
   function submit() {
     if (!name.trim()) return
@@ -14,9 +16,12 @@ export default function AddMonsterModal({ onAdd, onClose, title = 'Monster hinzu
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className={`modal-box${isAlly ? ' modal-box--ally' : ''}`} onClick={e => e.stopPropagation()}>
-        <h2 className={`modal-title${isAlly ? ' modal-title--ally' : ''}`}>{title}</h2>
+    <Modal
+      onClose={onClose}
+      labelledBy={titleId}
+      className={`modal-box${isAlly ? ' modal-box--ally' : ''}`}
+    >
+        <h2 id={titleId} className={`modal-title${isAlly ? ' modal-title--ally' : ''}`}>{title}</h2>
 
         <div className="modal-field">
           <label>Name</label>
@@ -70,7 +75,6 @@ export default function AddMonsterModal({ onAdd, onClose, title = 'Monster hinzu
           <button className="modal-cancel" onClick={onClose}>Abbrechen</button>
           <button className={`modal-add${isAlly ? ' modal-add--ally' : ''}`} onClick={submit} disabled={!name.trim()}>Hinzufügen</button>
         </div>
-      </div>
-    </div>
+    </Modal>
   )
 }

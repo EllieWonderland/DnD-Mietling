@@ -836,3 +836,58 @@
   border-color: #2a7a44;
 }
 .dmg-btn-minus:hover { background: #225532; }
+
+/* ── Monster rechnerisch besiegt (Schaden >= max HP) ── */
+.card-monster-down {
+  border-color: #ff4444 !important;
+  background: #2a0f0f !important;
+}
+
+.monster-down-hint {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #ff4444;
+  background: #3a1010;
+  color: #ff9999;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  animation: monsterDownPulse 1.4s ease-in-out infinite;
+}
+
+.kill-btn-suggested {
+  border-color: #ff4444 !important;
+  color: #ff8888 !important;
+  background: #2a1010 !important;
+  animation: monsterDownPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes monsterDownPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.5); }
+  50%      { box-shadow: 0 0 10px 2px rgba(255, 68, 68, 0.45); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monster-down-hint,
+  .kill-btn-suggested { animation: none; }
+}
+
+/* ── Tastatur-Alternative zum Ziehen ── */
+.card-move-group {
+  display: flex;
+  gap: 4px;
+  margin-right: auto;
+}
+
+.card-move-btn {
+  min-width: 36px;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.card-move-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}

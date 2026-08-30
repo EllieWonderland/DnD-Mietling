@@ -83,3 +83,24 @@
   background: #2a1010;
   font-weight: 700;
 }
+
+.tv-connect-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tv-connect-qr {
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  border-radius: 8px;
+  background: #ffffff;
+  align-self: center;
+}
+
+.qr-code {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
