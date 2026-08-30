@@ -18,7 +18,6 @@ const PLAYER_DEFAULTS = [
   { id: 'athania',    name: 'Athania' },
   { id: 'delat',      name: 'Delat' },
   { id: 'tharion',    name: 'Tharion' },
-  { id: 'sora',       name: 'Sora' },
   { id: 'vhahlhohkh', name: 'Vhahlhohkh' },
 ]
 
@@ -54,8 +53,22 @@ storageRemove('dnd-player-hp')
 function saveCombatState(state) {
   writeJSON('dnd-combat-state', state)
 }
+// A combat saved before a character left the group would bring them back on
+// resume. Players that no longer exist are dropped; monsters and allies are
+// created during the combat and always stay.
 function loadCombatState() {
-  return readJSON('dnd-combat-state', null)
+  const saved = readJSON('dnd-combat-state', null)
+  if (!saved || !Array.isArray(saved.participants)) return saved
+  const knownIds = new Set(PLAYER_DEFAULTS.map(p => p.id))
+  const participants = saved.participants.filter(
+    p => p?.type !== 'player' || knownIds.has(p.id),
+  )
+  if (participants.length === saved.participants.length) return saved
+  return {
+    ...saved,
+    participants,
+    activeIndex: Math.min(saved.activeIndex ?? 0, Math.max(0, participants.length - 1)),
+  }
 }
 function clearCombatState() {
   storageRemove('dnd-combat-state')
@@ -88,7 +101,7 @@ function makePlayer(pid, profiles) {
     initiative: 0,
     reaction: false,
     conditions: [], concentration: false,
-    blessed: false, hidden: false, flying: false, exhaustion: 0,
+    blessed: false, hidden: false, flying: false,
     deathSaves: { successes: 0, failures: 0 },
   }
 }
@@ -235,6 +248,9 @@ export default function App() {
       } catch {}
 
       if (!wsUrl) {
+        // Dev fallback: the relay from `npm run dev:all`. Deliberately built
+        // from the current hostname so a tablet on the LAN reaches the dev
+        // machine instead of itself.
         wsUrl = import.meta.env.DEV
           ? `ws://${window.location.hostname}:3001`
           : null
@@ -717,13 +733,7 @@ export default function App() {
             displayOnly
           />
         ) : dScene ? (
-          <AmbienceScene
-            scene={dScene}
-            fit={dSceneFit}
-            onPlayEffect={() => {}}
-            onBack={() => {}}
-            displayOnly
-          />
+          <AmbienceScene scene={dScene} fit={dSceneFit} />
         ) : (
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <img src={mietlingLogo} alt="DnD Mietling" style={{ maxWidth: '400px', width: '60vw', objectFit: 'contain' }} />

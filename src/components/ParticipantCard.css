@@ -117,17 +117,6 @@
   to   { filter: drop-shadow(0 0 6px #ff4444dd); transform: scale(1.08); }
 }
 
-.exhaustion-badge {
-  font-size: 0.72rem;
-  color: #cc8800;
-  background: #2a1a00;
-  border: 1px solid #7a5000;
-  border-radius: 4px;
-  padding: 2px 6px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
 /* ── CONDITION & STATUS CHIPS ROW ── */
 .card-chips-row {
   display: flex;

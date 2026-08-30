@@ -361,12 +361,9 @@ export function IconBook() {
   )
 }
 
-// JINGLES / EVENT SOUNDS (no mood profile - NOT selected by sliders)
-export const EVENT_SOUNDS = [
-  { key: 'defeat',    label: 'Defeat Outro',       url: m('defeat_outro.mp3') },
-  { key: 'victory',   label: 'Victory Fanfare',    url: m('orchestral_win.mp3') },
-  { key: 'war-intro', label: 'War Conflict Intro', url: m('amaksi-war-conflict-intro-272503.mp3') },
-]
+// Sieg- und Niederlagen-Jingle liegen als einzige Quelle im Bundle
+// (src/orchestral_win.mp3, src/defeat_outro.mp3) und werden direkt von
+// VictoryOverlay/DefeatOverlay importiert — nicht über das CDN.
 
 // cat = category, sub = subcategory (for ordered song list).
 // Array order determines display order.

@@ -18,7 +18,7 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 | 2 | 🟠 Sicherheit | 5–9 | ✅ erledigt |
 | 3 | 🟡 Logik & Stabilität | 10–16 | ✅ erledigt |
 | 4 | 🔵 UX / UI | 17–25 | ✅ erledigt |
-| 5 | 🧹 Aufräumen & Spielrunde | 26–31 | offen |
+| 5 | 🧹 Aufräumen & Spielrunde | 26–31 | ✅ erledigt |
 | 6 | ⚪ Build, Deploy & Performance | 32–37 | offen |
 
 ---
@@ -145,32 +145,34 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 
 ## 🧹 Kategorie 5 — Aufräumen & Spielrunde
 
-- [ ] **26. Sora vollständig entfernen**
+- [x] **26. Sora vollständig entfernen**
   Sora ist kein Mitglied der Spielrunde mehr.
-  - [ ] Eintrag aus `PLAYER_DEFAULTS` in `App.jsx:13` löschen
-  - [ ] **Migration:** Wegen Punkt 15 überschreiben gespeicherte `dnd-player-profiles` die Defaults — Sora bliebe auf allen bereits benutzten Geräten stehen. Beim Laden gespeicherte Profile gegen die Defaults abgleichen und nicht mehr existierende IDs verwerfen.
-  - [ ] Verwaiste Einträge in `dnd-player-hp` und in einem evtl. gespeicherten `dnd-combat-state` mit aufräumen
+  - [x] Eintrag aus `PLAYER_DEFAULTS` in `App.jsx:13` löschen
+  - [x] **Migration:** Wegen Punkt 15 überschreiben gespeicherte `dnd-player-profiles` die Defaults — Sora bliebe auf allen bereits benutzten Geräten stehen. Beim Laden gespeicherte Profile gegen die Defaults abgleichen und nicht mehr existierende IDs verwerfen.
+  - [x] Verwaiste Einträge in `dnd-player-hp` und in einem evtl. gespeicherten `dnd-combat-state` mit aufräumen
 
-- [ ] **27. `DeathSaveTracker` löschen**
+- [x] **27. `DeathSaveTracker` löschen**
   Wird nicht mehr gebraucht — das einfache Anhaken der gelungenen/misslungenen Rettungswürfe direkt in `ParticipantCard` reicht aus. Die Komponente ist ohnehin nirgends importiert.
-  - [ ] `src/components/DeathSaveTracker.jsx` löschen
-  - [ ] `src/components/DeathSaveTracker.css` löschen
+  - [x] `src/components/DeathSaveTracker.jsx` löschen
+  - [x] `src/components/DeathSaveTracker.css` löschen
 
-- [ ] **28. `EVENT_SOUNDS` und doppelte Audio-Dateien**
+- [x] **28. `EVENT_SOUNDS` und doppelte Audio-Dateien**
   `soundboardData.jsx:365` wird nirgends importiert und verweist auf `defeat_outro.mp3`/`orchestral_win.mp3` auf R2, während `VictoryOverlay`/`DefeatOverlay` dieselben Dateien lokal aus `src/` importieren.
   **Fix:** `EVENT_SOUNDS` entfernen; eine Quelle für die beiden Dateien festlegen.
+  **Erledigt:** `EVENT_SOUNDS` entfernt. Einzige Quelle bleibt das Bundle (`src/orchestral_win.mp3`, `src/defeat_outro.mp3`), direkt importiert von den Overlays.
 
-- [ ] **29. Toter `!displayOnly`-Block in `AmbienceScene`**
+- [x] **29. Toter `!displayOnly`-Block in `AmbienceScene`**
   Der Controller rendert die Szene nie, daher sind die Zurück-/Effekt-Steuerung und die Props `onBack`/`onPlayEffect` unerreichbar.
   **Fix:** Block und Props entfernen.
 
-- [ ] **30. `p.exhaustion` wird geschrieben, aber nie gelesen**
+- [x] **30. `p.exhaustion` wird geschrieben, aber nie gelesen**
   `setExhaustionLevel` pflegt das Feld parallel zu `conditions[].level`; gerendert wird nur letzteres, und `toggleCondition` setzt es beim Entfernen nicht zurück.
   **Fix:** Feld entfernen.
 
-- [ ] **31. `VITE_WS_URL` in `.env.development` ist tot**
+- [x] **31. `VITE_WS_URL` in `.env.development` ist tot**
   Wird im Code nirgends gelesen — die URL kommt aus `/config.json`, mit `ws://hostname:3001` als Dev-Fallback.
   **Fix:** Entweder auslesen oder aus `.env.development` entfernen.
+  **Erledigt:** `.env.development` gelöscht. Der Dev-Fallback `ws://<hostname>:3001` bleibt — er baut die Adresse absichtlich aus dem aktuellen Hostnamen, damit ein Tablet im WLAN den Dev-Rechner erreicht und nicht sich selbst.
 
 ---
 

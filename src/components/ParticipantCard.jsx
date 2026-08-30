@@ -185,9 +185,11 @@ export default function ParticipantCard({
     onUpdate({ conditions: next })
   }
 
+  // The level lives in the condition itself; a parallel `exhaustion` field was
+  // written but never read (and never reset when the condition was removed).
   function setExhaustionLevel(level) {
     const next = p.conditions.map(c => c.name === 'Exhaustion' ? { ...c, level } : c)
-    onUpdate({ conditions: next, exhaustion: level })
+    onUpdate({ conditions: next })
   }
 
   // Once the damage reaches max HP the monster is beaten on paper — the card

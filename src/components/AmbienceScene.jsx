@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react'
-import { EFFECT_TRACKS } from './soundboardData.jsx'
 import './AmbienceScene.css'
 
 function makePoster(label) {
@@ -29,7 +28,9 @@ function makePoster(label) {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
 }
 
-export default function AmbienceScene({ scene, onPlayEffect, onBack, displayOnly = false, fit = 'contain' }) {
+// Only the TV renders a scene — the controller just shows in the soundboard
+// that one is live. The component therefore has no controls of its own.
+export default function AmbienceScene({ scene, fit = 'contain' }) {
   const [videoStatus, setVideoStatus] = useState('loading')
   const videoRef = useRef(null)
 
@@ -92,28 +93,6 @@ export default function AmbienceScene({ scene, onPlayEffect, onBack, displayOnly
       </div>
 
       <div className="ambience-overlay" />
-
-      {!displayOnly && (
-        <div className="ambience-controls">
-          <button className="ambience-back" onClick={onBack}>
-            Zurück zur Startseite
-          </button>
-
-          <div className="ambience-effects" aria-label="Effekte">
-            {EFFECT_TRACKS.map(track => (
-              <button
-                key={track.key}
-                className="ambience-effect-btn"
-                onClick={() => onPlayEffect(track)}
-                title={track.label}
-                aria-label={track.label}
-              >
-                <track.Icon />
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
