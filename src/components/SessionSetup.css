@@ -151,12 +151,6 @@
   gap: 8px;
 }
 
-.player-hp-hint {
-  font-size: 0.8rem;
-  color: var(--text-dim);
-  font-family: inherit;
-  letter-spacing: 0;
-}
 
 .profile-edit-btn {
   padding: 4px 8px;
@@ -200,33 +194,6 @@
 }
 .profile-edit-name:focus { outline: none; border-color: var(--gold); }
 
-.profile-edit-hp-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.profile-edit-label {
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-}
-
-.profile-edit-hp {
-  width: 64px;
-  padding: 6px 10px;
-  background: var(--bg-dark);
-  border: 1px solid var(--border-gold);
-  border-radius: 6px;
-  color: var(--gold-light);
-  font-size: 1.1rem;
-  font-weight: 700;
-  text-align: center;
-}
-.profile-edit-hp:focus { outline: none; border-color: var(--gold); }
 
 .profile-save-btn {
   padding: 6px 12px;

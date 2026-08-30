@@ -9,29 +9,45 @@ import { getRoomId } from './utils/session.js'
 import { MUSIC_TRACKS, EFFECT_TRACKS, VIDEO_SCENES } from './components/soundboardData.jsx'
 import mietlingLogo from './assets/images/mietling.png'
 
+// Players have no HP in this app: the DM tracks damage at the table, the
+// tracker only shows death saves and who has fallen. Monsters and allies do
+// carry HP — see InitiativeTracker.
 const PLAYER_DEFAULTS = [
-  { id: 'athania',     name: 'Athania',     maxHp: 30 },
-  { id: 'delat',      name: 'Delat',       maxHp: 28 },
-  { id: 'tharion',    name: 'Tharion',     maxHp: 32 },
-  { id: 'sora',       name: 'Sora',        maxHp: 26 },
-  { id: 'vhahlhohkh', name: 'Vhahlhohkh', maxHp: 35 },
+  { id: 'athania',    name: 'Athania' },
+  { id: 'delat',      name: 'Delat' },
+  { id: 'tharion',    name: 'Tharion' },
+  { id: 'sora',       name: 'Sora' },
+  { id: 'vhahlhohkh', name: 'Vhahlhohkh' },
 ]
 
+// Stored profiles used to replace the defaults wholesale, so a character
+// added in code never showed up for anyone who had already used the app —
+// and a character removed from the code stayed forever. The defaults decide
+// who exists; a stored entry only overrides name and max HP, and only with
+// values that survive validation.
 function loadPlayerProfiles() {
   const saved = readJSON('dnd-player-profiles', null)
-  return Array.isArray(saved) && saved.length > 0 ? saved : null
+  const byId = new Map()
+  if (Array.isArray(saved)) {
+    for (const entry of saved) {
+      if (entry && typeof entry === 'object' && typeof entry.id === 'string') {
+        byId.set(entry.id, entry)
+      }
+    }
+  }
+  return PLAYER_DEFAULTS.map(def => {
+    const stored = byId.get(def.id)
+    if (!stored) return { ...def }
+    const name = typeof stored.name === 'string' && stored.name.trim()
+      ? stored.name.trim()
+      : def.name
+    return { ...def, name }
+  })
 }
 
-function loadPlayerHP() {
-  const saved = readJSON('dnd-player-hp', {})
-  return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {}
-}
-
-function savePlayerHP(participants) {
-  const hp = {}
-  participants.filter(p => p.type === 'player').forEach(p => { hp[p.id] = p.hp })
-  writeJSON('dnd-player-hp', hp)
-}
+// Left over from the days when players had HP. Nothing writes it any more,
+// so it is dropped once on start instead of lingering on every device.
+storageRemove('dnd-player-hp')
 
 function saveCombatState(state) {
   writeJSON('dnd-combat-state', state)
@@ -63,12 +79,11 @@ function fadeAudio(audio, fadeRef, target, durationMs, onDone) {
   fadeRef.current = id
 }
 
-function makePlayer(pid, savedHP, profiles) {
-  const profile = profiles.find(p => p.id === pid) ?? { id: pid, name: pid, maxHp: 20 }
-  const hp = savedHP[pid] ?? profile.maxHp
+function makePlayer(pid, profiles) {
+  const profile = profiles.find(p => p.id === pid) ?? { id: pid, name: pid }
   return {
     id: pid, name: profile.name, type: 'player',
-    initiative: 0, hp, maxHp: profile.maxHp,
+    initiative: 0,
     reaction: false,
     conditions: [], concentration: false,
     blessed: false, hidden: false, flying: false, exhaustion: 0,
@@ -136,11 +151,21 @@ export default function App() {
   const [ambienceFits, setAmbienceFits] = useState(() => readJSON('dnd-ambience-fits', {}) || {})
   const [effectTrigger, setEffectTrigger] = useState(null)
   const [audioUnlocked, setAudioUnlocked] = useState(false)
-  const [playerProfiles, setPlayerProfiles] = useState(() => loadPlayerProfiles() || PLAYER_DEFAULTS)
+  const [playerProfiles, setPlayerProfiles] = useState(loadPlayerProfiles)
   const [savedCombat, setSavedCombat] = useState(() => loadCombatState())
   const [mood, setMood] = useState({ danger: 0.2, energy: 0.4, mysticism: 0.3, tone: 0.6 })
   const tvMusicRef = useRef(null)
   const fadeRef = useRef(null)
+  // The relay replays the cached state on every (re)connect, effect trigger
+  // included. The first state a display sees only primes these refs — without
+  // that, reconnecting or pressing "Ton aktivieren" fires the last explosion
+  // into a quiet table.
+  const effectPrimedRef = useRef(false)
+  const lastEffectNonceRef = useRef(null)
+  // Volume the controller last asked for. A fade owns audio.volume while it
+  // runs, so slider moves during those ~600 ms land here and are applied at
+  // the end instead of being dropped.
+  const targetVolumeRef = useRef(0.72)
 
   const wsRef = useRef(null)
   const bcRef = useRef(null)
@@ -148,6 +173,15 @@ export default function App() {
   const lastMsgAtRef = useRef(Date.now())
   const [displayState, setDisplayState] = useState(null)
   const [displayCompactScroll, setDisplayCompactScroll] = useState(null)
+
+  function applyDisplayState(raw) {
+    const state = normalizeDisplayState(raw)
+    if (!effectPrimedRef.current) {
+      effectPrimedRef.current = true
+      lastEffectNonceRef.current = state.effectTrigger?.nonce ?? null
+    }
+    setDisplayState(state)
+  }
 
   // Clear display compact scroll when turn changes in display mode
   useEffect(() => {
@@ -171,7 +205,7 @@ export default function App() {
           lastMsgAtRef.current = Date.now()
           const msg = event.data
           if (msg?.type === 'STATE') {
-            if (isValidDisplayState(msg.state)) setDisplayState(normalizeDisplayState(msg.state))
+            if (isValidDisplayState(msg.state)) applyDisplayState(msg.state)
           } else if (msg?.type === 'COMPACT_SCROLL') {
             if (isValidCompactScroll(msg.scroll)) setDisplayCompactScroll(msg.scroll)
           }
@@ -216,7 +250,7 @@ export default function App() {
             try {
               const msg = JSON.parse(event.data)
               if (msg.type === 'STATE') {
-                if (isValidDisplayState(msg.state)) setDisplayState(normalizeDisplayState(msg.state))
+                if (isValidDisplayState(msg.state)) applyDisplayState(msg.state)
               } else if (msg.type === 'COMPACT_SCROLL') {
                 if (isValidCompactScroll(msg.scroll)) setDisplayCompactScroll(msg.scroll)
               }
@@ -388,7 +422,11 @@ export default function App() {
       audio.volume = 0
       audio.load()
       audio.play().catch(() => {})
-      fadeAudio(audio, fadeRef, volume, FADE_MS)
+      // Fade towards the volume known when the fade started, then snap to
+      // whatever the slider says now — a move during the fade is not lost.
+      fadeAudio(audio, fadeRef, volume, FADE_MS, () => {
+        audio.volume = targetVolumeRef.current
+      })
     }
 
     if (!key) {
@@ -415,15 +453,22 @@ export default function App() {
 
   // TV: sync volume while music is playing
   useEffect(() => {
-    if (APP_MODE !== 'display' || !audioUnlocked || !tvMusicRef.current) return
-    // If a fade is currently running, do not interfere - it ends within ~600 ms.
+    if (APP_MODE !== 'display') return
+    targetVolumeRef.current = displayState?.masterVolume ?? 0.72
+    if (!audioUnlocked || !tvMusicRef.current) return
+    // A running fade owns the volume; its onDone applies the ref afterwards.
     if (fadeRef.current) return
-    tvMusicRef.current.volume = displayState?.masterVolume ?? 0.72
+    tvMusicRef.current.volume = targetVolumeRef.current
   }, [displayState?.masterVolume, audioUnlocked])
 
   // TV: one-shot effect sounds
   useEffect(() => {
     if (APP_MODE !== 'display' || !audioUnlocked || !displayState?.effectTrigger) return
+    const nonce = displayState.effectTrigger.nonce
+    // Only a nonce the display has not seen before is a real trigger; a
+    // replayed state carries the old one.
+    if (nonce === lastEffectNonceRef.current) return
+    lastEffectNonceRef.current = nonce
     const track = EFFECT_TRACKS.find(t => t.key === displayState.effectTrigger.key)
     if (!track) return
     const audio = new Audio(track.url)
@@ -502,9 +547,9 @@ export default function App() {
     })
   }
 
-  function updatePlayerProfile(id, name, maxHp) {
+  function updatePlayerProfile(id, name) {
     setPlayerProfiles(prev => {
-      const next = prev.map(p => p.id === id ? { ...p, name, maxHp } : p)
+      const next = prev.map(p => p.id === id ? { ...p, name } : p)
       writeJSON('dnd-player-profiles', next)
       return next
     })
@@ -512,12 +557,15 @@ export default function App() {
 
   function startCombat(selectedIds, initiatives) {
     clearCombatState()
-    const savedHP = loadPlayerHP()
     const players = selectedIds.map(pid => ({
-      ...makePlayer(pid, savedHP, playerProfiles),
+      ...makePlayer(pid, playerProfiles),
       initiative: Math.max(1, parseInt(initiatives[pid]) || 1),
     }))
-    const sorted = [...players].sort((a, b) => b.initiative - a.initiative)
+    // `order` is the turn order from here on. Initiative only decides the
+    // starting line-up; after that manual swaps own it (see InitiativeTracker).
+    const sorted = [...players]
+      .sort((a, b) => b.initiative - a.initiative)
+      .map((p, i) => ({ ...p, order: i }))
     setParticipants(sorted)
     setRound(1)
     setActiveIndex(0)
@@ -528,13 +576,6 @@ export default function App() {
     setPhase('combat')
   }
 
-  // Victory/defeat detection lives in InitiativeTracker — it is the only place
-  // that knows whether the DM already waved a result away ("Doch weiterkämpfen").
-  function updateParticipants(next) {
-    setParticipants(next)
-    savePlayerHP(next)
-  }
-
   function nextTurn() {
     setRound(r => r + 1)
     const next = participants.map(p => ({ ...p, reaction: false }))
@@ -543,7 +584,6 @@ export default function App() {
   function prevTurn() { setRound(r => Math.max(1, r - 1)) }
 
   function endCombat() {
-    savePlayerHP(participants)
     clearCombatState()
     setSavedCombat(null)
     setPhase('setup')
@@ -621,8 +661,9 @@ export default function App() {
     return (
       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
         <ScreenKeepAlive enabled={true} />
-        {/* The combat screen always takes precedence. An active scene pauses
-            during combat and resumes afterwards (if not stopped). */}
+        {/* The combat screen always takes precedence. Starting or resuming a
+            combat clears the scene for good — it does not come back when the
+            combat ends (see startCombat/resumeCombat). */}
         <ErrorBoundary label="TV-Anzeige">
         {dp === 'combat' ? (
           <InitiativeTracker
@@ -750,13 +791,14 @@ export default function App() {
       {phase === 'combat' && (
         <InitiativeTracker
           participants={participants}
-          setParticipants={updateParticipants}
+          setParticipants={setParticipants}
           round={round}
           activeIndex={activeIndex}
           setActiveIndex={setActiveIndex}
           onNextTurn={nextTurn}
           onPrevTurn={prevTurn}
           onEndCombat={endCombat}
+          onUpdateProfile={updatePlayerProfile}
           victory={victory}
           setVictory={setVictory}
           defeat={defeat}

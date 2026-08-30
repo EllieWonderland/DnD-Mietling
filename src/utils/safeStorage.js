@@ -1,5 +1,5 @@
 // localStorage throws in Safari's private mode and once the quota is full.
-// savePlayerHP runs on every participant change, so a single unguarded
+// The combat autosave runs on every participant change, so a single unguarded
 // setItem would take the app down on every click. Everything goes through
 // this wrapper; if the real storage is unavailable, an in-memory map keeps
 // the session consistent until the tab is closed.

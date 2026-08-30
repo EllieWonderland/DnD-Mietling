@@ -52,12 +52,15 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
   function confirmEdit() {
     const name = editName.trim() || p.name
     const initiative = Math.max(1, parseInt(editInit) || 1)
-    const maxHp = Math.max(1, parseInt(editMaxHp) || 1)
-    const changes = { name, initiative, maxHp }
-    if (p.type === 'player' || p.type === 'ally') {
-      changes.hp = Math.min(p.hp, maxHp)
+    const changes = { name, initiative }
+    // Players have no HP — only their name and initiative are editable.
+    if (p.type !== 'player') {
+      const maxHp = Math.max(1, parseInt(editMaxHp) || 1)
+      changes.maxHp = maxHp
+      if (p.type === 'ally') changes.hp = Math.min(p.hp, maxHp)
     }
     if (p.type === 'monster') {
+      const maxHp = changes.maxHp
       // A mistyped damage total is fixed here instead of by deleting the monster.
       const damage = Math.max(0, parseInt(editDamage) || 0)
       changes.damage = damage
@@ -129,17 +132,18 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
     if (type === 'success') {
       const newCount = ds.successes === index + 1 ? index : index + 1
       if (newCount >= 3) {
-        onUpdate({ hp: 1, dying: false, deathSaves: { successes: 0, failures: 0 } })
+        const stabilized = { dying: false, deathSaves: { successes: 0, failures: 0 } }
+        if (p.type === 'ally') stabilized.hp = 1
+        onUpdate(stabilized)
       } else {
         onUpdate({ deathSaves: { ...ds, successes: newCount } })
       }
     } else {
       const newCount = ds.failures === index + 1 ? index : index + 1
       if (newCount >= 3) {
-        // The third failure kills the character — it never deletes them.
-        // The card stays on the board, greyed out and marked ☠. HP stays as it
-        // is: it is persisted per player and must not carry a 0 into the next
-        // combat, and `dead` alone already counts as down everywhere.
+        // The third failure kills the character — it never deletes them. The
+        // card stays on the board, greyed out and marked ☠, and `dead` is what
+        // counts as down everywhere else.
         onUpdate({ dead: true, dying: false, deathSaves: { successes: 0, failures: 3 } })
       } else {
         onUpdate({ deathSaves: { ...ds, failures: newCount } })
@@ -148,12 +152,9 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
   }
 
   function revive() {
-    onUpdate({
-      dead: false,
-      dying: false,
-      hp: Math.max(1, p.hp || 0),
-      deathSaves: { successes: 0, failures: 0 },
-    })
+    const changes = { dead: false, dying: false, deathSaves: { successes: 0, failures: 0 } }
+    if (p.type === 'ally') changes.hp = Math.max(1, p.hp || 0)
+    onUpdate(changes)
   }
 
   // Removing a participant is not undoable, so ✕ always asks first. The prompt
@@ -224,18 +225,20 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                 min="1" max="30"
               />
             </div>
-            <div className="card-edit-num-group">
-              <span className="card-edit-label">Max HP</span>
-              <input
-                type="number"
-                inputMode="numeric"
-                className="card-edit-num"
-                value={editMaxHp}
-                onChange={e => setEditMaxHp(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') confirmEdit(); if (e.key === 'Escape') setEditMode(false) }}
-                min="1"
-              />
-            </div>
+            {p.type !== 'player' && (
+              <div className="card-edit-num-group">
+                <span className="card-edit-label">Max HP</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  className="card-edit-num"
+                  value={editMaxHp}
+                  onChange={e => setEditMaxHp(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') confirmEdit(); if (e.key === 'Escape') setEditMode(false) }}
+                  min="1"
+                />
+              </div>
+            )}
             {p.type === 'monster' && (
               <div className="card-edit-num-group">
                 <span className="card-edit-label">Schaden</span>
@@ -296,12 +299,6 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
 
           {/* Condition & Status Chips */}
           <div className="card-chips-row">
-            {p.bloodied && (
-              <span className="status-chip chip-bloodied" title="Verwundet">
-                🩸 Verwundet
-              </span>
-            )}
-
             {!displayOnly ? (
               <>
                 <button

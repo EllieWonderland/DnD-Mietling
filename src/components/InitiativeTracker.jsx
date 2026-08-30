@@ -12,10 +12,36 @@ import './InitiativeTracker.css'
 
 let monsterIdCounter = Date.now()
 
+// ── Turn order ──────────────────────────────────────────────────────────────
+// The order used to be nothing but the array position, so every sort by
+// initiative (adding a monster, duplicating one, editing an initiative) wiped
+// a manual tie resolution. It now lives in a persistent `order` field:
+// initiative decides where a newcomer is placed, the DM owns everything after.
+
+function renumber(rows) {
+  return rows.map((p, i) => (p.order === i ? p : { ...p, order: i }))
+}
+
+// Brings a list into its stored order. Participants without `order` (a combat
+// saved by an older version) keep their array position — sort is stable.
+function orderedList(list) {
+  return renumber([...list].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)))
+}
+
+// Places one participant according to initiative: in front of the first one
+// that rolled lower, at the end if nobody did.
+function insertByInitiative(list, entry) {
+  const rows = orderedList(list)
+  const at = rows.findIndex(p => p.initiative < entry.initiative)
+  rows.splice(at === -1 ? rows.length : at, 0, entry)
+  return renumber(rows)
+}
+
 export default function InitiativeTracker({
   participants, setParticipants,
   round, activeIndex, setActiveIndex,
   onNextTurn, onPrevTurn, onEndCombat, victory, setVictory, defeat, setDefeat,
+  onUpdateProfile,
   displayOnly = false,
   playingMusicKey, volume, onVolumeChange, onPlayMusic, onPlayEffect,
   mood, onMoodChange, onSelectMusic, onStopMusic,
@@ -140,8 +166,8 @@ export default function InitiativeTracker({
     const monsters = participants.filter(p => p.type === 'monster')
     const players = participants.filter(p => p.type === 'player')
     const allMonstersDead = monsters.length > 0 && monsters.every(m => m.dead)
-    // Player is down if HP is 0, a death save is running (dying) or they died.
-    const allPlayersDown = players.length > 0 && players.every(p => p.hp <= 0 || p.dying || p.dead)
+    // Players have no HP: they are down while making death saves or once dead.
+    const allPlayersDown = players.length > 0 && players.every(p => p.dying || p.dead)
     if (allMonstersDead) {
       if (dismissedResult !== 'victory') setVictory(true)
     } else if (allPlayersDown && monsters.some(m => !m.dead)) {
@@ -165,8 +191,7 @@ export default function InitiativeTracker({
       conditions: [],
       color: color || null,
     }
-    const next = [...participants, newMonster].sort((a, b) => b.initiative - a.initiative)
-    setParticipants(next)
+    setParticipants(insertByInitiative(participants, newMonster))
   }
 
   function addAlly(name, initiative, hp) {
@@ -180,8 +205,7 @@ export default function InitiativeTracker({
       conditions: [],
       deathSaves: { successes: 0, failures: 0 },
     }
-    const next = [...participants, newAlly].sort((a, b) => b.initiative - a.initiative)
-    setParticipants(next)
+    setParticipants(insertByInitiative(participants, newAlly))
   }
 
   function removeAlly(id) {
@@ -208,15 +232,16 @@ export default function InitiativeTracker({
       conditions: [],
       reaction: false,
     }
-    const next = [...participants, copy].sort((a, b) => b.initiative - a.initiative)
-    setParticipants(next)
+    setParticipants(insertByInitiative(participants, copy))
   }
 
   function updateParticipant(id, changes, alertData) {
     let next = participants.map(p => p.id === id ? { ...p, ...changes } : p)
     if ('initiative' in changes) {
+      // Only the edited participant moves; everyone else keeps their place.
       const activeId = visible[activeIndex]?.id
-      next = [...next].sort((a, b) => b.initiative - a.initiative)
+      const moved = next.find(p => p.id === id)
+      next = insertByInitiative(next.filter(p => p.id !== id), moved)
       if (activeId) {
         const newVisible = next.filter(p => !(p.type === 'monster' && p.dead))
         const newIdx = newVisible.findIndex(p => p.id === activeId)
@@ -224,6 +249,13 @@ export default function InitiativeTracker({
       }
     }
     setParticipants(next)
+    // The card edit is the second way to rename a player. Without this it
+    // would only live in the combat state while the setup screen wrote the
+    // profile — two paths, two results.
+    const edited = participants.find(p => p.id === id)
+    if (edited?.type === 'player' && 'name' in changes) {
+      onUpdateProfile?.(id, changes.name)
+    }
     if (!displayOnly && alertData) setConcentrationAlert(alertData)
   }
 
@@ -318,11 +350,13 @@ export default function InitiativeTracker({
           const fromP = visible[from]
           const toP = visible[to]
           if (fromP && toP) {
-            const newList = [...participants]
+            const newList = orderedList(participants)
             const fromGlobal = newList.findIndex(p => p.id === fromP.id)
             const toGlobal = newList.findIndex(p => p.id === toP.id)
             ;[newList[fromGlobal], newList[toGlobal]] = [newList[toGlobal], newList[fromGlobal]]
-            setParticipants(newList)
+            // Renumbering writes the swap into `order`, so the next monster
+            // that joins cannot undo it.
+            setParticipants(renumber(newList))
           }
         }
       }

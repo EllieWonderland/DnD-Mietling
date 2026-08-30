@@ -16,7 +16,7 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 |---|-----------|--------|--------|
 | 1 | 🔴 Kritisch — Datenverlust im Kampf | 1–4 | ✅ erledigt |
 | 2 | 🟠 Sicherheit | 5–9 | ✅ erledigt |
-| 3 | 🟡 Logik & Stabilität | 10–16 | offen |
+| 3 | 🟡 Logik & Stabilität | 10–16 | ✅ erledigt |
 | 4 | 🔵 UX / UI | 17–25 | offen |
 | 5 | 🧹 Aufräumen & Spielrunde | 26–31 | offen |
 | 6 | ⚪ Build, Deploy & Performance | 32–37 | offen |
@@ -71,31 +71,32 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 
 ## 🟡 Kategorie 3 — Logik & Stabilität
 
-- [ ] **10. Reconnect spielt einen alten Soundeffekt ab**
+- [x] **10. Reconnect spielt einen alten Soundeffekt ab**
   `App.jsx:388` — der Effekt hängt an `effectTrigger.nonce`. Verbindet sich der TV neu (oder wird „Ton aktivieren" gedrückt), liefert das Relay den gecachten State inkl. des zuletzt getriggerten Effekts; `undefined → nonce` ist eine Änderung, also knallt mitten in der Stille die letzte Explosion.
   **Fix:** Beim ersten empfangenen State den Nonce nur in einem Ref merken, nicht abspielen.
 
-- [ ] **11. Manueller Platztausch wird von jedem `sort` zerstört**
+- [x] **11. Manueller Platztausch wird von jedem `sort` zerstört**
   `addMonster`, `addAlly`, `duplicateMonsterWithColor` und `updateParticipant` (bei Initiative-Änderung) sortieren `participants` neu nach Initiative. Nach einem Kachel-Tausch (Tie-Resolution) reicht ein neues Monster, und der Tausch ist weg.
   **Fix:** Persistentes Sortierfeld (z. B. `order` oder `tieBreak`) statt reiner Array-Position; `sort` nach `initiative desc, order asc`.
 
-- [ ] **12. Lautstärkeänderung während eines Fades geht verloren**
+- [x] **12. Lautstärkeänderung während eines Fades geht verloren**
   `App.jsx:374` — `if (fadeRef.current) return` verwirft den Wert, statt ihn nach dem Fade nachzuziehen. Reglerbewegung in den 600 ms bleibt wirkungslos bis zur nächsten Änderung.
   **Fix:** Ziel-Lautstärke in einem Ref halten und am Fade-Ende anwenden.
 
-- [ ] **13. Spieler-HP ist tote Mechanik**
+- [x] **13. Spieler-HP ist tote Mechanik**
   `makePlayer` legt `hp`/`maxHp` an, `savePlayerHP` persistiert sie, `loadPlayerHP` lädt sie — aber die Spieler-Kachel hat **keine HP-Anzeige und kein Schadensfeld**. Der Wert ändert sich nie. Folge: `p.hp <= 0` in `App.jsx:492` kann nie greifen (nur `p.dying`), der `🩸 Verwundet`-Chip erscheint bei Spielern nie, das `(30 HP)`-Label im Setup ist dekorativ.
   **Entscheidung nötig:** HP-Steuerung für Spieler ergänzen **oder** das Feld samt Persistenz entfernen. Aktueller Zustand ist irreführend.
+  **Entschieden am 2026-08-30: entfernen.** `hp`/`maxHp` aus `makePlayer` und `PLAYER_DEFAULTS`, `savePlayerHP`/`loadPlayerHP` samt `dnd-player-hp` (wird beim Start einmalig gelöscht), Max-HP-Feld im Setup und in der Spieler-Kachel, `(x HP)`-Label und der nie erreichbare 🩸-Chip bei Spielern. Spielerzustand läuft nur noch über Todeswürfe/Gefallen; Monster und Verbündete behalten ihre HP.
 
-- [ ] **14. Profil-Edit in der Kampfkachel persistiert nicht**
+- [x] **14. Profil-Edit in der Kampfkachel persistiert nicht**
   Max HP über ✏️ in der Kachel ändern → nur im Kampf-State, nicht in `dnd-player-profiles`. Über das Setup dagegen schon. Zwei Wege, zwei Ergebnisse.
   **Fix:** Kachel-Edit bei Spielern zusätzlich `updatePlayerProfile` aufrufen (oder Max-HP dort sperren).
 
-- [ ] **15. Alte Profile blockieren neue Spieler**
+- [x] **15. Alte Profile blockieren neue Spieler**
   `App.jsx:17-23` — sobald `dnd-player-profiles` existiert, wird `PLAYER_DEFAULTS` komplett ignoriert. Ein im Code ergänzter Charakter taucht bei niemandem auf, der die App schon benutzt hat. Kaputte Einträge ohne `maxHp` erzeugen `NaN`-HP.
   **Fix:** Merge nach `id` statt Ersetzen, plus Validierung/Defaults pro Feld. **Blockiert Punkt 26 (Sora).**
 
-- [ ] **16. Kommentar widerspricht Code**
+- [x] **16. Kommentar widerspricht Code**
   `App.jsx:582-583`: „An active scene pauses during combat and resumes afterwards (if not stopped)." — `startCombat` und `resumeCombat` setzen aber `setAmbienceScene(null)`, die Szene kommt nie zurück.
   **Fix:** Entweder Kommentar korrigieren oder das Verhalten tatsächlich implementieren (Szene merken und nach Kampfende wiederherstellen).
 

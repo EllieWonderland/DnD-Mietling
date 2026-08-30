@@ -27,7 +27,6 @@ export default function SessionSetup({
   const [initiatives, setInitiatives] = useState({})
   const [editingId, setEditingId] = useState(null)
   const [editName, setEditName] = useState('')
-  const [editMaxHp, setEditMaxHp] = useState('')
 
   function toggle(id) {
     setSelected(prev =>
@@ -42,13 +41,11 @@ export default function SessionSetup({
   function startEditProfile(p) {
     setEditingId(p.id)
     setEditName(p.name)
-    setEditMaxHp(String(p.maxHp))
   }
 
   function saveProfile() {
     const name = editName.trim() || players.find(p => p.id === editingId)?.name || editingId
-    const maxHp = Math.max(1, parseInt(editMaxHp) || 1)
-    onUpdateProfile(editingId, name, maxHp)
+    onUpdateProfile(editingId, name)
     setEditingId(null)
   }
 
@@ -82,18 +79,6 @@ export default function SessionSetup({
                     placeholder="Name"
                     autoFocus
                   />
-                  <div className="profile-edit-hp-group">
-                    <span className="profile-edit-label">Max HP</span>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      className="profile-edit-hp"
-                      value={editMaxHp}
-                      onChange={e => setEditMaxHp(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') saveProfile(); if (e.key === 'Escape') cancelEdit() }}
-                      min="1"
-                    />
-                  </div>
                   <button className="profile-save-btn" onClick={saveProfile} title="Speichern">✓</button>
                   <button className="profile-cancel-btn" onClick={cancelEdit} title="Abbrechen">✕</button>
                 </div>
@@ -107,7 +92,6 @@ export default function SessionSetup({
                       className="player-checkbox"
                     />
                     <span className="player-name">{p.name}</span>
-                    <span className="player-hp-hint">({p.maxHp} HP)</span>
                   </label>
                   <div className="player-row-right">
                     {selected.includes(p.id) && (
