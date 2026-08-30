@@ -1,0 +1,85 @@
+.tv-connect {
+  width: 100%;
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+.tv-connect-open { border-color: var(--gold); }
+
+.tv-connect-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  background: transparent;
+  color: var(--text-main);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.tv-connect-room {
+  font-weight: 400;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+}
+
+.tv-connect-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 18px 16px;
+}
+
+.tv-connect-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+.tv-connect-url {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--bg-dark);
+  border: 1px solid var(--gray-dim);
+  color: var(--gold-light);
+  font-size: 0.78rem;
+  word-break: break-all;
+  user-select: all;
+}
+
+.tv-connect-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tv-connect-btn {
+  padding: 9px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: linear-gradient(180deg, #3a2800, #2a1800);
+  color: var(--gold);
+  border: 1px solid var(--border-gold);
+}
+
+.tv-connect-btn-ghost {
+  background: transparent;
+  color: var(--text-dim);
+  border-color: var(--gray-dim);
+  font-weight: 400;
+}
+
+.tv-connect-armed {
+  border-color: var(--red-bright);
+  color: #ff8888;
+  background: #2a1010;
+  font-weight: 700;
+}

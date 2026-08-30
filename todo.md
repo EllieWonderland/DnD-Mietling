@@ -15,7 +15,7 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 | # | Kategorie | Punkte | Status |
 |---|-----------|--------|--------|
 | 1 | 🔴 Kritisch — Datenverlust im Kampf | 1–4 | ✅ erledigt |
-| 2 | 🟠 Sicherheit | 5–9 | offen |
+| 2 | 🟠 Sicherheit | 5–9 | ✅ erledigt |
 | 3 | 🟡 Logik & Stabilität | 10–16 | offen |
 | 4 | 🔵 UX / UI | 17–25 | offen |
 | 5 | 🧹 Aufräumen & Spielrunde | 26–31 | offen |
@@ -46,23 +46,24 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 
 ## 🟠 Kategorie 2 — Sicherheit
 
-- [ ] **5. Das Relay ist komplett offen**
+- [x] **5. Das Relay ist komplett offen**
   `server.js` und der Cloudflare-Worker haben keine Authentifizierung und kein Raum-/Session-Konzept. Wer `wss://dnd-mietling-ws.janafisenko.workers.dev` kennt, bekommt beim Connect sofort den letzten State (Charaktername, HP, Zustände) und kann beliebige `STATE`-Nachrichten senden, die der TV ungefiltert übernimmt. `.workers.dev`-Hostnamen sind nicht geheim.
   **Fix:** Session-Token in der URL (`?room=<zufall>`), Worker relayt nur innerhalb eines Raums. Controller erzeugt den Raum, Display bekommt ihn per QR-Code (siehe Punkt 18).
 
-- [ ] **6. Kein Origin-Check beim Upgrade**
+- [x] **6. Kein Origin-Check beim Upgrade**
   `server.js:18-24` — WebSockets unterliegen nicht der Same-Origin-Policy. Jede Webseite im selben Browser kann `ws://localhost:3001` verbinden und mitlesen/injizieren.
   **Fix:** `req.headers.origin` gegen eine Allowlist prüfen, sonst `socket.destroy()`.
 
-- [ ] **7. Relay validiert nichts**
+- [x] **7. Relay validiert nichts**
   `server.js:29-38` — jede geparste JSON wird 1:1 an alle Clients weitergereicht (nicht nur `STATE`/`COMPACT_SCROLL`), `lastState` wird unbegrenzt gespeichert, keine Größen- oder Ratenbegrenzung.
   **Fix:** Nachrichtentyp gegen eine Whitelist prüfen, Payload-Größe begrenzen, Rate-Limit pro Client. Zusätzlich clientseitig die State-Form prüfen (hängt mit Punkt 4 zusammen).
 
-- [ ] **8. Der Worker-Quellcode liegt nicht im Repo**
+- [x] **8. Der Worker-Quellcode liegt nicht im Repo**
   `git ls-files` findet kein `worker/`. Die Komponente, die in Produktion die gesamte TV-Synchronisation trägt, ist nicht versioniert — nicht reviewbar, nicht reproduzierbar, bei Verlust nicht wiederherstellbar.
   **Fix:** `worker/` (inkl. `wrangler.toml`) ins Repo aufnehmen.
+  **Erledigt:** `worker/src/index.js` + `worker/wrangler.toml` + `worker/README.md` neu geschrieben (Durable Object je Raum). ⚠️ Muss noch per `cd worker && npx wrangler deploy` ausgerollt werden — bis dahin läuft in Produktion der alte, raumlose Worker (funktioniert weiter, ignoriert aber `?room=`).
 
-- [ ] **9. Ungeschützte `localStorage`-Schreibzugriffe**
+- [x] **9. Ungeschützte `localStorage`-Schreibzugriffe**
   `App.jsx:32`, `App.jsx:42`, `App.jsx:462` haben kein `try/catch` — anders als die übrigen. In Safari-Privatmodus oder bei vollem Speicher wirft `setItem`; da `savePlayerHP` bei *jeder* Teilnehmeränderung läuft, killt das die App bei jedem Klick.
   **Fix:** Einheitlicher `safeStorage`-Wrapper mit `try/catch` für alle Zugriffe.
 
@@ -109,6 +110,7 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 - [ ] **18. Der Display-Modus ist nirgends auffindbar**
   `?mode=display` steht nur im Quelltext und in der Roadmap. Kein Button, kein QR-Code, kein Hinweis in der App.
   **Fix:** Im Setup ein „TV verbinden"-Panel mit vollständiger URL + QR-Code (kombinierbar mit dem Raum-Token aus Punkt 5).
+  **Teilweise erledigt (mit Punkt 5):** `TvConnectPanel` im Setup zeigt die vollständige Adresse inkl. Raum-Code mit Kopieren-Button. Offen bleibt der QR-Code.
 
 - [ ] **19. „Verwerfen" im Fortsetzen-Dialog löscht sofort**
   `App.jsx:657` — ein Tipp, keine Rückfrage, Kampf weg.

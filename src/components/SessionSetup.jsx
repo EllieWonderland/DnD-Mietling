@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import Soundboard from './Soundboard.jsx'
+import TvConnectPanel from './TvConnectPanel.jsx'
 import './SessionSetup.css'
 
 export default function SessionSetup({
   players,
+  room,
   onStart,
   onUpdateProfile,
   playingMusicKey,
@@ -142,6 +144,8 @@ export default function SessionSetup({
         >
           Kampf Beginnen
         </button>
+
+        <TvConnectPanel room={room} />
 
         <div className="setup-soundboard">
           <Soundboard

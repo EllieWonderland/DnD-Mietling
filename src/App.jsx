@@ -4,6 +4,8 @@ import InitiativeTracker from './components/InitiativeTracker.jsx'
 import AmbienceScene from './components/AmbienceScene.jsx'
 import ScreenKeepAlive from './components/ScreenKeepAlive.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import { readJSON, writeJSON, storageRemove } from './utils/safeStorage.js'
+import { getRoomId } from './utils/session.js'
 import { MUSIC_TRACKS, EFFECT_TRACKS, VIDEO_SCENES } from './components/soundboardData.jsx'
 import mietlingLogo from './assets/images/mietling.png'
 
@@ -16,31 +18,29 @@ const PLAYER_DEFAULTS = [
 ]
 
 function loadPlayerProfiles() {
-  try {
-    const saved = JSON.parse(localStorage.getItem('dnd-player-profiles') || 'null')
-    if (Array.isArray(saved) && saved.length > 0) return saved
-    return null
-  } catch { return null }
+  const saved = readJSON('dnd-player-profiles', null)
+  return Array.isArray(saved) && saved.length > 0 ? saved : null
 }
 
 function loadPlayerHP() {
-  try { return JSON.parse(localStorage.getItem('dnd-player-hp') || '{}') } catch { return {} }
+  const saved = readJSON('dnd-player-hp', {})
+  return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {}
 }
 
 function savePlayerHP(participants) {
   const hp = {}
   participants.filter(p => p.type === 'player').forEach(p => { hp[p.id] = p.hp })
-  localStorage.setItem('dnd-player-hp', JSON.stringify(hp))
+  writeJSON('dnd-player-hp', hp)
 }
 
 function saveCombatState(state) {
-  try { localStorage.setItem('dnd-combat-state', JSON.stringify(state)) } catch {}
+  writeJSON('dnd-combat-state', state)
 }
 function loadCombatState() {
-  try { return JSON.parse(localStorage.getItem('dnd-combat-state') || 'null') } catch { return null }
+  return readJSON('dnd-combat-state', null)
 }
 function clearCombatState() {
-  localStorage.removeItem('dnd-combat-state')
+  storageRemove('dnd-combat-state')
 }
 
 // Smoothly fade audio volume on a single element to save memory.
@@ -116,6 +116,11 @@ const APP_MODE = new URLSearchParams(window.location.search).get('mode') === 'di
   ? 'display'
   : 'controller'
 
+// Everything is relayed inside one room. The controller owns the id and hands
+// it to the TV through the connection URL; without it the display connects to
+// nothing, which is the whole point — the relay hostname itself is public.
+const ROOM = getRoomId(APP_MODE)
+
 export default function App() {
   const [phase, setPhase] = useState('setup')
   const [participants, setParticipants] = useState([])
@@ -128,9 +133,7 @@ export default function App() {
   const [playingMusicKey, setPlayingMusicKey] = useState(null)
   const [masterVolume, setMasterVolume] = useState(0.72)
   const [ambienceScene, setAmbienceScene] = useState(null)
-  const [ambienceFits, setAmbienceFits] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('dnd-ambience-fits')) || {} } catch { return {} }
-  })
+  const [ambienceFits, setAmbienceFits] = useState(() => readJSON('dnd-ambience-fits', {}) || {})
   const [effectTrigger, setEffectTrigger] = useState(null)
   const [audioUnlocked, setAudioUnlocked] = useState(false)
   const [playerProfiles, setPlayerProfiles] = useState(() => loadPlayerProfiles() || PLAYER_DEFAULTS)
@@ -155,8 +158,11 @@ export default function App() {
 
   // WebSocket & BroadcastChannel: sync state & scroll events
   useEffect(() => {
+    if (!ROOM) return // display opened without a room — nothing to connect to
     let closed = false
-    const bc = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('dnd-mietling') : null
+    const bc = typeof BroadcastChannel !== 'undefined'
+      ? new BroadcastChannel(`dnd-mietling-${ROOM}`)
+      : null
     bcRef.current = bc
 
     if (bc) {
@@ -189,9 +195,12 @@ export default function App() {
 
       if (!wsUrl) return // no server configured — silently skip WebSocket
 
+      // The room travels in the query string; the relay never forwards across rooms.
+      const roomUrl = `${wsUrl}${wsUrl.includes('?') ? '&' : '?'}room=${encodeURIComponent(ROOM)}`
+
       function connect() {
         if (closed) return
-        const ws = new WebSocket(wsUrl)
+        const ws = new WebSocket(roomUrl)
         wsRef.current = ws
 
         ws.onopen = () => {
@@ -488,7 +497,7 @@ export default function App() {
     if (!sceneKey) return
     setAmbienceFits(prev => {
       const next = { ...prev, [sceneKey]: (prev[sceneKey] === 'cover' ? 'contain' : 'cover') }
-      try { localStorage.setItem('dnd-ambience-fits', JSON.stringify(next)) } catch {}
+      writeJSON('dnd-ambience-fits', next)
       return next
     })
   }
@@ -496,7 +505,7 @@ export default function App() {
   function updatePlayerProfile(id, name, maxHp) {
     setPlayerProfiles(prev => {
       const next = prev.map(p => p.id === id ? { ...p, name, maxHp } : p)
-      localStorage.setItem('dnd-player-profiles', JSON.stringify(next))
+      writeJSON('dnd-player-profiles', next)
       return next
     })
   }
@@ -551,6 +560,23 @@ export default function App() {
 
   // ── DISPLAY MODE (TV) ──────────────────────────────────────────────────────
   if (APP_MODE === 'display') {
+    // Without a room the TV would have to listen to the whole relay. It waits
+    // for the link from the setup screen instead.
+    if (!ROOM) {
+      return (
+        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '24px', padding: 'clamp(20px, 4vh, 48px)', boxSizing: 'border-box', textAlign: 'center' }}>
+          <img src={mietlingLogo} alt="DnD Mietling" style={{ maxWidth: '320px', width: '60vw', objectFit: 'contain' }} />
+          <div style={{ color: 'var(--gold)', fontFamily: 'var(--font-title)', fontSize: '1.3rem', letterSpacing: '0.08em' }}>
+            Kein Raum in der Adresse
+          </div>
+          <div style={{ color: 'var(--text-dim)', maxWidth: '32em', lineHeight: 1.7 }}>
+            Diese Anzeige braucht die Verbindungs-Adresse aus dem Setup-Bildschirm
+            („TV verbinden"). Sie enthält den Raum-Code dieser Session.
+          </div>
+        </div>
+      )
+    }
+
     if (!audioUnlocked) {
       return (
         <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '32px', padding: 'clamp(20px, 4vh, 48px)', boxSizing: 'border-box' }}>
@@ -702,6 +728,7 @@ export default function App() {
       {phase === 'setup' && (
         <SessionSetup
           players={playerProfiles}
+          room={ROOM}
           onUpdateProfile={updatePlayerProfile}
           onStart={startCombat}
           playingMusicKey={playingMusicKey}
