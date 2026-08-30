@@ -3,6 +3,7 @@ import SessionSetup from './components/SessionSetup.jsx'
 import InitiativeTracker from './components/InitiativeTracker.jsx'
 import AmbienceScene from './components/AmbienceScene.jsx'
 import ScreenKeepAlive from './components/ScreenKeepAlive.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { MUSIC_TRACKS, EFFECT_TRACKS, VIDEO_SCENES } from './components/soundboardData.jsx'
 import mietlingLogo from './assets/images/mietling.png'
 
@@ -75,6 +76,42 @@ function makePlayer(pid, savedHP, profiles) {
   }
 }
 
+// The TV renders whatever the relay hands it. A malformed payload (foreign
+// sender, half-written message, older app version) must not reach the render
+// tree — a missing `participants` alone is enough to blank the screen.
+function isValidDisplayState(s) {
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return false
+  if (!Array.isArray(s.participants)) return false
+  if (!s.participants.every(p => p && typeof p === 'object' && typeof p.id === 'string')) return false
+  if (typeof s.round !== 'number' || !Number.isFinite(s.round)) return false
+  if (typeof s.activeIndex !== 'number' || !Number.isFinite(s.activeIndex)) return false
+  if (s.phase !== 'setup' && s.phase !== 'combat') return false
+  return true
+}
+
+// Fill in what a valid-but-sparse state leaves out so the render path never
+// meets undefined where it expects a list or a flag.
+function normalizeDisplayState(s) {
+  return {
+    ...s,
+    participants: s.participants.map(p => ({
+      ...p,
+      conditions: Array.isArray(p.conditions) ? p.conditions : [],
+      deathSaves: p.deathSaves && typeof p.deathSaves === 'object'
+        ? p.deathSaves
+        : { successes: 0, failures: 0 },
+    })),
+    ambienceFits: s.ambienceFits && typeof s.ambienceFits === 'object' ? s.ambienceFits : {},
+    victory: !!s.victory,
+    defeat: !!s.defeat,
+  }
+}
+
+function isValidCompactScroll(scroll) {
+  if (!scroll || typeof scroll !== 'object') return false
+  return typeof scroll.scrollRatio === 'number' || typeof scroll.scrollTop === 'number'
+}
+
 const APP_MODE = new URLSearchParams(window.location.search).get('mode') === 'display'
   ? 'display'
   : 'controller'
@@ -128,9 +165,9 @@ export default function App() {
           lastMsgAtRef.current = Date.now()
           const msg = event.data
           if (msg?.type === 'STATE') {
-            setDisplayState(msg.state)
+            if (isValidDisplayState(msg.state)) setDisplayState(normalizeDisplayState(msg.state))
           } else if (msg?.type === 'COMPACT_SCROLL') {
-            setDisplayCompactScroll(msg.scroll)
+            if (isValidCompactScroll(msg.scroll)) setDisplayCompactScroll(msg.scroll)
           }
         }
       }
@@ -170,9 +207,9 @@ export default function App() {
             try {
               const msg = JSON.parse(event.data)
               if (msg.type === 'STATE') {
-                setDisplayState(msg.state)
+                if (isValidDisplayState(msg.state)) setDisplayState(normalizeDisplayState(msg.state))
               } else if (msg.type === 'COMPACT_SCROLL') {
-                setDisplayCompactScroll(msg.scroll)
+                if (isValidCompactScroll(msg.scroll)) setDisplayCompactScroll(msg.scroll)
               }
             } catch {}
           }
@@ -482,17 +519,11 @@ export default function App() {
     setPhase('combat')
   }
 
+  // Victory/defeat detection lives in InitiativeTracker — it is the only place
+  // that knows whether the DM already waved a result away ("Doch weiterkämpfen").
   function updateParticipants(next) {
     setParticipants(next)
     savePlayerHP(next)
-    if (victory || defeat) return
-    const monsters = next.filter(p => p.type === 'monster')
-    const players = next.filter(p => p.type === 'player')
-    const allMonstersDead = monsters.length > 0 && monsters.every(m => m.dead)
-    // Player counts as down at 0 HP OR active death save (dying).
-    const allPlayersDown = players.length > 0 && players.every(p => p.hp <= 0 || p.dying)
-    if (allMonstersDead) setVictory(true)
-    else if (allPlayersDown && monsters.some(m => !m.dead)) setDefeat(true)
   }
 
   function nextTurn() {
@@ -566,6 +597,7 @@ export default function App() {
         <ScreenKeepAlive enabled={true} />
         {/* The combat screen always takes precedence. An active scene pauses
             during combat and resumes afterwards (if not stopped). */}
+        <ErrorBoundary label="TV-Anzeige">
         {dp === 'combat' ? (
           <InitiativeTracker
             participants={dPart}
@@ -595,6 +627,7 @@ export default function App() {
             <img src={mietlingLogo} alt="DnD Mietling" style={{ maxWidth: '400px', width: '60vw', objectFit: 'contain' }} />
           </div>
         )}
+        </ErrorBoundary>
       </div>
     )
   }

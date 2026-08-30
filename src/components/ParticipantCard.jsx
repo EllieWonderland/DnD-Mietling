@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import ConditionsMenu from './ConditionsMenu.jsx'
 import ColorPicker from './ColorPicker.jsx'
 import { getMonsterColor } from '../utils/monsterColors.js'
@@ -33,11 +33,17 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
   const [editInit, setEditInit] = useState('')
   const [editMaxHp, setEditMaxHp] = useState('')
   const [editColor, setEditColor] = useState(null)
+  const [editDamage, setEditDamage] = useState('')
+  const [confirmRemove, setConfirmRemove] = useState(false)
+  const confirmTimer = useRef(null)
+
+  useEffect(() => () => { if (confirmTimer.current) clearTimeout(confirmTimer.current) }, [])
 
   function enterEdit() {
     setEditName(p.name)
     setEditInit(String(p.initiative))
     setEditMaxHp(String(p.maxHp || 0))
+    setEditDamage(String(p.damage || 0))
     setEditColor(p.color || null)
     setEditMode(true)
     setShowConditions(false)
@@ -52,7 +58,10 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
       changes.hp = Math.min(p.hp, maxHp)
     }
     if (p.type === 'monster') {
-      changes.bloodied = maxHp > 0 && (p.damage || 0) >= maxHp / 2
+      // A mistyped damage total is fixed here instead of by deleting the monster.
+      const damage = Math.max(0, parseInt(editDamage) || 0)
+      changes.damage = damage
+      changes.bloodied = maxHp > 0 && damage >= maxHp / 2
       changes.color = editColor
     }
     onUpdate(changes)
@@ -87,12 +96,15 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
     setConcDmgInput('')
   }
 
-  function applyDamage() {
+  // sign +1 adds damage, -1 takes it back (mistyped total or healing).
+  // Bloodied follows the damage in both directions; with no max HP the manual
+  // 🩸 toggle stays untouched.
+  function applyDamage(sign = 1) {
     const val = parseInt(damageInput)
     if (isNaN(val) || val <= 0) return
-    const newDamage = Math.max(0, (p.damage || 0) + val)
-    const isNowBloodied = p.maxHp > 0 && newDamage >= p.maxHp / 2
-    onUpdate({ damage: newDamage, bloodied: isNowBloodied || p.bloodied })
+    const newDamage = Math.max(0, (p.damage || 0) + sign * val)
+    const bloodied = p.maxHp > 0 ? newDamage >= p.maxHp / 2 : p.bloodied
+    onUpdate({ damage: newDamage, bloodied })
     setDamageInput('')
   }
 
@@ -124,11 +136,38 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
     } else {
       const newCount = ds.failures === index + 1 ? index : index + 1
       if (newCount >= 3) {
-        onRemove()
+        // The third failure kills the character — it never deletes them.
+        // The card stays on the board, greyed out and marked ☠. HP stays as it
+        // is: it is persisted per player and must not carry a 0 into the next
+        // combat, and `dead` alone already counts as down everywhere.
+        onUpdate({ dead: true, dying: false, deathSaves: { successes: 0, failures: 3 } })
       } else {
         onUpdate({ deathSaves: { ...ds, failures: newCount } })
       }
     }
+  }
+
+  function revive() {
+    onUpdate({
+      dead: false,
+      dying: false,
+      hp: Math.max(1, p.hp || 0),
+      deathSaves: { successes: 0, failures: 0 },
+    })
+  }
+
+  // Removing a participant is not undoable, so ✕ always asks first. The prompt
+  // disarms itself after a few seconds so no card is left in a pending state.
+  function requestRemove() {
+    if (confirmRemove) {
+      if (confirmTimer.current) clearTimeout(confirmTimer.current)
+      setConfirmRemove(false)
+      onRemove()
+      return
+    }
+    setConfirmRemove(true)
+    if (confirmTimer.current) clearTimeout(confirmTimer.current)
+    confirmTimer.current = setTimeout(() => setConfirmRemove(false), 4000)
   }
 
   function toggleCondition(cond) {
@@ -147,9 +186,10 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
   const cardClass = [
     'participant-card',
     p.type === 'player' ? 'card-player' : p.type === 'ally' ? 'card-ally' : 'card-monster',
-    isActive ? 'card-active' : '',
-    p.bloodied ? 'card-bloodied' : '',
-    p.dying ? 'card-dying' : '',
+    isActive && !p.dead ? 'card-active' : '',
+    p.bloodied && !p.dead ? 'card-bloodied' : '',
+    p.dying && !p.dead ? 'card-dying' : '',
+    p.dead ? 'card-dead' : '',
     p.color ? `card-monster-has-color` : '',
     displayOnly ? 'card-display-only' : '',
   ].filter(Boolean).join(' ')
@@ -196,6 +236,20 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                 min="1"
               />
             </div>
+            {p.type === 'monster' && (
+              <div className="card-edit-num-group">
+                <span className="card-edit-label">Schaden</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  className="card-edit-num"
+                  value={editDamage}
+                  onChange={e => setEditDamage(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') confirmEdit(); if (e.key === 'Escape') setEditMode(false) }}
+                  min="0"
+                />
+              </div>
+            )}
           </div>
           {p.type === 'monster' && (
             <div className="card-edit-color-field">
@@ -207,6 +261,31 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
             <button className="card-edit-confirm" onClick={confirmEdit}>✓ Speichern</button>
             <button className="card-edit-cancel" onClick={() => setEditMode(false)}>Abbrechen</button>
           </div>
+        </div>
+      ) : p.dead ? (
+        /* ── GEFALLEN (Spieler / Verbündeter) ── */
+        <div className="card-body card-dead-body">
+          <div className="card-name-row">
+            <span className="card-dead-skull" aria-hidden="true">☠</span>
+            <span className={`card-name${p.type === 'ally' ? ' ally-name' : ''}`}>{p.name}</span>
+            <span className="card-dead-label">Gefallen</span>
+          </div>
+          {!displayOnly && (
+            <div className="card-dead-actions">
+              <button
+                className="monster-btn revive-btn"
+                onClick={revive}
+                title="Wiederbeleben"
+                aria-label={`${p.name} wiederbeleben`}
+              >💚 Wiederbeleben</button>
+              <button
+                className={`monster-btn remove-btn${confirmRemove ? ' remove-armed' : ''}`}
+                onClick={requestRemove}
+                title={confirmRemove ? 'Nochmal tippen zum Entfernen' : 'Aus der Liste entfernen'}
+                aria-label={confirmRemove ? `${p.name} wirklich entfernen` : `${p.name} entfernen`}
+              >{confirmRemove ? 'Wirklich entfernen?' : '✕ Entfernen'}</button>
+            </div>
+          )}
         </div>
       ) : p.type === 'player' ? (
         /* ── PLAYER LAYOUT ── */
@@ -411,7 +490,11 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                   <button className="ally-btn ally-dmg-btn" onClick={applyAllyDamage}>-Dmg</button>
                   <button className="ally-btn ally-heal-btn" onClick={applyAllyHeal}>+Heil</button>
                   <div className="monster-sep" />
-                  <button className="monster-btn remove-btn" onClick={onRemove} title="Entfernen">✕</button>
+                  <button
+                    className={`monster-btn remove-btn${confirmRemove ? ' remove-armed' : ''}`}
+                    onClick={requestRemove}
+                    title={confirmRemove ? 'Nochmal tippen zum Entfernen' : 'Entfernen'}
+                  >{confirmRemove ? 'Wirklich?' : '✕'}</button>
                 </>
               )}
             </div>
@@ -444,7 +527,12 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                 </div>
               </div>
               {!displayOnly && (
-                <button className="monster-btn remove-btn" style={{ marginLeft: 'auto' }} onClick={onRemove} title="Entfernen">✕</button>
+                <button
+                  className={`monster-btn remove-btn${confirmRemove ? ' remove-armed' : ''}`}
+                  style={{ marginLeft: 'auto' }}
+                  onClick={requestRemove}
+                  title={confirmRemove ? 'Nochmal tippen zum Entfernen' : 'Entfernen'}
+                >{confirmRemove ? 'Wirklich?' : '✕'}</button>
               )}
             </div>
           )}
@@ -518,7 +606,8 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                   placeholder="Dmg"
                   min="1"
                 />
-                <button className="dmg-btn" onClick={applyDamage}>+Dmg</button>
+                <button className="dmg-btn" onClick={() => applyDamage(1)}>+Dmg</button>
+                <button className="dmg-btn dmg-btn-minus" onClick={() => applyDamage(-1)} title="Schaden zurücknehmen / heilen">-Dmg</button>
                 <button
                   className={`monster-btn ${p.bloodied ? 'bloodied-active' : ''}`}
                   onClick={() => onUpdate({ bloodied: !p.bloodied })}
@@ -527,7 +616,11 @@ export default function ParticipantCard({ participant: p, isActive, onUpdate, on
                 <div className="monster-sep" />
                 <button className="monster-btn" onClick={onDuplicate} title="Duplizieren">⧉</button>
                 <button className="monster-btn kill-btn" onClick={onKill} title="Besiegt">☠</button>
-                <button className="monster-btn remove-btn" onClick={onRemove} title="Entfernen">✕</button>
+                <button
+                  className={`monster-btn remove-btn${confirmRemove ? ' remove-armed' : ''}`}
+                  onClick={requestRemove}
+                  title={confirmRemove ? 'Nochmal tippen zum Entfernen' : 'Entfernen'}
+                >{confirmRemove ? 'Wirklich?' : '✕'}</button>
               </>
             )}
           </div>

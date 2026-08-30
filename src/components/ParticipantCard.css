@@ -776,3 +776,63 @@
 }
 
 
+
+/* ── GEFALLEN: Spieler/Verbündete bleiben sichtbar, statt gelöscht zu werden ── */
+.card-dead {
+  border-color: #4a4440 !important;
+  background: #16130f !important;
+  box-shadow: none !important;
+  opacity: 0.62;
+}
+
+.card-dead .card-initiative { color: var(--gray-text) !important; }
+.card-dead .card-name { color: var(--gray-text); text-decoration: line-through; }
+
+.card-dead-body { gap: 8px; }
+
+.card-dead-skull {
+  font-size: 1.3rem;
+  line-height: 1;
+  color: #cc5555;
+  flex-shrink: 0;
+}
+
+.card-dead-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gray-text);
+  border: 1px solid var(--gray-dim);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+
+.card-dead-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.revive-btn {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.revive-btn:hover { border-color: #4a9a5a; color: #8fe0a0; background: #0f2214; }
+
+/* Zweistufiges Entfernen: der erste Tipp scharfschaltet nur */
+.remove-armed {
+  border-color: var(--red-bright) !important;
+  color: #ff8888 !important;
+  background: #2a1010 !important;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.dmg-btn-minus {
+  background: #1a3a24;
+  color: #88dd9e;
+  border-color: #2a7a44;
+}
+.dmg-btn-minus:hover { background: #225532; }

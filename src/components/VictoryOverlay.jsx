@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import orchestralWin from '../orchestral_win.mp3'
 import './VictoryOverlay.css'
 
-export default function VictoryOverlay({ onClose, muted = false }) {
+export default function VictoryOverlay({ onEnd, onContinue, muted = false, displayOnly = false }) {
   const canvasRef = useRef(null)
 
   useEffect(() => {
@@ -51,13 +51,20 @@ export default function VictoryOverlay({ onClose, muted = false }) {
     }
   }, [])
 
+  // No backdrop handler: ending a combat wipes the autosave, so it must take a
+  // deliberate press on the button — not a stray tap next to it.
   return (
-    <div className="victory-overlay" onClick={onClose}>
+    <div className="victory-overlay">
       <canvas ref={canvasRef} className="victory-canvas" />
       <div className="victory-content">
         <div className="victory-text">VICTORY</div>
         <div className="victory-sub">Der Kampf ist gewonnen!</div>
-        <button className="victory-btn" onClick={onClose}>Weiter</button>
+        {!displayOnly && (
+          <div className="overlay-actions">
+            <button className="victory-btn" onClick={onEnd}>Kampf beenden</button>
+            <button className="overlay-btn-ghost" onClick={onContinue}>Doch weiterkämpfen</button>
+          </div>
+        )}
       </div>
     </div>
   )

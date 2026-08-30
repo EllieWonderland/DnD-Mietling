@@ -14,7 +14,7 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 
 | # | Kategorie | Punkte | Status |
 |---|-----------|--------|--------|
-| 1 | 🔴 Kritisch — Datenverlust im Kampf | 1–4 | offen |
+| 1 | 🔴 Kritisch — Datenverlust im Kampf | 1–4 | ✅ erledigt |
 | 2 | 🟠 Sicherheit | 5–9 | offen |
 | 3 | 🟡 Logik & Stabilität | 10–16 | offen |
 | 4 | 🔵 UX / UI | 17–25 | offen |
@@ -25,20 +25,20 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 
 ## 🔴 Kategorie 1 — Kritisch: Datenverlust im laufenden Kampf
 
-- [ ] **1. Versehentlicher Sieg beendet den Kampf unwiderruflich**
+- [x] **1. Versehentlicher Sieg beendet den Kampf unwiderruflich**
   `InitiativeTracker.jsx:248` setzt `victory`, sobald das letzte Monster **entfernt** wird — nicht nur wenn es stirbt. Monster versehentlich anlegen + ✕ → Siegesfanfare.
   Dazu `InitiativeTracker.jsx:644`: `onClose={() => { setVictory(false); onEndCombat() }}` — jeder Klick, auch auf den Hintergrund, beendet den Kampf und ruft `clearCombatState()`. Autosave weg, Reload rettet nichts. Gilt genauso für Defeat (`:648`).
   **Fix:** Sieg nur bei `dead`, nicht bei `remove`. Overlay bekommt zwei getrennte Aktionen: „Kampf beenden" und „Doch weiterkämpfen" (nur `setVictory(false)`). Backdrop-Klick darf nicht beenden.
 
-- [ ] **2. Toter Spielercharakter verschwindet spurlos**
+- [x] **2. Toter Spielercharakter verschwindet spurlos**
   `ParticipantCard.jsx:126-127` — der 3. Misserfolgs-Kreis ruft direkt `onRemove()`, bei Spielern also Löschen aus der Liste. Ein Fehltipp auf einen 12×12-px-Kreis löscht den Charakter: keine Rückfrage, kein Undo, keine ☠-Markierung.
   **Fix:** Statt Löschen einen `dead`-Zustand für Spieler/Verbündete (Kachel bleibt sichtbar, ausgegraut, ☠). Entfernen nur explizit über ✕ mit Rückfrage.
 
-- [ ] **3. Monster-Schaden ist nicht korrigierbar**
+- [x] **3. Monster-Schaden ist nicht korrigierbar**
   Es gibt nur `+Dmg` — kein `-Dmg`, keine Heilung, und `confirmEdit` (`ParticipantCard.jsx:47-60`) fasst `damage` nicht an. Vertippt bei „37" statt „7" → Monster löschen und neu anlegen. Verbündete haben `+Heil`, Monster nicht.
   **Fix:** `-Dmg`-Button analog zu `+Heil`, plus `damage` im Edit-Modus editierbar machen.
 
-- [ ] **4. Kein Error Boundary**
+- [x] **4. Kein Error Boundary**
   Nirgends vorhanden. Jeder Render-Fehler weißt Tablet *oder* TV mitten in der Session ab. Besonders kritisch im Display-Modus, weil dort ungeprüfte Fremddaten gerendert werden: State ohne `participants` → `participants.filter` in `InitiativeTracker.jsx:63` crasht.
   **Fix:** `ErrorBoundary`-Komponente um `App` (und separat um den Display-Zweig) mit „Neu laden"-Button. Zusätzlich Shape-Validierung des empfangenen States vor `setDisplayState`.
 

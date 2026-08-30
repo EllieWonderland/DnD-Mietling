@@ -27,6 +27,9 @@ export default function InitiativeTracker({
   const [concentrationAlert, setConcentrationAlert] = useState(null)
   const [showSoundboard, setShowSoundboard] = useState(false)
   const [cTab, setCTab] = useState(null) // 'music' | 'effects' | 'scenes' | null
+  // "Doch weiterkämpfen" must not re-announce the same result on the next
+  // render. The lock lifts as soon as the board no longer meets the condition.
+  const [dismissedResult, setDismissedResult] = useState(null) // 'victory' | 'defeat' | null
   // Swapping places is only allowed before the first action of a combat. A
   // combat resumed mid-fight is therefore already locked.
   const [canDrag, setCanDrag] = useState(!displayOnly && round === 1 && activeIndex === 0)
@@ -137,14 +140,17 @@ export default function InitiativeTracker({
     const monsters = participants.filter(p => p.type === 'monster')
     const players = participants.filter(p => p.type === 'player')
     const allMonstersDead = monsters.length > 0 && monsters.every(m => m.dead)
-    // Player is down if HP is 0 OR death save is active (dying).
-    const allPlayersDown = players.length > 0 && players.every(p => p.hp <= 0 || p.dying)
+    // Player is down if HP is 0, a death save is running (dying) or they died.
+    const allPlayersDown = players.length > 0 && players.every(p => p.hp <= 0 || p.dying || p.dead)
     if (allMonstersDead) {
-      setVictory(true)
+      if (dismissedResult !== 'victory') setVictory(true)
     } else if (allPlayersDown && monsters.some(m => !m.dead)) {
-      setDefeat(true)
+      if (dismissedResult !== 'defeat') setDefeat(true)
+    } else if (dismissedResult) {
+      // The situation changed — a later victory may be announced again.
+      setDismissedResult(null)
     }
-  }, [participants, victory, defeat, setVictory, setDefeat])
+  }, [participants, victory, defeat, dismissedResult, setVictory, setDefeat])
 
   function addMonster(name, initiative, hp, color = null) {
     const id = `monster-${monsterIdCounter++}`
@@ -243,9 +249,8 @@ export default function InitiativeTracker({
       const newVisible = next.filter(p => !(p.type === 'monster' && p.dead))
       setActiveIndex(Math.min(activeIndex, Math.max(0, newVisible.length - 1)))
     }
-    const hadMonsters = participants.some(p => p.type === 'monster')
-    const hasAliveMonsters = next.some(p => p.type === 'monster' && !p.dead)
-    if (hadMonsters && !hasAliveMonsters && !defeat) setVictory(true)
+    // Deliberately no victory check here: a monster that is taken off the list
+    // was never defeated. Only ☠ (killMonster) can win the fight.
   }
 
   function handleNextTurn() {
@@ -550,7 +555,8 @@ export default function InitiativeTracker({
 
         <div className="compact-order-panel" ref={compactPanelRef} onScroll={handleCompactPanelScroll}>
           {compactRows.map((p, cIdx) => {
-              const isDead = p.type === 'monster' && p.dead
+              // Fallen players/allies stay in the strip, just as dead monsters do.
+              const isDead = !!p.dead
               const isActive = !isDead && p.id === activeRowId
               const monsterCol = p.color ? getMonsterColor(p.color) : null
               return (
@@ -641,11 +647,21 @@ export default function InitiativeTracker({
       )}
 
       {victory && !defeat && (
-        <VictoryOverlay onClose={() => { setVictory(false); onEndCombat() }} muted={!displayOnly} />
+        <VictoryOverlay
+          onEnd={() => { setVictory(false); onEndCombat() }}
+          onContinue={() => { setDismissedResult('victory'); setVictory(false) }}
+          muted={!displayOnly}
+          displayOnly={displayOnly}
+        />
       )}
 
       {defeat && (
-        <DefeatOverlay onClose={() => { setDefeat(false); onEndCombat() }} muted={!displayOnly} />
+        <DefeatOverlay
+          onEnd={() => { setDefeat(false); onEndCombat() }}
+          onContinue={() => { setDismissedResult('defeat'); setDefeat(false) }}
+          muted={!displayOnly}
+          displayOnly={displayOnly}
+        />
       )}
     </div>
   )

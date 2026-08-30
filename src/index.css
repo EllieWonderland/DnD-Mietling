@@ -58,3 +58,32 @@ input {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-dark); }
 ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 3px; }
+
+/* Shared action row for the victory/defeat overlays. Ending a combat and
+   carrying on are two distinct presses — the backdrop does nothing. */
+.overlay-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.overlay-btn-ghost {
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-family: var(--font-title);
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--text-dim);
+  border: 1px solid var(--gray-dim);
+  transition: all 0.2s;
+}
+
+.overlay-btn-ghost:hover {
+  color: var(--text-main);
+  border-color: var(--text-dim);
+}

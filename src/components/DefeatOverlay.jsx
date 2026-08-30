@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import defeatOutro from '../defeat_outro.mp3'
 import './DefeatOverlay.css'
 
-export default function DefeatOverlay({ onClose, muted = false }) {
+export default function DefeatOverlay({ onEnd, onContinue, muted = false, displayOnly = false }) {
   const canvasRef = useRef(null)
 
   useEffect(() => {
@@ -52,13 +52,19 @@ export default function DefeatOverlay({ onClose, muted = false }) {
     }
   }, [])
 
+  // No backdrop handler — see VictoryOverlay: ending the combat drops the autosave.
   return (
-    <div className="defeat-overlay" onClick={onClose}>
+    <div className="defeat-overlay">
       <canvas ref={canvasRef} className="defeat-canvas" />
       <div className="defeat-content">
         <div className="defeat-text">NIEDERLAGE</div>
         <div className="defeat-sub">Die Gruppe ist gefallen...</div>
-        <button className="defeat-btn" onClick={onClose}>Neu starten</button>
+        {!displayOnly && (
+          <div className="overlay-actions">
+            <button className="defeat-btn" onClick={onEnd}>Kampf beenden</button>
+            <button className="overlay-btn-ghost" onClick={onContinue}>Doch weiterkämpfen</button>
+          </div>
+        )}
       </div>
     </div>
   )
