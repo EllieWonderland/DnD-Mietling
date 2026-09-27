@@ -4,6 +4,7 @@ import Modal from './Modal.jsx'
 import ConnectionBadge from './ConnectionBadge.jsx'
 import AddMonsterModal from './AddMonsterModal.jsx'
 import DuplicateMonsterModal from './DuplicateMonsterModal.jsx'
+import EndCombatDialog from './EndCombatDialog.jsx'
 import VictoryOverlay from './VictoryOverlay.jsx'
 import DefeatOverlay from './DefeatOverlay.jsx'
 import { getEffectGroups } from './soundboardData.jsx'
@@ -28,6 +29,16 @@ function renumber(rows) {
 // saved by an older version) keep their array position — sort is stable.
 function orderedList(list) {
   return renumber([...list].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)))
+}
+
+// Swaps two places in the turn order. The initiative stays with the place, so
+// the list remains sorted by initiative and a newcomer is placed against the
+// swapped line-up, not behind the first one who happened to roll lower.
+function swapPlaces(rows, a, b) {
+  const next = [...rows]
+  next[a] = { ...rows[b], initiative: rows[a].initiative }
+  next[b] = { ...rows[a], initiative: rows[b].initiative }
+  return next
 }
 
 // Places one participant according to initiative: in front of the first one
@@ -115,6 +126,7 @@ export default function InitiativeTracker({
   const [showAddMonster, setShowAddMonster] = useState(false)
   const [showAddAlly, setShowAddAlly] = useState(false)
   const [duplicateTarget, setDuplicateTarget] = useState(null)
+  const [confirmEnd, setConfirmEnd] = useState(false)
   const [concentrationAlert, setConcentrationAlert] = useState(null)
   const [showSoundboard, setShowSoundboard] = useState(false)
   const [cTab, setCTab] = useState(null) // 'music' | 'effects' | 'scenes' | null
@@ -272,16 +284,24 @@ export default function InitiativeTracker({
     }
   }
 
-  function duplicateMonsterWithColor(monster, color) {
-    const id = `monster-${monsterIdCounter++}`
+  // Copies a monster or an ally fresh: full health, no conditions. An empty
+  // initiative keeps the original's.
+  function duplicateParticipant(original, color, initiative) {
     const copy = {
-      ...monster,
-      id,
+      ...original,
+      id: `${original.type}-${monsterIdCounter++}`,
+      initiative: parseInt(initiative) > 0 ? parseInt(initiative) : original.initiative,
       color: color ?? null,
-      damage: 0,
       bloodied: false,
       dead: false,
       conditions: [],
+    }
+    if (original.type === 'ally') {
+      copy.hp = original.maxHp || original.hp
+      copy.dying = false
+      copy.deathSaves = { successes: 0, failures: 0 }
+    } else {
+      copy.damage = 0
     }
     setParticipants(insertByInitiative(participants, copy))
   }
@@ -320,8 +340,7 @@ export default function InitiativeTracker({
     const a = rows.findIndex(p => p.id === visible[idx].id)
     const b = rows.findIndex(p => p.id === visible[target].id)
     if (a < 0 || b < 0) return
-    ;[rows[a], rows[b]] = [rows[b], rows[a]]
-    setParticipants(renumber(rows))
+    setParticipants(renumber(swapPlaces(rows, a, b)))
   }
 
   function killMonster(id) {
@@ -415,13 +434,12 @@ export default function InitiativeTracker({
           const fromP = visible[from]
           const toP = visible[to]
           if (fromP && toP) {
-            const newList = orderedList(participants)
-            const fromGlobal = newList.findIndex(p => p.id === fromP.id)
-            const toGlobal = newList.findIndex(p => p.id === toP.id)
-            ;[newList[fromGlobal], newList[toGlobal]] = [newList[toGlobal], newList[fromGlobal]]
+            const rows = orderedList(participants)
+            const fromGlobal = rows.findIndex(p => p.id === fromP.id)
+            const toGlobal = rows.findIndex(p => p.id === toP.id)
             // Renumbering writes the swap into `order`, so the next monster
             // that joins cannot undo it.
-            setParticipants(renumber(newList))
+            setParticipants(renumber(swapPlaces(rows, fromGlobal, toGlobal)))
           }
         }
       }
@@ -496,11 +514,7 @@ export default function InitiativeTracker({
   const swapTargetId = swapActive ? visible[dragOverIdx]?.id ?? null : null
 
   const previewRows = swapActive
-    ? (() => {
-        const rows = [...visible]
-        ;[rows[draggingIdx], rows[dragOverIdx]] = [rows[dragOverIdx], rows[draggingIdx]]
-        return rows
-      })()
+    ? swapPlaces(visible, draggingIdx, dragOverIdx)
     : visible
 
   // Whoever ends up acting at the active position - during a preview that is
@@ -525,7 +539,7 @@ export default function InitiativeTracker({
           ? <div />
           : (
             <div className="tracker-header-left">
-              <button className="end-btn" onClick={onEndCombat}>← Beenden</button>
+              <button className="end-btn" onClick={() => setConfirmEnd(true)}>← Beenden</button>
               {connectionStatus && (
                 <ConnectionBadge status={connectionStatus} since={connectionSince} />
               )}
@@ -648,7 +662,7 @@ export default function InitiativeTracker({
                 onUpdate={(changes, alertData) => updateParticipant(p.id, changes, alertData)}
                 onKill={p.type === 'monster' ? () => killMonster(p.id) : undefined}
                 onRemove={p.type === 'monster' ? () => removeMonster(p.id) : () => removeAlly(p.id)}
-                onDuplicate={p.type === 'monster' ? () => setDuplicateTarget(p) : undefined}
+                onDuplicate={p.type !== 'player' ? () => setDuplicateTarget(p) : undefined}
                 onMove={canDrag ? delta => moveParticipant(p.id, delta) : undefined}
                 canMoveUp={canDrag && idx > 0}
                 canMoveDown={canDrag && idx < previewRows.length - 1}
@@ -736,11 +750,19 @@ export default function InitiativeTracker({
       {!displayOnly && duplicateTarget && (
         <DuplicateMonsterModal
           monster={duplicateTarget}
-          onSelectColor={newColor => {
-            duplicateMonsterWithColor(duplicateTarget, newColor)
+          onSelectColor={(newColor, initiative) => {
+            duplicateParticipant(duplicateTarget, newColor, initiative)
             setDuplicateTarget(null)
           }}
           onClose={() => setDuplicateTarget(null)}
+        />
+      )}
+
+      {!displayOnly && confirmEnd && (
+        <EndCombatDialog
+          round={round}
+          onConfirm={() => { setConfirmEnd(false); onEndCombat() }}
+          onCancel={() => setConfirmEnd(false)}
         />
       )}
 

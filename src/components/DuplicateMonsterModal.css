@@ -116,3 +116,42 @@
   border-color: var(--text-dim);
   color: var(--text-main);
 }
+
+.dup-modal-box--ally { border-color: #3a6ea8; }
+.dup-modal-box--ally .dup-modal-title { color: #99ccff; }
+
+.dup-initiative-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+.dup-initiative-field label {
+  flex-basis: 100%;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.dup-initiative-input {
+  width: 96px;
+  padding: 8px 12px;
+  background: var(--bg-dark);
+  border: 1px solid var(--gray-dim);
+  border-radius: 6px;
+  color: var(--text-main);
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  text-align: center;
+}
+
+.dup-initiative-input:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+.dup-initiative-hint {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}

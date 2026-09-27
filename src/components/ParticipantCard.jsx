@@ -235,6 +235,15 @@ export default function ParticipantCard({
     >☠</button>
   )
 
+  const duplicateButton = !displayOnly && onDuplicate && (
+    <button
+      className="monster-btn"
+      onClick={onDuplicate}
+      title="Duplizieren"
+      aria-label={`${p.name} duplizieren`}
+    >⧉</button>
+  )
+
   return (
     <div className={cardClass}>
       {/* Initiative badge */}
@@ -546,6 +555,7 @@ export default function ParticipantCard({
                   <button className="ally-btn ally-dmg-btn" onClick={applyAllyDamage} aria-label={`${p.name} Schaden zufügen`}>-Dmg</button>
                   <button className="ally-btn ally-heal-btn" onClick={applyAllyHeal} aria-label={`${p.name} heilen`}>+Heil</button>
                   <div className="monster-sep" />
+                  {duplicateButton}
                   {allyDefeatButton}
                   <button
                     className={`monster-btn remove-btn${confirmRemove ? ' remove-armed' : ''}`}
@@ -590,6 +600,7 @@ export default function ParticipantCard({
               </div>
               {!displayOnly && (
                 <div className="ally-down-actions">
+                  {duplicateButton}
                   {allyDefeatButton}
                   <button
                     className={`monster-btn remove-btn${confirmRemove ? ' remove-armed' : ''}`}
@@ -684,12 +695,7 @@ export default function ParticipantCard({
                   aria-pressed={!!p.bloodied}
                 >🩸</button>
                 <div className="monster-sep" />
-                <button
-                  className="monster-btn"
-                  onClick={onDuplicate}
-                  title="Duplizieren"
-                  aria-label={`${p.name} duplizieren`}
-                >⧉</button>
+                {duplicateButton}
                 <button
                   className={`monster-btn kill-btn${monsterDown ? ' kill-btn-suggested' : ''}`}
                   onClick={onKill}
