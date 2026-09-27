@@ -32,6 +32,6 @@ Danach muss `public/config.json` auf den Worker-Host zeigen:
 
 ## Limits
 
-- Nur der Nachrichtentyp `STATE` wird weitergereicht.
+- Nur die Nachrichtentypen `STATE` und `PRESENCE` (Lebenszeichen der TVs, wird nicht zwischengespeichert) werden weitergereicht.
 - Maximale Payload: 128 KB.
 - Maximal 60 Nachrichten pro Sekunde und Client.

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import './ConnectionBadge.css'
 
 const LABELS = {
-  open: 'Verbunden',
+  tv: 'TV verbunden',
+  'no-tv': 'Kein TV',
   connecting: 'Verbindet',
   closed: 'Getrennt',
   off: 'Kein Relay',
@@ -21,7 +22,7 @@ export default function ConnectionBadge({ status, since }) {
   const [, forceTick] = useState(0)
 
   useEffect(() => {
-    if (status === 'open' || status === 'off') return
+    if (status !== 'closed' && status !== 'connecting') return
     const id = setInterval(() => forceTick(t => t + 1), 1000)
     return () => clearInterval(id)
   }, [status])

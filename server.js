@@ -8,9 +8,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const PORT = process.env.PORT || 3001
 
 // ── Relay limits ────────────────────────────────────────────────────────────
-// The relay only ever carries the state message. Anything else is dropped
-// instead of being handed to every connected screen.
-const ALLOWED_TYPES = new Set(['STATE'])
+// The relay only carries the state message and the displays' presence beat
+// (never cached). Anything else is dropped instead of being handed to every
+// connected screen.
+const ALLOWED_TYPES = new Set(['STATE', 'PRESENCE'])
 const MAX_PAYLOAD_BYTES = 128 * 1024
 const MAX_MESSAGES_PER_SEC = 60
 const ROOM_RE = /^[a-z0-9]{8,32}$/

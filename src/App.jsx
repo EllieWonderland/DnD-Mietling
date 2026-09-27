@@ -151,6 +151,12 @@ const APP_MODE = new URLSearchParams(window.location.search).get('mode') === 'di
 // nothing, which is the whole point — the relay hostname itself is public.
 const ROOM = getRoomId(APP_MODE)
 
+// A connected relay says nothing about a TV — the tablet is alone in its room
+// until a display joins. Every display therefore reports in on a fixed beat,
+// and the controller only shows "TV verbunden" while those reports arrive.
+const PRESENCE_INTERVAL_MS = 4000
+const PRESENCE_TIMEOUT_MS = 10000
+
 export default function App() {
   const [phase, setPhase] = useState('setup')
   const [participants, setParticipants] = useState([])
@@ -191,6 +197,10 @@ export default function App() {
   const [wsStatus, setWsStatus] = useState(ROOM ? 'connecting' : 'off')
   const [wsSince, setWsSince] = useState(() => Date.now())
   const [displayStale, setDisplayStale] = useState(false)
+  // Controller: when a display last reported in, over the relay or the
+  // BroadcastChannel of this browser.
+  const lastPresenceAtRef = useRef(0)
+  const [tvSeen, setTvSeen] = useState(false)
 
   function changeWsStatus(next) {
     setWsStatus(prev => {
@@ -219,9 +229,13 @@ export default function App() {
 
     if (bc) {
       bc.onmessage = event => {
+        const msg = event.data
+        if (msg?.type === 'PRESENCE') {
+          if (APP_MODE === 'controller') notePresence()
+          return
+        }
         if (APP_MODE === 'display') {
           lastMsgAtRef.current = Date.now()
-          const msg = event.data
           if (msg?.type === 'STATE') {
             if (isValidDisplayState(msg.state)) applyDisplayState(msg.state)
           }
@@ -262,6 +276,7 @@ export default function App() {
 
         ws.onopen = () => {
           changeWsStatus('open')
+          if (APP_MODE === 'display') sendPresence()
           if (pendingStateRef.current) {
             ws.send(pendingStateRef.current)
             pendingStateRef.current = null
@@ -269,14 +284,18 @@ export default function App() {
         }
 
         ws.onmessage = event => {
+          let msg
+          try { msg = JSON.parse(event.data) } catch { return }
+          if (msg?.type === 'PRESENCE') {
+            // Another display's report must not count as news for a display.
+            if (APP_MODE === 'controller') notePresence()
+            return
+          }
           if (APP_MODE === 'display') {
             lastMsgAtRef.current = Date.now()
-            try {
-              const msg = JSON.parse(event.data)
-              if (msg.type === 'STATE') {
-                if (isValidDisplayState(msg.state)) applyDisplayState(msg.state)
-              }
-            } catch {}
+            if (msg?.type === 'STATE') {
+              if (isValidDisplayState(msg.state)) applyDisplayState(msg.state)
+            }
           }
         }
 
@@ -343,6 +362,39 @@ export default function App() {
     }, 4000)
     return () => clearInterval(id)
   }, [])
+
+  function notePresence() {
+    lastPresenceAtRef.current = Date.now()
+    setTvSeen(true)
+  }
+
+  function sendPresence() {
+    const payload = { type: 'PRESENCE' }
+    const ws = wsRef.current
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload))
+    if (bcRef.current) bcRef.current.postMessage(payload)
+  }
+
+  // Display: report in, so the controller knows someone is watching.
+  useEffect(() => {
+    if (APP_MODE !== 'display' || !ROOM) return
+    sendPresence()
+    const id = setInterval(sendPresence, PRESENCE_INTERVAL_MS)
+    return () => clearInterval(id)
+  }, [])
+
+  // Controller: the TV counts as gone once its reports stop.
+  useEffect(() => {
+    if (APP_MODE !== 'controller') return
+    const id = setInterval(() => {
+      setTvSeen(Date.now() - lastPresenceAtRef.current < PRESENCE_TIMEOUT_MS)
+    }, 2000)
+    return () => clearInterval(id)
+  }, [])
+
+  // What the header dot shows: a TV that reports in, otherwise the state of
+  // the relay connection. A display in this browser needs no relay at all.
+  const tvStatus = tvSeen ? 'tv' : wsStatus === 'open' ? 'no-tv' : wsStatus
 
   // Display: the TV shows the last state forever if the relay goes quiet.
   // A discreet hint says so instead of pretending the board is current.
@@ -727,7 +779,7 @@ export default function App() {
         <SessionSetup
           players={playerProfiles}
           room={ROOM}
-          connectionStatus={wsStatus}
+          connectionStatus={tvStatus}
           connectionSince={wsSince}
           onUpdateProfile={updatePlayerProfile}
           onStart={startCombat}
@@ -758,7 +810,7 @@ export default function App() {
           onPrevTurn={prevTurn}
           onEndCombat={endCombat}
           onUpdateProfile={updatePlayerProfile}
-          connectionStatus={wsStatus}
+          connectionStatus={tvStatus}
           connectionSince={wsSince}
           victory={victory}
           setVictory={setVictory}

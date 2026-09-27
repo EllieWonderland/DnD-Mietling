@@ -6,9 +6,11 @@
 //
 //   wss://<worker-host>/?room=<id>
 //
-// One Durable Object instance per room does the fan-out.
+// One Durable Object instance per room does the fan-out. Displays also send a
+// PRESENCE beat so the controller can tell whether a TV is listening; it is
+// relayed but never cached.
 
-const ALLOWED_TYPES = new Set(['STATE'])
+const ALLOWED_TYPES = new Set(['STATE', 'PRESENCE'])
 const MAX_PAYLOAD_BYTES = 128 * 1024
 const MAX_MESSAGES_PER_SEC = 60
 const ROOM_RE = /^[a-z0-9]{8,32}$/

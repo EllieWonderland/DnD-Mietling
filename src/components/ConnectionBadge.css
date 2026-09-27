@@ -21,8 +21,12 @@
   flex-shrink: 0;
 }
 
-.conn-open   { border-color: #2f6b3a; color: #9fd6ac; }
-.conn-open .conn-dot { background: #4ec26a; box-shadow: 0 0 8px #4ec26a80; }
+.conn-tv   { border-color: #2f6b3a; color: #9fd6ac; }
+.conn-tv .conn-dot { background: #4ec26a; box-shadow: 0 0 8px #4ec26a80; }
+
+/* Relay steht, aber kein TV meldet sich */
+.conn-no-tv { border-color: #7a6215; color: var(--gold-light); }
+.conn-no-tv .conn-dot { background: var(--gold); }
 
 .conn-connecting { border-color: #7a6215; color: var(--gold-light); }
 .conn-connecting .conn-dot {
