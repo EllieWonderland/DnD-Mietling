@@ -20,6 +20,7 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 | 4 | 🔵 UX / UI | 17–25 | ✅ erledigt |
 | 5 | 🧹 Aufräumen & Spielrunde | 26–31 | ✅ erledigt |
 | 6 | ⚪ Build, Deploy & Performance | 32–37 | ⚠️ bis auf 36 erledigt |
+| 7 | 🎲 Spielrunde 2026-09-27 | 38–42 | ✅ erledigt |
 
 ---
 
@@ -203,3 +204,25 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
   `docs/Roadmap.md` nennt Long-Press = 250 ms, im Code sind es 450 ms (`InitiativeTracker.jsx:274`). Die Szenen-Tabelle listet Höhle/Bibliothek/Schiff/Friedhof als ❌, obwohl alle vier in `VIDEO_SCENES` stehen.
   **Fix:** Roadmap mit dem Code abgleichen.
   **Erledigt:** Long-Press auf 450 ms korrigiert; Höhle, Bibliothek, Schiff und Burg auf ✅ gesetzt; Friedhof, Kerker, Waldrand, Mondnacht, Mondmeer und Nachtregen als fehlende Zeilen ergänzt.
+
+---
+
+## 🎲 Kategorie 7 — Befunde aus der Spielrunde (2026-09-27)
+
+- [x] **38. Vahlok wird falsch geschrieben**
+  Default-Name war „Vhahlhohkh".
+  **Erledigt:** Name auf „Vahlok" (id bleibt `vhahlhohkh`, damit gespeicherte Kämpfe passen). Ein gespeichertes Profil mit dem alten Default-Namen wird ignoriert; „Kampf fortsetzen" übernimmt Spielernamen aus den Profilen.
+
+- [x] **39. Verbündete brauchen einen direkten Besiegt-Button**
+  Bisher nur über 0 HP und drei misslungene Todeswürfe.
+  **Erledigt:** ☠ neben -Dmg/+Heil und bei 0 HP neben den Todeswürfen. Die Karte bleibt ausgegraut stehen, „Wiederbeleben" setzt auf 1 HP.
+
+- [x] **40. Aktiver Zug zu schwach markiert; Konzentration/Versteckt/Fliegend ebenso**
+  Der Rahmen hatte die Farbe des Kartentyps (gold auf gold beim Spieler).
+  **Erledigt:** Eigene „Am Zug"-Farbe (`--turn-ring`, warmes Weiß) für Karte und Leiste, dazu ein „▶ Am Zug"-Reiter. Aktive Status-Chips sind jetzt vollflächig gefüllt, auf dem TV größer; Konzentration/Versteckt/Fliegend stehen zusätzlich als Symbol in der Reihenfolge-Leiste.
+
+- [x] **41. Verbündete brauchen Farbringe**
+  **Erledigt:** Farbring beim Hinzufügen und im Bearbeiten-Modus, Anzeige auf Karte und in der Leiste.
+
+- [x] **42. TV-Ansicht nicht scrollbar, untere Zeilen verschwinden**
+  **Erledigt:** Der TV scrollt nicht mehr, sondern passt alles ein: Karten werden per `zoom` verkleinert (bis 50 %), die Liste wechselt auf zwei Spalten, sobald eine Spalte unter 80 % schrumpfen müsste. Die Leiste rechts schrumpft genauso. Erst wenn selbst das nicht reicht, greift das bisherige Mitscrollen zum aktiven Teilnehmer.

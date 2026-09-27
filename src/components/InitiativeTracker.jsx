@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useId } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useId } from 'react'
 import ParticipantCard from './ParticipantCard.jsx'
 import Modal from './Modal.jsx'
 import ConnectionBadge from './ConnectionBadge.jsx'
@@ -37,6 +37,57 @@ function insertByInitiative(list, entry) {
   const at = rows.findIndex(p => p.initiative < entry.initiative)
   rows.splice(at === -1 ? rows.length : at, 0, entry)
   return renumber(rows)
+}
+
+// ── TV fit ──────────────────────────────────────────────────────────────────
+// The TV has no input, so rows below the fold were simply gone. Instead of
+// scrolling, the rows are zoomed down until everything fits; the main list may
+// also split into two columns, whichever keeps the rows larger. `zoom` rather
+// than a transform, because it shrinks the layout itself — scrollHeight then
+// tells whether it fits.
+const TV_MIN_ZOOM = 0.5
+const TV_TWO_COLUMNS_BELOW = 0.8
+
+function fitsIn(el) {
+  return el.scrollHeight <= el.clientHeight + 1
+}
+
+function setRowZoom(el, zoom) {
+  for (const row of el.children) row.style.zoom = zoom === 1 ? '' : String(zoom)
+}
+
+// Largest zoom (down to TV_MIN_ZOOM) at which the rows fit; left applied.
+function shrinkToFit(el) {
+  let zoom = 1
+  setRowZoom(el, zoom)
+  for (let i = 0; i < 8 && !fitsIn(el) && zoom > TV_MIN_ZOOM; i++) {
+    // Padding and gaps do not zoom, so one step undershoots a little and the
+    // next pass takes the rest.
+    zoom = Math.max(TV_MIN_ZOOM, zoom * (el.clientHeight / el.scrollHeight) * 0.99)
+    setRowZoom(el, zoom)
+  }
+  return zoom
+}
+
+function setColumns(el, cols) {
+  if (cols > 1) {
+    el.dataset.cols = String(cols)
+    el.style.gridTemplateRows = `repeat(${Math.ceil(el.children.length / cols)}, auto)`
+  } else {
+    delete el.dataset.cols
+    el.style.gridTemplateRows = ''
+  }
+}
+
+function fitTvList(el, { allowColumns = false } = {}) {
+  if (!el) return
+  setColumns(el, 1)
+  const oneColumn = shrinkToFit(el)
+  if (!allowColumns || oneColumn >= TV_TWO_COLUMNS_BELOW || el.children.length < 2) return
+  setColumns(el, 2)
+  if (shrinkToFit(el) >= oneColumn) return
+  setColumns(el, 1)
+  shrinkToFit(el)
 }
 
 export default function InitiativeTracker({
@@ -95,6 +146,23 @@ export default function InitiativeTracker({
   }, [preventTouchScroll, windowPointerUp, windowPointerCancel])
 
   const visible = participants.filter(p => !(p.type === 'monster' && p.dead))
+
+  // TV: refit after every render (a new participant or chip changes the
+  // height) and whenever the screen size or the web font changes it. Runs
+  // before paint, so the intermediate sizes are never visible.
+  function fitTv() {
+    fitTvList(listRef.current, { allowColumns: true })
+    fitTvList(compactPanelRef.current)
+  }
+  useLayoutEffect(() => {
+    if (displayOnly) fitTv()
+  })
+  useEffect(() => {
+    if (!displayOnly) return
+    window.addEventListener('resize', fitTv)
+    document.fonts?.ready.then(fitTv)
+    return () => window.removeEventListener('resize', fitTv)
+  }, [displayOnly])
 
   // In display mode: sync manual scroll from controller
   useEffect(() => {
@@ -198,7 +266,7 @@ export default function InitiativeTracker({
     setParticipants(insertByInitiative(participants, newMonster))
   }
 
-  function addAlly(name, initiative, hp) {
+  function addAlly(name, initiative, hp, color = null) {
     const id = `ally-${monsterIdCounter++}`
     const maxHp = parseInt(hp) || 20
     const newAlly = {
@@ -208,6 +276,7 @@ export default function InitiativeTracker({
       reaction: false,
       conditions: [],
       deathSaves: { successes: 0, failures: 0 },
+      color: color || null,
     }
     setParticipants(insertByInitiative(participants, newAlly))
   }
@@ -641,6 +710,9 @@ export default function InitiativeTracker({
                     />
                   )}
                   <span className="compact-name">{p.name}</span>
+                  {!isDead && p.concentration && <span className="compact-status" title="Konzentration">🔮</span>}
+                  {!isDead && p.hidden && <span className="compact-status" title="Versteckt">👻</span>}
+                  {!isDead && p.flying && <span className="compact-status" title="Fliegend">🪽</span>}
                   {p.dying && <span className="compact-dying">♥</span>}
                   {isDead && <span className="compact-skull">☠</span>}
                 </div>
@@ -675,7 +747,7 @@ export default function InitiativeTracker({
         <AddMonsterModal
           title="Verbündeten hinzufügen"
           isAlly
-          onAdd={(name, initiative, hp) => { addAlly(name, initiative, hp); setShowAddAlly(false) }}
+          onAdd={(name, initiative, hp, color) => { addAlly(name, initiative, hp, color); setShowAddAlly(false) }}
           onClose={() => setShowAddAlly(false)}
         />
       )}

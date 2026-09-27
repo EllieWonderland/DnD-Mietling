@@ -18,8 +18,13 @@ const PLAYER_DEFAULTS = [
   { id: 'athania',    name: 'Athania' },
   { id: 'delat',      name: 'Delat' },
   { id: 'tharion',    name: 'Tharion' },
-  { id: 'vhahlhohkh', name: 'Vhahlhohkh' },
+  { id: 'vhahlhohkh', name: 'Vahlok' },
 ]
+
+// Default names that turned out to be misspelled. The id stays (a saved
+// combat refers to it), but a stored profile still carrying the old default
+// was never a deliberate rename and must not keep the typo alive.
+const RETIRED_DEFAULT_NAMES = new Set(['Vhahlhohkh'])
 
 // Stored profiles used to replace the defaults wholesale, so a character
 // added in code never showed up for anyone who had already used the app —
@@ -39,8 +44,9 @@ function loadPlayerProfiles() {
   return PLAYER_DEFAULTS.map(def => {
     const stored = byId.get(def.id)
     if (!stored) return { ...def }
-    const name = typeof stored.name === 'string' && stored.name.trim()
-      ? stored.name.trim()
+    const storedName = typeof stored.name === 'string' ? stored.name.trim() : ''
+    const name = storedName && !RETIRED_DEFAULT_NAMES.has(storedName)
+      ? storedName
       : def.name
     return { ...def, name }
   })
@@ -561,7 +567,13 @@ export default function App() {
 
   function resumeCombat() {
     if (!savedCombat) return
-    setParticipants(savedCombat.participants)
+    // Player names live in the profiles; a combat saved before a rename (or
+    // before a spelling fix) would otherwise bring the old name back.
+    setParticipants(savedCombat.participants.map(p => {
+      if (p.type !== 'player') return p
+      const profile = playerProfiles.find(pr => pr.id === p.id)
+      return profile ? { ...p, name: profile.name } : p
+    }))
     setRound(savedCombat.round)
     setActiveIndex(savedCombat.activeIndex)
     setVictory(savedCombat.victory ?? false)

@@ -18,6 +18,10 @@
   --active-glow: #c9a22780;
   --border-gold: #c9a22760;
   --border-red: #a0202060;
+  /* Whose turn it is. Deliberately a colour no card type, status chip or
+     colour ring uses, so it reads as "am Zug" and nothing else. */
+  --turn-ring: #fbf7ee;
+  --turn-glow: #fbf7ee70;
   --font-title: 'Cinzel', serif;
   --font-body: 'Montserrat', sans-serif;
 }

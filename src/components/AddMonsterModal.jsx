@@ -64,12 +64,10 @@ export default function AddMonsterModal({ onAdd, onClose, title = 'Monster hinzu
           </div>
         </div>
 
-        {!isAlly && (
-          <div className="modal-field modal-field--color">
-            <label>Farbring (optional)</label>
-            <ColorPicker selectedColor={color} onChange={setColor} />
-          </div>
-        )}
+        <div className="modal-field modal-field--color">
+          <label>Farbring (optional)</label>
+          <ColorPicker selectedColor={color} onChange={setColor} />
+        </div>
 
         <div className="modal-actions">
           <button className="modal-cancel" onClick={onClose}>Abbrechen</button>

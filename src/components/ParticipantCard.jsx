@@ -71,8 +71,8 @@ export default function ParticipantCard({
       const damage = Math.max(0, parseInt(editDamage) || 0)
       changes.damage = damage
       changes.bloodied = maxHp > 0 && damage >= maxHp / 2
-      changes.color = editColor
     }
+    if (p.type !== 'player') changes.color = editColor
     onUpdate(changes)
     setEditMode(false)
   }
@@ -157,6 +157,13 @@ export default function ParticipantCard({
     }
   }
 
+  // Allies fall like monsters do — one tap, no detour over 0 HP and three
+  // failed saves. Unlike a monster the card stays (greyed out, ☠) and can be
+  // revived, which puts them back on 1 HP.
+  function defeatAlly() {
+    onUpdate({ dead: true, dying: false, hp: 0, deathSaves: { successes: 0, failures: 0 } })
+  }
+
   function revive() {
     const changes = { dead: false, dying: false, deathSaves: { successes: 0, failures: 0 } }
     if (p.type === 'ally') changes.hp = Math.max(1, p.hp || 0)
@@ -204,11 +211,29 @@ export default function ParticipantCard({
     p.dying && !p.dead ? 'card-dying' : '',
     p.dead ? 'card-dead' : '',
     monsterDown && !p.dead ? 'card-monster-down' : '',
-    p.color ? `card-monster-has-color` : '',
     displayOnly ? 'card-display-only' : '',
   ].filter(Boolean).join(' ')
 
-  const monsterColor = p.type === 'monster' ? getMonsterColor(p.color) : null
+  // Colour ring on the miniature's base — monsters and allies both have minis.
+  const ringColor = p.type !== 'player' ? getMonsterColor(p.color) : null
+  const colorToken = ringColor && (
+    <span
+      className="monster-color-token"
+      style={{
+        backgroundColor: ringColor.hex,
+        borderColor: ringColor.border,
+      }}
+      title={`Farbring: ${ringColor.label}`}
+    />
+  )
+  const allyDefeatButton = !displayOnly && (
+    <button
+      className="monster-btn kill-btn"
+      onClick={defeatAlly}
+      title="Besiegt"
+      aria-label={`${p.name} als besiegt markieren`}
+    >☠</button>
+  )
 
   return (
     <div className={cardClass}>
@@ -267,7 +292,7 @@ export default function ParticipantCard({
               </div>
             )}
           </div>
-          {p.type === 'monster' && (
+          {p.type !== 'player' && (
             <div className="card-edit-color-field">
               <span className="card-edit-label">Farbring</span>
               <ColorPicker selectedColor={editColor} onChange={setEditColor} />
@@ -466,6 +491,7 @@ export default function ParticipantCard({
         /* ── ALLY LAYOUT ── */
         <div className="card-body ally-body">
           <div className="card-name-row">
+            {colorToken}
             <span className="card-name ally-name">{p.name}</span>
           </div>
 
@@ -527,6 +553,7 @@ export default function ParticipantCard({
                   <button className="ally-btn ally-dmg-btn" onClick={applyAllyDamage} aria-label={`${p.name} Schaden zufügen`}>-Dmg</button>
                   <button className="ally-btn ally-heal-btn" onClick={applyAllyHeal} aria-label={`${p.name} heilen`}>+Heil</button>
                   <div className="monster-sep" />
+                  {allyDefeatButton}
                   <button
                     className={`monster-btn remove-btn${confirmRemove ? ' remove-armed' : ''}`}
                     onClick={requestRemove}
@@ -569,13 +596,15 @@ export default function ParticipantCard({
                 </div>
               </div>
               {!displayOnly && (
-                <button
-                  className={`monster-btn remove-btn${confirmRemove ? ' remove-armed' : ''}`}
-                  style={{ marginLeft: 'auto' }}
-                  onClick={requestRemove}
-                  title={confirmRemove ? 'Nochmal tippen zum Entfernen' : 'Entfernen'}
-                  aria-label={confirmRemove ? `${p.name} wirklich entfernen` : `${p.name} entfernen`}
-                >{confirmRemove ? 'Wirklich?' : '✕'}</button>
+                <div className="ally-down-actions">
+                  {allyDefeatButton}
+                  <button
+                    className={`monster-btn remove-btn${confirmRemove ? ' remove-armed' : ''}`}
+                    onClick={requestRemove}
+                    title={confirmRemove ? 'Nochmal tippen zum Entfernen' : 'Entfernen'}
+                    aria-label={confirmRemove ? `${p.name} wirklich entfernen` : `${p.name} entfernen`}
+                  >{confirmRemove ? 'Wirklich?' : '✕'}</button>
+                </div>
               )}
             </div>
           )}
@@ -584,16 +613,7 @@ export default function ParticipantCard({
         /* ── MONSTER LAYOUT ── */
         <div className="card-body monster-body">
           <div className="card-name-row">
-            {monsterColor && (
-              <span
-                className="monster-color-token"
-                style={{
-                  backgroundColor: monsterColor.hex,
-                  borderColor: monsterColor.border,
-                }}
-                title={`Farbring: ${monsterColor.label}`}
-              />
-            )}
+            {colorToken}
             <span className="card-name monster-name">{p.name}</span>
           </div>
 

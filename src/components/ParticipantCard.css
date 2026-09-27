@@ -14,23 +14,40 @@
 .card-monster { border-color: var(--border-red); background: #1e1414; }
 .card-ally    { border-color: #3a6ea8; background: #111820; }
 
-.card-active {
-  border-color: var(--gold) !important;
-  box-shadow: 0 0 0 2px var(--gold), 0 0 28px var(--active-glow);
-  background: #2e2416 !important;
+/* ── AM ZUG ──
+   The active border used to be the type colour turned up a notch — gold on a
+   gold player card, red on a red monster card — which nobody at the table
+   could tell apart from across the room. The turn now has its own colour that
+   no card type, status or colour ring uses, plus a tab naming it. The doubled
+   class outranks bloodied/dying/down, which would otherwise repaint the border. */
+.participant-card.card-active {
+  border-color: var(--turn-ring) !important;
+  box-shadow: 0 0 0 3px var(--turn-ring), 0 0 32px var(--turn-glow) !important;
+  animation: none;
   z-index: 1;
 }
 
-.card-monster.card-active {
-  border-color: var(--red-bright) !important;
-  box-shadow: 0 0 0 2px var(--red-bright), 0 0 28px #cc222250;
-  background: #2a1414 !important;
-}
+.card-player.card-active  { background: #2e2416 !important; }
+.card-monster.card-active { background: #2a1414 !important; }
+.card-ally.card-active    { background: #152030 !important; }
 
-.card-ally.card-active {
-  border-color: #66aaee !important;
-  box-shadow: 0 0 0 2px #66aaee, 0 0 28px #3366aa50;
-  background: #152030 !important;
+.participant-card.card-active::after {
+  content: '▶ Am Zug';
+  position: absolute;
+  top: -10px;
+  left: 14px;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: var(--turn-ring);
+  color: #1a1410;
+  font-family: var(--font-title);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.5;
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 .card-bloodied {
@@ -164,11 +181,13 @@
   border-color: #9060d0;
   color: #d8b4fe;
 }
+/* Active states are filled solid: an outlined chip with a slightly brighter
+   border was too close to its "off" look to spot at a glance or on the TV. */
 .chip-conc.chip-active {
-  background: #2e1a4a;
-  border-color: #c090ff;
-  color: #f3e8ff;
-  box-shadow: 0 0 10px rgba(144, 96, 208, 0.5);
+  background: #7c3aed;
+  border-color: #d8b4fe;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(167, 115, 250, 0.7);
 }
 
 .chip-blessed {
@@ -177,10 +196,10 @@
   color: var(--text-dim);
 }
 .chip-blessed.chip-active {
-  background: #2e2210;
-  border-color: var(--gold);
-  color: #fef08a;
-  box-shadow: 0 0 10px var(--active-glow);
+  background: #b8901a;
+  border-color: #fef08a;
+  color: #1a1410;
+  box-shadow: 0 0 12px var(--active-glow);
 }
 
 .chip-hidden {
@@ -189,10 +208,10 @@
   color: var(--text-dim);
 }
 .chip-hidden.chip-active {
-  background: #122828;
-  border-color: #2dd4bf;
-  color: #99f6e4;
-  box-shadow: 0 0 10px rgba(45, 212, 191, 0.4);
+  background: #0f766e;
+  border-color: #5eead4;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(45, 212, 191, 0.6);
 }
 
 .chip-flying {
@@ -201,10 +220,10 @@
   color: var(--text-dim);
 }
 .chip-flying.chip-active {
-  background: #142238;
-  border-color: #60a5fa;
-  color: #bfdbfe;
-  box-shadow: 0 0 10px rgba(96, 165, 250, 0.4);
+  background: #1d4ed8;
+  border-color: #93c5fd;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(96, 165, 250, 0.6);
 }
 
 .chip-reaction-ready {
@@ -529,6 +548,12 @@
 }
 .ally-heal-btn:hover { background: #224433; }
 
+.ally-down-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
 /* ── DEATH SAVES ── */
 .death-saves-row {
   display: flex;
@@ -762,6 +787,19 @@
   width: 22px;
   height: 22px;
   border-width: 2.5px;
+}
+
+/* The TV only ever shows chips that are on, so they can be large. */
+.card-display-only .status-chip {
+  font-size: 1.02rem;
+  padding: 5px 13px;
+  cursor: default;
+}
+
+.card-display-only.card-active::after {
+  top: -12px;
+  font-size: 0.8rem;
+  padding: 1px 12px;
 }
 
 

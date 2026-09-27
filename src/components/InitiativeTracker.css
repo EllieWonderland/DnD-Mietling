@@ -355,17 +355,19 @@
 .compact-monster { border-left-color: var(--border-red); }
 .compact-ally    { border-left-color: #3a6ea8; }
 
+/* Same turn colour as the active card (see ParticipantCard.css). */
 .compact-active {
   background: #2e2416;
-  border-left-color: var(--gold) !important;
+  border-left-color: var(--turn-ring) !important;
+  box-shadow: inset 0 0 0 2px var(--turn-ring);
 }
-.compact-monster.compact-active {
-  background: #2a1414;
-  border-left-color: var(--red-bright) !important;
-}
-.compact-ally.compact-active {
-  background: #152030;
-  border-left-color: #66aaee !important;
+.compact-monster.compact-active { background: #2a1414; }
+.compact-ally.compact-active    { background: #152030; }
+
+.compact-status {
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  line-height: 1;
 }
 
 .compact-dead { opacity: 0.3; }
@@ -430,7 +432,9 @@
 }
 
 .tracker-display-mode .participant-list {
-  padding: 14px 20px 24px 20px;
+  padding: 16px 20px 24px 20px;
+  /* Room for the "Am Zug" tab that sits on the active card's top edge. */
+  gap: 14px;
 }
 
 .tracker-display-mode .compact-order-panel {
@@ -461,23 +465,41 @@
 }
 
 .tracker-display-mode .compact-skull,
-.tracker-display-mode .compact-dying {
+.tracker-display-mode .compact-dying,
+.tracker-display-mode .compact-status {
   font-size: 1.15rem;
 }
 
 .tracker-display-mode .compact-active {
   background: #342817;
-  box-shadow: inset 0 0 20px rgba(201, 162, 39, 0.25);
+  box-shadow: inset 0 0 0 3px var(--turn-ring), inset 0 0 20px var(--turn-glow);
 }
 
-.tracker-display-mode .compact-monster.compact-active {
-  background: #301616;
-  box-shadow: inset 0 0 20px rgba(204, 34, 34, 0.25);
+.tracker-display-mode .compact-monster.compact-active { background: #301616; }
+.tracker-display-mode .compact-ally.compact-active    { background: #162438; }
+
+/* ── TV: everything on one screen ──
+   Nobody can scroll the TV, so rows that did not fit were simply gone. The
+   tracker shrinks the rows until they fit (zoom, set from JS) and splits the
+   list into two columns once shrinking alone would make it unreadable. Read
+   top to bottom, then the second column. */
+.tracker-display-mode .participant-list[data-cols="2"] {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  column-gap: 16px;
+  row-gap: 14px;
 }
 
-.tracker-display-mode .compact-ally.compact-active {
-  background: #162438;
-  box-shadow: inset 0 0 20px rgba(102, 170, 238, 0.25);
+/* Side by side, both cards of a grid row take the taller one's height. */
+.tracker-display-mode .participant-list[data-cols="2"] > * {
+  display: flex;
+}
+
+.tracker-display-mode .participant-list[data-cols="2"] > * > .participant-card {
+  flex: 1;
+  min-width: 0;
 }
 
 @keyframes compact-dying-blink {
