@@ -366,13 +366,6 @@ export default function ParticipantCard({
                   🔮 Konzentration
                 </button>
                 <button
-                  className={`status-chip ${p.reaction ? 'chip-reaction-spent' : 'chip-reaction-ready'}`}
-                  onClick={() => onUpdate({ reaction: !p.reaction })}
-                  title={p.reaction ? 'Reaktion verbraucht (klicken zum Zurücksetzen)' : 'Reaktion bereit (klicken zum Verbrauchen)'}
-                >
-                  ⚡ {p.reaction ? 'Reaktion verbraucht' : 'Reaktion bereit'}
-                </button>
-                <button
                   className={`status-chip chip-hidden ${p.hidden ? 'chip-active' : ''}`}
                   onClick={() => onUpdate({ hidden: !p.hidden })}
                   title="Verstecken umschalten"

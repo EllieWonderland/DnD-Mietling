@@ -409,7 +409,6 @@
   animation: compact-dying-blink 1s ease-in-out infinite alternate;
 }
 
-/* ── DISPLAY MODE (TV) RIGHT PANEL STYLING ── */
 /* ── DISPLAY MODE (TV) SAFE AREA & LAYOUT ── */
 .tracker-display-mode {
   padding: clamp(16px, 2.5vh, 36px) clamp(16px, 2.5vw, 40px);
@@ -431,73 +430,34 @@
   overflow: hidden;
 }
 
+/* ── TV: everything on one screen ──
+   Nobody can scroll the TV, so there is no scrolling and no separate
+   turn-order strip: the list takes the full width, splits into as many
+   columns as keep the rows largest and shrinks the rows until all of them fit
+   (columns and zoom are set from JS). Read top to bottom, then the next
+   column. */
 .tracker-display-mode .participant-list {
   padding: 16px 20px 24px 20px;
   /* Room for the "Am Zug" tab that sits on the active card's top edge. */
   gap: 14px;
+  overflow: hidden;
+  scroll-behavior: auto;
 }
 
-.tracker-display-mode .compact-order-panel {
-  width: clamp(280px, 24vw, 380px);
-  border-left: 3px solid var(--border-gold);
-  background: #090805;
-  padding: 6px 0 16px 0;
-}
-
-.tracker-display-mode .compact-row {
-  padding: 6px 12px;
-  min-height: 42px;
-  gap: 10px;
-  border-left-width: 5px;
-}
-
-.tracker-display-mode .compact-name {
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.tracker-display-mode .compact-color-dot {
-  width: 14px;
-  height: 14px;
-  border-width: 2px;
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
-}
-
-.tracker-display-mode .compact-skull,
-.tracker-display-mode .compact-dying,
-.tracker-display-mode .compact-status {
-  font-size: 1.15rem;
-}
-
-.tracker-display-mode .compact-active {
-  background: #342817;
-  box-shadow: inset 0 0 0 3px var(--turn-ring), inset 0 0 20px var(--turn-glow);
-}
-
-.tracker-display-mode .compact-monster.compact-active { background: #301616; }
-.tracker-display-mode .compact-ally.compact-active    { background: #162438; }
-
-/* ── TV: everything on one screen ──
-   Nobody can scroll the TV, so rows that did not fit were simply gone. The
-   tracker shrinks the rows until they fit (zoom, set from JS) and splits the
-   list into two columns once shrinking alone would make it unreadable. Read
-   top to bottom, then the second column. */
-.tracker-display-mode .participant-list[data-cols="2"] {
+.tracker-display-mode .participant-list[data-cols] {
   display: grid;
   grid-auto-flow: column;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: start;
   column-gap: 16px;
   row-gap: 14px;
 }
 
-/* Side by side, both cards of a grid row take the taller one's height. */
-.tracker-display-mode .participant-list[data-cols="2"] > * {
+/* Side by side, the cards of a grid row take the tallest one's height. */
+.tracker-display-mode .participant-list[data-cols] > * {
   display: flex;
 }
 
-.tracker-display-mode .participant-list[data-cols="2"] > * > .participant-card {
+.tracker-display-mode .participant-list[data-cols] > * > .participant-card {
   flex: 1;
   min-width: 0;
 }

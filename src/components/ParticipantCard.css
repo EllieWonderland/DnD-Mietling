@@ -226,19 +226,6 @@
   box-shadow: 0 0 12px rgba(96, 165, 250, 0.6);
 }
 
-.chip-reaction-ready {
-  background: #1a2216;
-  border-color: #4ade8080;
-  color: #86efac;
-}
-
-.chip-reaction-spent {
-  background: #201c18;
-  border-color: #57534e;
-  color: #a8a29e;
-  opacity: 0.65;
-}
-
 .chip-condition {
   background: #241d14;
   border-color: rgba(201, 162, 39, 0.45);

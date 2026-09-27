@@ -40,13 +40,20 @@ function insertByInitiative(list, entry) {
 }
 
 // ── TV fit ──────────────────────────────────────────────────────────────────
-// The TV has no input, so rows below the fold were simply gone. Instead of
-// scrolling, the rows are zoomed down until everything fits; the main list may
-// also split into two columns, whichever keeps the rows larger. `zoom` rather
-// than a transform, because it shrinks the layout itself — scrollHeight then
-// tells whether it fits.
-const TV_MIN_ZOOM = 0.5
-const TV_TWO_COLUMNS_BELOW = 0.8
+// The TV has no input, so every row has to be on screen at all times — there
+// is no scrolling and no separate turn-order strip. The list is split into as
+// many columns as keep the rows largest and the rows are zoomed down until
+// everything fits. `zoom` rather than a transform, because it shrinks the
+// layout itself — scrollHeight then tells whether it fits.
+const TV_MAX_COLUMNS = 4
+// Rows this large are comfortable; no further column is opened for more.
+const TV_COMFORT_ZOOM = 0.8
+// A further column has to make the rows at least this much larger to be worth
+// the narrower cards.
+const TV_COLUMN_GAIN = 1.1
+// Only a safety net against an endless loop. Below the comfortable size the
+// fit never stops at a floor: a small row beats a row that is not there.
+const TV_MIN_ZOOM = 0.15
 
 function fitsIn(el) {
   return el.scrollHeight <= el.clientHeight + 1
@@ -56,11 +63,11 @@ function setRowZoom(el, zoom) {
   for (const row of el.children) row.style.zoom = zoom === 1 ? '' : String(zoom)
 }
 
-// Largest zoom (down to TV_MIN_ZOOM) at which the rows fit; left applied.
+// Largest zoom at which the rows fit; left applied.
 function shrinkToFit(el) {
   let zoom = 1
   setRowZoom(el, zoom)
-  for (let i = 0; i < 8 && !fitsIn(el) && zoom > TV_MIN_ZOOM; i++) {
+  for (let i = 0; i < 10 && !fitsIn(el) && zoom > TV_MIN_ZOOM; i++) {
     // Padding and gaps do not zoom, so one step undershoots a little and the
     // next pass takes the rest.
     zoom = Math.max(TV_MIN_ZOOM, zoom * (el.clientHeight / el.scrollHeight) * 0.99)
@@ -72,21 +79,26 @@ function shrinkToFit(el) {
 function setColumns(el, cols) {
   if (cols > 1) {
     el.dataset.cols = String(cols)
+    el.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`
     el.style.gridTemplateRows = `repeat(${Math.ceil(el.children.length / cols)}, auto)`
   } else {
     delete el.dataset.cols
+    el.style.gridTemplateColumns = ''
     el.style.gridTemplateRows = ''
   }
 }
 
-function fitTvList(el, { allowColumns = false } = {}) {
+function fitTvList(el) {
   if (!el) return
-  setColumns(el, 1)
-  const oneColumn = shrinkToFit(el)
-  if (!allowColumns || oneColumn >= TV_TWO_COLUMNS_BELOW || el.children.length < 2) return
-  setColumns(el, 2)
-  if (shrinkToFit(el) >= oneColumn) return
-  setColumns(el, 1)
+  const maxCols = Math.min(TV_MAX_COLUMNS, el.children.length)
+  let best = { cols: 1, zoom: 0 }
+  for (let cols = 1; cols <= maxCols; cols++) {
+    setColumns(el, cols)
+    const zoom = shrinkToFit(el)
+    if (cols === 1 || zoom > best.zoom * TV_COLUMN_GAIN) best = { cols, zoom }
+    if (best.zoom >= TV_COMFORT_ZOOM) break
+  }
+  setColumns(el, best.cols)
   shrinkToFit(el)
 }
 
@@ -99,7 +111,6 @@ export default function InitiativeTracker({
   displayOnly = false,
   playingMusicKey, volume, onVolumeChange, onPlayMusic, onPlayEffect,
   mood, onMoodChange, onSelectMusic, onStopMusic,
-  onCompactScroll, compactScroll,
 }) {
   const [showAddMonster, setShowAddMonster] = useState(false)
   const [showAddAlly, setShowAddAlly] = useState(false)
@@ -129,7 +140,6 @@ export default function InitiativeTracker({
   const listRef = useRef(null)
   const compactPanelRef = useRef(null)
   const compactRowRefs = useRef([])
-  const isProgrammaticScroll = useRef(false)
 
   useEffect(() => {
     endDragRef.current = endDrag
@@ -151,8 +161,7 @@ export default function InitiativeTracker({
   // height) and whenever the screen size or the web font changes it. Runs
   // before paint, so the intermediate sizes are never visible.
   function fitTv() {
-    fitTvList(listRef.current, { allowColumns: true })
-    fitTvList(compactPanelRef.current)
+    fitTvList(listRef.current)
   }
   useLayoutEffect(() => {
     if (displayOnly) fitTv()
@@ -164,23 +173,11 @@ export default function InitiativeTracker({
     return () => window.removeEventListener('resize', fitTv)
   }, [displayOnly])
 
-  // In display mode: sync manual scroll from controller
+  // Tablet: auto-scroll active card and sidebar into view at 2nd position.
+  // The TV shows everything at once and never scrolls.
   useEffect(() => {
-    if (!displayOnly || !compactScroll || !compactPanelRef.current) return
-    const el = compactPanelRef.current
-    const maxScroll = el.scrollHeight - el.clientHeight
-    if (maxScroll > 0 && typeof compactScroll.scrollRatio === 'number') {
-      el.scrollTop = compactScroll.scrollRatio * maxScroll
-    } else if (typeof compactScroll.scrollTop === 'number') {
-      el.scrollTop = compactScroll.scrollTop
-    }
-  }, [compactScroll, displayOnly])
-
-  // Auto-scroll active card and sidebar into view at 2nd position
-  useEffect(() => {
+    if (displayOnly) return
     const timer = setTimeout(() => {
-      isProgrammaticScroll.current = true
-
       // 1. Participant List: active element at 2nd position (previous element at top)
       if (listRef.current) {
         if (activeIndex <= 0) {
@@ -194,8 +191,8 @@ export default function InitiativeTracker({
         }
       }
 
-      // 2. Compact Order Panel: active element at 2nd position (only when not manually scrolled on display)
-      if (compactPanelRef.current && (!displayOnly || !compactScroll)) {
+      // 2. Compact Order Panel: active element at 2nd position
+      if (compactPanelRef.current) {
         // Mirrors the turn order of the main list so manual swaps land here too.
         const activeParticipant = visible[activeIndex]
         const compactActiveIdx = participants.findIndex(p => p.id === activeParticipant?.id)
@@ -210,26 +207,10 @@ export default function InitiativeTracker({
           }
         }
       }
-
-      setTimeout(() => {
-        isProgrammaticScroll.current = false
-      }, 350)
     }, 40)
 
     return () => clearTimeout(timer)
-  }, [activeIndex, round])
-
-  function handleCompactPanelScroll(e) {
-    if (displayOnly || isProgrammaticScroll.current) return
-    const el = e.currentTarget
-    const maxScroll = el.scrollHeight - el.clientHeight
-    const ratio = maxScroll > 0 ? el.scrollTop / maxScroll : 0
-    onCompactScroll?.({
-      scrollRatio: ratio,
-      scrollTop: el.scrollTop,
-      timestamp: Date.now(),
-    })
-  }
+  }, [activeIndex, round, displayOnly])
 
   // Victory/Defeat: react to any participant change. The first result
   // is locked (guard) so both overlays/sounds don't play.
@@ -259,7 +240,6 @@ export default function InitiativeTracker({
       maxHp: parseInt(hp) || 0,
       damage: 0,
       bloodied: false, dead: false,
-      reaction: false,
       conditions: [],
       color: color || null,
     }
@@ -273,7 +253,6 @@ export default function InitiativeTracker({
       id, name, type: 'ally',
       initiative: Math.max(1, parseInt(initiative) || 1),
       hp: maxHp, maxHp,
-      reaction: false,
       conditions: [],
       deathSaves: { successes: 0, failures: 0 },
       color: color || null,
@@ -303,7 +282,6 @@ export default function InitiativeTracker({
       bloodied: false,
       dead: false,
       conditions: [],
-      reaction: false,
     }
     setParticipants(insertByInitiative(participants, copy))
   }
@@ -680,7 +658,9 @@ export default function InitiativeTracker({
           ))}
         </div>
 
-        <div className="compact-order-panel" ref={compactPanelRef} onScroll={handleCompactPanelScroll}>
+        {/* Tablet only: the TV shows the whole list and needs no overview. */}
+        {!displayOnly && (
+        <div className="compact-order-panel" ref={compactPanelRef}>
           {compactRows.map((p, cIdx) => {
               // Fallen players/allies stay in the strip, just as dead monsters do.
               const isDead = !!p.dead
@@ -719,6 +699,7 @@ export default function InitiativeTracker({
               )
             })}
         </div>
+        )}
       </div>
 
       {!displayOnly && (

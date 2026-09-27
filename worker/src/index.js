@@ -8,7 +8,7 @@
 //
 // One Durable Object instance per room does the fan-out.
 
-const ALLOWED_TYPES = new Set(['STATE', 'COMPACT_SCROLL'])
+const ALLOWED_TYPES = new Set(['STATE'])
 const MAX_PAYLOAD_BYTES = 128 * 1024
 const MAX_MESSAGES_PER_SEC = 60
 const ROOM_RE = /^[a-z0-9]{8,32}$/

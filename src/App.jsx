@@ -105,7 +105,6 @@ function makePlayer(pid, profiles) {
   return {
     id: pid, name: profile.name, type: 'player',
     initiative: 0,
-    reaction: false,
     conditions: [], concentration: false,
     blessed: false, hidden: false, flying: false,
     deathSaves: { successes: 0, failures: 0 },
@@ -141,11 +140,6 @@ function normalizeDisplayState(s) {
     victory: !!s.victory,
     defeat: !!s.defeat,
   }
-}
-
-function isValidCompactScroll(scroll) {
-  if (!scroll || typeof scroll !== 'object') return false
-  return typeof scroll.scrollRatio === 'number' || typeof scroll.scrollTop === 'number'
 }
 
 const APP_MODE = new URLSearchParams(window.location.search).get('mode') === 'display'
@@ -193,7 +187,6 @@ export default function App() {
   const pendingStateRef = useRef(null)
   const lastMsgAtRef = useRef(Date.now())
   const [displayState, setDisplayState] = useState(null)
-  const [displayCompactScroll, setDisplayCompactScroll] = useState(null)
   // Relay connection, shown as a dot in the header (todo.md, Punkt 17).
   const [wsStatus, setWsStatus] = useState(ROOM ? 'connecting' : 'off')
   const [wsSince, setWsSince] = useState(() => Date.now())
@@ -215,14 +208,7 @@ export default function App() {
     setDisplayState(state)
   }
 
-  // Clear display compact scroll when turn changes in display mode
-  useEffect(() => {
-    if (APP_MODE === 'display') {
-      setDisplayCompactScroll(null)
-    }
-  }, [displayState?.activeIndex, displayState?.round])
-
-  // WebSocket & BroadcastChannel: sync state & scroll events
+  // WebSocket & BroadcastChannel: sync state
   useEffect(() => {
     if (!ROOM) return // display opened without a room — nothing to connect to
     let closed = false
@@ -238,8 +224,6 @@ export default function App() {
           const msg = event.data
           if (msg?.type === 'STATE') {
             if (isValidDisplayState(msg.state)) applyDisplayState(msg.state)
-          } else if (msg?.type === 'COMPACT_SCROLL') {
-            if (isValidCompactScroll(msg.scroll)) setDisplayCompactScroll(msg.scroll)
           }
         }
       }
@@ -291,8 +275,6 @@ export default function App() {
               const msg = JSON.parse(event.data)
               if (msg.type === 'STATE') {
                 if (isValidDisplayState(msg.state)) applyDisplayState(msg.state)
-              } else if (msg.type === 'COMPACT_SCROLL') {
-                if (isValidCompactScroll(msg.scroll)) setDisplayCompactScroll(msg.scroll)
               }
             } catch {}
           }
@@ -387,44 +369,6 @@ export default function App() {
     }, 5000)
     return () => clearInterval(id)
   }, [])
-
-  // Controller: broadcast right panel scroll position
-  const scrollThrottleRef = useRef(null)
-  const pendingScrollRef = useRef(null)
-
-  function dispatchCompactScroll(scrollData) {
-    const payload = {
-      type: 'COMPACT_SCROLL',
-      scroll: {
-        scrollRatio: scrollData.scrollRatio,
-        scrollTop: scrollData.scrollTop,
-        timestamp: scrollData.timestamp || Date.now(),
-      },
-    }
-    const str = JSON.stringify(payload)
-    const ws = wsRef.current
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(str)
-    }
-    if (bcRef.current) {
-      bcRef.current.postMessage(payload)
-    }
-  }
-
-  function sendCompactScroll(scrollData) {
-    if (APP_MODE !== 'controller') return
-    pendingScrollRef.current = scrollData
-    if (scrollThrottleRef.current) return
-
-    dispatchCompactScroll(scrollData)
-    scrollThrottleRef.current = setTimeout(() => {
-      scrollThrottleRef.current = null
-      if (pendingScrollRef.current) {
-        dispatchCompactScroll(pendingScrollRef.current)
-        pendingScrollRef.current = null
-      }
-    }, 40)
-  }
 
   // PWA install prompt
   useEffect(() => {
@@ -636,11 +580,7 @@ export default function App() {
     setPhase('combat')
   }
 
-  function nextTurn() {
-    setRound(r => r + 1)
-    const next = participants.map(p => ({ ...p, reaction: false }))
-    updateParticipants(next)
-  }
+  function nextTurn() { setRound(r => r + 1) }
   function prevTurn() { setRound(r => Math.max(1, r - 1)) }
 
   function endCombat() {
@@ -741,7 +681,6 @@ export default function App() {
             setVictory={() => {}}
             defeat={dDefeat ?? false}
             setDefeat={() => {}}
-            compactScroll={displayCompactScroll}
             displayOnly
           />
         ) : dScene ? (
@@ -834,7 +773,6 @@ export default function App() {
           onMoodChange={setMood}
           onSelectMusic={selectMusic}
           onStopMusic={stopMusic}
-          onCompactScroll={sendCompactScroll}
         />
       )}
     </div>
