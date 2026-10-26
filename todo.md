@@ -21,6 +21,9 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 | 5 | 🧹 Aufräumen & Spielrunde | 26–31 | ✅ erledigt |
 | 6 | ⚪ Build, Deploy & Performance | 32–37 | ⚠️ bis auf 36 erledigt |
 | 7 | 🎲 Spielrunde 2026-09-27 | 38–42 | ✅ erledigt |
+| 8 | 🎯 Kampflogik & Karten (Review 2026-10-26) | 43–49 | ⏳ 43–45 erledigt |
+| 9 | 🛠 Code, Betrieb & Performance (Review 2026-10-26) | 50–61 | ⏳ 55 erledigt |
+| 10 | 📱 Play Store | 62–72 | offen |
 
 ---
 
@@ -226,3 +229,160 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 
 - [x] **42. TV-Ansicht nicht scrollbar, untere Zeilen verschwinden**
   **Erledigt:** Der TV scrollt nicht mehr, sondern passt alles ein: Karten werden per `zoom` verkleinert (bis 50 %), die Liste wechselt auf zwei Spalten, sobald eine Spalte unter 80 % schrumpfen müsste. Die Leiste rechts schrumpft genauso. Erst wenn selbst das nicht reicht, greift das bisherige Mitscrollen zum aktiven Teilnehmer.
+
+---
+
+## Entschieden — bleibt so (Review 2026-10-26)
+
+Damit diese Punkte nicht bei jedem Review neu aufkommen:
+
+- **Initiative mindestens 1.** Werte ≤ 0 werden weiterhin auf 1 gesetzt.
+- **Monster zählen Schaden hoch, statt HP herunter.** Die App wird von jemandem aus der Spielrunde bedient, nicht vom DM — die HP der Monster sind am Tisch unbekannt. Max HP bleibt optional.
+- **Keine Konzentration für Monster und Verbündete.** Ob ein NPC konzentriert ist, weiß nur der DM.
+
+---
+
+## 🎯 Kategorie 8 — Kampflogik & Karten (Review 2026-10-26)
+
+- [x] **43. Neues Monster / neuer Verbündeter verschiebt den aktiven Zug**
+  `InitiativeTracker.jsx:246-307` — `addMonster`, `addAlly` und `duplicateParticipant` sortieren per `insertByInitiative` ein, lassen `activeIndex` aber stehen. Beispiel: A(20), B(15), C(10), C am Zug → Monster mit Init 18 dazu → B ist wieder am Zug.
+  **Fix:** Wie in `updateParticipant`: aktive ID vorher merken, danach neu suchen. Langfristig `activeId` statt `activeIndex` speichern (Autosave-Migration beachten).
+  **Erledigt:** Hinzufügen, Duplizieren und Initiative-Ändern laufen über `setParticipantsKeepingTurn` — wer am Zug ist, bleibt am Zug. Ausnahme vor dem ersten Zug (solange Plätze noch tauschbar sind): Dann beginnt weiter der Oberste der Liste, damit ein nach Kampfstart angelegtes Monster mit hoher Initiative in Runde 1 nicht übersprungen wird. Die Umstellung auf `activeId` bleibt offen. Der Filter „wer hat Züge" steht jetzt an einer Stelle (`turnOrder`) — dort setzt Punkt 44 an.
+
+- [x] **44. Gefallene Spieler/Verbündete bekommen „Geisterzüge"**
+  `visible` (`InitiativeTracker.jsx:170`) blendet nur tote Monster aus. Tote Spieler/Verbündete bleiben in der Zugfolge, werden aber nirgends hervorgehoben (`isActive && !p.dead`) — ein Druck auf „Nächster Zug" geht ins Leere.
+  **Fix:** `handleNextTurn`/`handlePrevTurn` überspringen Teilnehmer mit `dead`. Rundenwechsel dabei korrekt zählen.
+  **Erledigt:** Neue reine Funktion `stepTurn` (vor/zurück, überspringt Gefallene, zählt den Rundenwechsel beim Überlaufen; Kandidat für die Tests aus Punkt 53). „◀ Zurück" ist gesperrt, wenn in Runde 1 vor dem aktiven Zug nur Gefallene stehen. Verlässt der aktive Teilnehmer die Zugfolge (✕, ☠ beim Monster), übernimmt der nächste noch Stehende dieser Runde — `removeAlly`, `removeMonster` und `killMonster` teilen sich dafür `setParticipantsLeaving` statt dreifach kopierter Indexlogik. Stirbt jemand während des eigenen Zugs, bleibt der Zug bis „Nächster Zug" bei ihm (ohne Hervorhebung).
+
+- [x] **45. ☠ beim Monster ist sofort endgültig**
+  `ParticipantCard.jsx:699-704` — keine Rückfrage (✕ daneben hat eine), danach verschwindet die Karte ohne Weg zurück. Beim letzten Monster folgt die Siegesfanfare; „Doch weiterkämpfen" hilft nicht, das Monster bleibt tot.
+  **Fix:** Zwei-Tipp-Bestätigung wie bei ✕ **und** tote Monster in der rechten Leiste antippbar → „Wiederbeleben".
+  **Erledigt:** ☠ beim Monster zeigt erst „Besiegt?", der zweite Tipp besiegt (✕ und ☠ teilen sich `confirmTwice`). Besiegte Monster sind in der rechten Leiste ein Button: erster Tipp „↺ Wiederbeleben?", zweiter holt das Monster mit seinem bisherigen Schaden an den alten Platz zurück; wer am Zug ist, bleibt am Zug. Nach „Doch weiterkämpfen" kann so auch das letzte Monster zurückgeholt werden.
+
+- [ ] **46. Alter Soundeffekt nach „Ton aktivieren"**
+  `App.jsx:519-534` — ein Effekt, der ausgelöst wird, bevor am TV „Ton aktivieren" gedrückt wurde, wird beim Entsperren nachgespielt (Nonce wird nur bei `audioUnlocked` gemerkt). Variante von Punkt 10.
+  **Fix:** Nonce auch ohne `audioUnlocked` in `lastEffectNonceRef` mitführen, nur das Abspielen hängt am Unlock.
+
+- [ ] **47. HP bei Verbündeten entfernen**
+  Hat sich in der Spielrunde als unnötig erwiesen — jeder zählt seine HP selbst. Verbündete werden damit wie Spieler behandelt (analog Punkt 13):
+  - `hp`/`maxHp` aus `addAlly`, `duplicateParticipant`, Edit-Modus und `AddMonsterModal` (bei `isAlly`) entfernen; -Dmg/+Heil-Leiste weg.
+  - Todeswürfe über einen „☠ Todeswürfe"-Button wie beim Spieler statt über 0 HP; „Stabil" bzw. 3 Erfolge beenden sie.
+  - ☠ Besiegt, ausgegraute Karte und Wiederbeleben bleiben; „Wiederbeleben" setzt keine HP mehr.
+  - Der nie gesetzte 🩸-Chip bei Verbündeten entfällt.
+  - Gespeicherte Kämpfe mit `hp` bei Verbündeten müssen weiter laden (Felder einfach ignorieren).
+
+- [ ] **48. Versteckt und Fliegend auch für Monster und Verbündete**
+  Bisher nur bei Spielern. Konzentration und Gesegnet bleiben spielerexklusiv (siehe „Entschieden").
+  **Fix:** Die beiden Chips auf allen Karten; die Symbole in der rechten Leiste gibt es bereits für alle Typen.
+
+- [ ] **49. „besiegt?" erscheint auch am TV** — *Entscheidung nötig*
+  `ParticipantCard.jsx:666` ist nicht auf `!displayOnly` beschränkt. Die Spieler sehen den Hinweis, bevor am Tablet entschieden wurde. Nur relevant, wenn Max HP eingetragen ist.
+  **Optionen:** Hinweis nur am Tablet zeigen **oder** so lassen.
+
+---
+
+## 🛠 Kategorie 9 — Code, Betrieb & Performance (Review 2026-10-26)
+
+- [ ] **50. Erschöpfungsstufe nur bei Spielern sichtbar**
+  Bei Verbündeten und Monstern zeigt der Chip nur „Erschöpfung" ohne Stufe. Folge von Punkt 51.
+
+- [ ] **51. Copy-Paste in `ParticipantCard.jsx`**
+  Zustands-Chips 3×, Todeswürfe 2×, Entfernen-Button 3× — die Abweichungen zwischen den Kartentypen (Punkte 50, 47) entstehen genau dort.
+  **Fix:** `ConditionChips`, `DeathSaves`, `RemoveButton` als eigene Komponenten. Am besten zusammen mit 47/48 umsetzen.
+
+- [ ] **52. `App.jsx` macht zu viel**
+  837 Zeilen: Relay, TV-Audio, Persistenz und drei Display-Screens mit Inline-Styles.
+  **Fix:** `useRelay()` und `useTvAudio()` als Hooks auslagern, Display-Wartebildschirme als Komponente mit CSS-Datei.
+
+- [ ] **53. Keine Tests, kein Linter**
+  **Fix:** Vitest für die reinen Funktionen (`insertByInitiative`, `swapPlaces`, `orderedList`, Zugwechsel inkl. 43/44, `loadPlayerProfiles`, `isValidDisplayState`, `findBestTrack`). ESLint mit `react-hooks`-Regeln.
+
+- [ ] **54. Relay-Logik doppelt (`server.js` und Worker)**
+  Typen-Whitelist, Limits und Raum-Regex müssen von Hand synchron gehalten werden.
+  **Fix:** Gemeinsames Modul (z. B. `relay/rules.js`), das beide importieren — Wrangler bündelt Importe außerhalb von `worker/` mit.
+
+- [x] **55. `render.yaml` ist tot**
+  Render wird nicht mehr genutzt. **Erledigt:** Datei gelöscht.
+
+- [ ] **56. `npm audit`: 4 Lücken (1 kritisch, 2 hoch)**
+  `ws`, `body-parser`, `proxy-addr`, `qs` — betrifft nur `server.js` (lokaler Dev-Relay).
+  **Fix:** `npm audit fix` (ohne Breaking Changes), danach `npm run dev:all` testen.
+
+- [ ] **57. `ALLOWED_ORIGINS` im Worker ist leer**
+  `worker/wrangler.toml` — der Origin-Check ist in Produktion damit aus.
+  **Fix:** Vercel-Domain (und ggf. spätere eigene Domain) eintragen, `npx wrangler deploy`. Hinweis: Wer den TV-Link hat, kann auch `STATE` senden — für den Einsatz am Tisch vertretbar.
+
+- [ ] **58. TV rendert alle 4 s komplett neu**
+  Der Heartbeat schickt identischen State, `setDisplayState` bekommt trotzdem ein neues Objekt, `fitTvList` misst das Layout jedes Mal mehrfach neu. Auf schwachen TV-Browsern spürbar.
+  **Fix:** Empfangenes JSON mit dem zuletzt angewendeten vergleichen und Duplikate verwerfen.
+
+- [ ] **59. Lautstärkeregler kann das Rate-Limit reißen**
+  Jede Reglerbewegung schickt den vollen State, das Relay verwirft alles über 60 Nachrichten/s. Der letzte Wert kommt erst mit dem nächsten Heartbeat an.
+  **Fix:** Senden drosseln (z. B. max. alle 100 ms, letzter Wert gewinnt).
+
+- [ ] **60. Soundeffekte mit Verzögerung beim ersten Abspielen**
+  `App.jsx:529` erzeugt pro Auslösung `new Audio(url)`, der Service Worker cached Medien nicht.
+  **Fix:** Beim „Ton aktivieren" alle Effekte vorladen (oder als Web-Audio-Buffer dekodieren).
+
+- [ ] **61. Kleinkram Build & Dateien**
+  - Umlaute/Leerzeichen in Mediendateinamen (`höhle.mp4`, `tür öffnen.mp3`, `Holy Spell.mp3` …) → ASCII-Namen, manche TV-Browser sind da empfindlich. R2-Dateien mit umbenennen.
+  - Service-Worker-Cache wird von Hand versioniert (`v6`); alte gehashte Assets sammeln sich bis zum nächsten Hochzählen. Bei Punkt 68 ggf. auf `vite-plugin-pwa` umstellen.
+  - `.env.development` ist wieder da (untracked), `VITE_WS_URL` wird weiter nirgends gelesen (siehe Punkt 31) → löschen.
+
+---
+
+## 📱 Kategorie 10 — Play Store
+
+Ziel: Die App für beliebige Spielrunden anbieten. Der Weg ist eine **Trusted Web Activity (TWA)** — die bestehende PWA wird in eine Android-Hülle verpackt, die Website bleibt die eigentliche App (der TV braucht sie ohnehin als URL).
+
+- [ ] **62. Gruppe frei eintragen statt fester Spielerliste**
+  `PLAYER_DEFAULTS`, `RETIRED_DEFAULT_NAMES` und der Platzhalter „Neuer Spieler" sind auf die eigene Runde zugeschnitten.
+  - Erster Start ohne gespeicherte Gruppe → „Eure Gruppe"-Bildschirm: Namen eintragen, hinzufügen, entfernen, umbenennen. Gespeichert in `dnd-player-profiles` (bleibt auf dem Gerät).
+  - Neue Spieler bekommen eine zufällige ID (nicht der Name — Umbenennen darf gespeicherte Kämpfe nicht brechen).
+  - Im Setup jederzeit bearbeitbar; Entfernen mit Rückfrage.
+  - `loadCombatState` prüft gegen die gespeicherte Gruppe statt gegen `PLAYER_DEFAULTS`.
+  - Leere Gruppe: „Kampf beginnen" erst möglich, wenn mindestens ein Spieler ausgewählt ist (gibt es schon) und ein Hinweis, wenn keiner existiert.
+  - **Migration der eigenen Geräte:** Die alten IDs (`athania`, `delat`, …) einmalig als Gruppe übernehmen, wenn das Gerät die App schon benutzt hat (z. B. erkennbar an `dnd-room-id` oder `dnd-combat-state`) — sonst einfach neu eintragen.
+
+- [ ] **63. Gruppe sichern (optional)**
+  In der TWA liegt `localStorage` im Chrome-Speicher des Geräts. „Chrome-Daten löschen" löscht auch die Gruppe.
+  **Fix:** Export/Import als JSON-Datei oder als Code zum Abtippen.
+
+- [ ] **64. Name „DnD" — Markenrecht** — *Entscheidung nötig*
+  „D&D"/„Dungeons & Dragons" ist eine Marke von Wizards of the Coast. Google lehnt Apps, die fremde Marken im Namen tragen, häufig ab.
+  **Fix:** Neutraler Name, z. B. „Mietling — Initiative-Tracker", in der Beschreibung höchstens „für Pen & Paper / 5e-kompatibel". Betrifft Manifest, `index.html`, Store-Eintrag, Logo-Alt-Texte.
+
+- [ ] **65. Lizenzen aller Medien prüfen und dokumentieren**
+  Musik, Videos und Soundeffekte stammen aus verschiedenen Quellen (Pixabay-Dateinamen u. a.). Für eine öffentliche App muss jede Datei eine Lizenz haben, die die Nutzung in einer verteilten App erlaubt.
+  **Fix:** Tabelle Datei → Quelle → Lizenz (z. B. in `docs/`), unklare Dateien ersetzen, Credits-Seite in der App.
+
+- [ ] **66. Google Fonts selbst hosten**
+  `index.html` lädt Cinzel/Montserrat von Google — überträgt die IP an Google (DSGVO-Thema) und funktioniert offline nicht.
+  **Fix:** Fonts als WOFF2 ins Bundle.
+
+- [ ] **67. Datenschutzerklärung, Impressum, Data-Safety-Formular**
+  Play verlangt eine öffentlich erreichbare Datenschutzerklärung, auch ohne Konten. Inhalt: lokale Speicherung, Relay über Cloudflare (Namen, Zustände, Schaden werden während der Session übertragen und nur flüchtig im Speicher gehalten), Medien von R2, Vercel-Hosting.
+  Impressumspflicht (§ 5 DDG) für eine kostenlose App prüfen. Im Play-Console-Formular „Datensicherheit" ehrlich angeben, dass Daten übertragen, aber nicht gespeichert/geteilt werden.
+
+- [ ] **68. TWA-Paket bauen**
+  - Manifest: PNG-Icons 192 und 512 px (Play akzeptiert kein SVG), eigenes `maskable`-Icon statt `"any maskable"` auf derselben Datei, `id`, Screenshots-Feld.
+  - `/.well-known/assetlinks.json` (Digital Asset Links) unter der App-Domain, sonst zeigt die App eine Browser-Adressleiste.
+  - Paket mit Bubblewrap oder PWABuilder erzeugen, Signaturschlüssel sicher aufbewahren (bei Verlust kein Update mehr möglich — Play App Signing nutzen).
+  - Eigene Domain statt `*.vercel.app` empfohlen (unabhängig von Vercel, schönere TV-Adresse).
+
+- [ ] **69. Android-Zurück-Taste**
+  Die SPA hat keine History-Einträge — „Zurück" schließt die App mitten im Kampf (Autosave rettet den Stand, aber unschön). Offene Dialoge sollten per Zurück schließen.
+  **Fix:** Für Kampf und Modals History-Einträge setzen und `popstate` behandeln.
+
+- [ ] **70. Relay und CDN für öffentliche Nutzung**
+  - Punkt 36 (eigene Domain für R2) wird Pflicht — `r2.dev` ist rate-limitiert.
+  - Worker auf die WebSocket-Hibernation-API umstellen (`state.acceptWebSocket`), damit Durable Objects bei vielen Runden nicht durchgehend laufen; Free-Tier-Limits und Kosten im Blick behalten.
+  - Ohne konfiguriertes Relay muss die App weiter sauber ohne TV funktionieren (tut sie, bitte nach 62 erneut testen).
+
+- [ ] **71. Play Console**
+  - Entwicklerkonto (einmalig 25 US-$), Identitätsprüfung.
+  - Neue private Konten: geschlossener Test mit mindestens 12 Testern über 14 Tage, bevor die Produktion freigegeben wird — die eigene Spielrunde kann das sein.
+  - Store-Eintrag: Beschreibung, Screenshots Handy + Tablet (7"/10"), Feature-Grafik 1024×500, Altersfreigabe-Fragebogen (IARC), Zielgruppe (nicht für Kinder → keine Familien-Richtlinien), Kategorie.
+
+- [ ] **72. Texte und Annahmen der eigenen Runde verallgemeinern**
+  Hinweistexte, die das Setup der eigenen Gruppe voraussetzen, beim Durchgehen für Fremde verständlich machen (z. B. ein kurzer Erklär-Bildschirm „Tablet + TV" beim ersten Start).

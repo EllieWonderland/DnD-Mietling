@@ -402,6 +402,37 @@
   opacity: 0.8;
 }
 
+/* Defeated monster: the row is a button that brings it back. */
+.compact-revivable {
+  width: 100%;
+  margin: 0;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.compact-revivable:hover,
+.compact-revivable:focus-visible { opacity: 0.6; }
+
+.compact-revive-armed,
+.compact-revive-armed:hover {
+  opacity: 1;
+  background: rgba(201, 162, 39, 0.18);
+}
+
+.compact-revive {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gold-light, #e8c547);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .compact-dying {
   font-size: 0.75rem;
   color: #cc3333;

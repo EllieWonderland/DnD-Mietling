@@ -50,6 +50,35 @@ function insertByInitiative(list, entry) {
   return renumber(rows)
 }
 
+// Who takes turns: everyone but the defeated monsters, which leave the list.
+// `activeIndex` counts in this list.
+function turnOrder(list) {
+  return list.filter(p => !(p.type === 'monster' && p.dead))
+}
+
+// The next (dir 1) or previous (dir -1) place in the turn order. Fallen
+// players and allies keep their card but are skipped. Passing the end of the
+// list starts a new round (roundDelta). Returns null when there is nothing
+// before the first turn of the combat. With nobody left standing it steps
+// plainly, so the buttons still respond.
+function stepTurn(order, from, dir, round) {
+  const anyStanding = order.some(p => !p.dead)
+  let idx = from
+  let roundDelta = 0
+  do {
+    idx += dir
+    if (idx >= order.length) {
+      idx = 0
+      roundDelta = 1
+    } else if (idx < 0) {
+      if (round <= 1) return null
+      idx = order.length - 1
+      roundDelta = -1
+    }
+  } while (anyStanding && order[idx].dead)
+  return { idx, roundDelta }
+}
+
 // ── TV fit ──────────────────────────────────────────────────────────────────
 // The TV has no input, so every row has to be on screen at all times — there
 // is no scrolling and no separate turn-order strip. The list is split into as
@@ -133,6 +162,8 @@ export default function InitiativeTracker({
   // "Doch weiterkämpfen" must not re-announce the same result on the next
   // render. The lock lifts as soon as the board no longer meets the condition.
   const [dismissedResult, setDismissedResult] = useState(null) // 'victory' | 'defeat' | null
+  const [reviveArmedId, setReviveArmedId] = useState(null)
+  const reviveTimer = useRef(null)
   const concAlertTitleId = useId()
   // Swapping places is only allowed before the first action of a combat. A
   // combat resumed mid-fight is therefore already locked.
@@ -161,13 +192,14 @@ export default function InitiativeTracker({
   useEffect(() => {
     return () => {
       if (longPressTimer.current) clearTimeout(longPressTimer.current)
+      if (reviveTimer.current) clearTimeout(reviveTimer.current)
       document.removeEventListener('touchmove', preventTouchScroll, { passive: false })
       window.removeEventListener('pointerup', windowPointerUp)
       window.removeEventListener('pointercancel', windowPointerCancel)
     }
   }, [preventTouchScroll, windowPointerUp, windowPointerCancel])
 
-  const visible = participants.filter(p => !(p.type === 'monster' && p.dead))
+  const visible = turnOrder(participants)
 
   // TV: refit after every render (a new participant or chip changes the
   // height) and whenever the screen size or the web font changes it. Runs
@@ -255,7 +287,7 @@ export default function InitiativeTracker({
       conditions: [],
       color: color || null,
     }
-    setParticipants(insertByInitiative(participants, newMonster))
+    setParticipantsKeepingTurn(insertByInitiative(participants, newMonster))
   }
 
   function addAlly(name, initiative, hp, color = null) {
@@ -269,19 +301,38 @@ export default function InitiativeTracker({
       deathSaves: { successes: 0, failures: 0 },
       color: color || null,
     }
-    setParticipants(insertByInitiative(participants, newAlly))
+    setParticipantsKeepingTurn(insertByInitiative(participants, newAlly))
+  }
+
+  // A newcomer or a changed initiative shifts the places, but whoever is on
+  // turn stays on turn. Before the first turn the top of the list starts,
+  // whoever that is now.
+  function setParticipantsKeepingTurn(next) {
+    setParticipants(next)
+    if (canDrag) return
+    const activeId = visible[activeIndex]?.id
+    const newIdx = turnOrder(next).findIndex(p => p.id === activeId)
+    if (newIdx >= 0 && newIdx !== activeIndex) setActiveIndex(newIdx)
+  }
+
+  // Someone leaves the turn order (removed, or a monster defeated). Everyone
+  // behind them moves up a place; if it was their turn, the next one still
+  // standing in this round takes over.
+  function setParticipantsLeaving(id, next) {
+    const leftIdx = visible.findIndex(p => p.id === id)
+    setParticipants(next)
+    if (leftIdx >= 0 && leftIdx < activeIndex) {
+      setActiveIndex(activeIndex - 1)
+    } else if (leftIdx === activeIndex) {
+      const order = turnOrder(next)
+      const idx = Math.min(activeIndex, Math.max(0, order.length - 1))
+      const standing = order.findIndex((p, i) => i >= idx && !p.dead)
+      setActiveIndex(standing >= 0 ? standing : idx)
+    }
   }
 
   function removeAlly(id) {
-    const removedIdx = visible.findIndex(p => p.id === id)
-    const next = participants.filter(p => p.id !== id)
-    setParticipants(next)
-    if (removedIdx >= 0 && removedIdx < activeIndex) {
-      setActiveIndex(prev => Math.max(0, prev - 1))
-    } else if (removedIdx === activeIndex) {
-      const newVisible = next.filter(p => !(p.type === 'monster' && p.dead))
-      setActiveIndex(Math.min(activeIndex, Math.max(0, newVisible.length - 1)))
-    }
+    setParticipantsLeaving(id, participants.filter(p => p.id !== id))
   }
 
   // Copies a monster or an ally fresh: full health, no conditions. An empty
@@ -303,23 +354,17 @@ export default function InitiativeTracker({
     } else {
       copy.damage = 0
     }
-    setParticipants(insertByInitiative(participants, copy))
+    setParticipantsKeepingTurn(insertByInitiative(participants, copy))
   }
 
   function updateParticipant(id, changes, alertData) {
     let next = participants.map(p => p.id === id ? { ...p, ...changes } : p)
     if ('initiative' in changes) {
       // Only the edited participant moves; everyone else keeps their place.
-      const activeId = visible[activeIndex]?.id
       const moved = next.find(p => p.id === id)
       next = insertByInitiative(next.filter(p => p.id !== id), moved)
-      if (activeId) {
-        const newVisible = next.filter(p => !(p.type === 'monster' && p.dead))
-        const newIdx = newVisible.findIndex(p => p.id === activeId)
-        if (newIdx >= 0) setActiveIndex(newIdx)
-      }
     }
-    setParticipants(next)
+    setParticipantsKeepingTurn(next)
     // The card edit is the second way to rename a player. Without this it
     // would only live in the combat state while the setup screen wrote the
     // profile — two paths, two results.
@@ -344,27 +389,30 @@ export default function InitiativeTracker({
   }
 
   function killMonster(id) {
-    const killedIdx = visible.findIndex(p => p.id === id)
-    const next = participants.map(p => p.id === id ? { ...p, dead: true } : p)
-    setParticipants(next)
-    if (killedIdx >= 0 && killedIdx < activeIndex) {
-      setActiveIndex(prev => Math.max(0, prev - 1))
-    } else if (killedIdx === activeIndex) {
-      const newVisible = next.filter(p => !(p.type === 'monster' && p.dead))
-      setActiveIndex(Math.min(activeIndex, Math.max(0, newVisible.length - 1)))
+    setParticipantsLeaving(id, participants.map(p => p.id === id ? { ...p, dead: true } : p))
+  }
+
+  // The way back from ☠, from the right-hand strip: the monster returns to its
+  // old place with its damage, as if the tap had never happened.
+  function reviveMonster(id) {
+    setParticipantsKeepingTurn(participants.map(p => p.id === id ? { ...p, dead: false } : p))
+  }
+
+  // Two taps like ✕ on a card: the first one shows "Wiederbeleben?", the second
+  // one revives. Disarms itself after a few seconds.
+  function requestRevive(id) {
+    if (reviveTimer.current) clearTimeout(reviveTimer.current)
+    if (reviveArmedId === id) {
+      setReviveArmedId(null)
+      reviveMonster(id)
+      return
     }
+    setReviveArmedId(id)
+    reviveTimer.current = setTimeout(() => setReviveArmedId(null), 4000)
   }
 
   function removeMonster(id) {
-    const removedIdx = visible.findIndex(p => p.id === id)
-    const next = participants.filter(p => p.id !== id)
-    setParticipants(next)
-    if (removedIdx >= 0 && removedIdx < activeIndex) {
-      setActiveIndex(prev => Math.max(0, prev - 1))
-    } else if (removedIdx === activeIndex) {
-      const newVisible = next.filter(p => !(p.type === 'monster' && p.dead))
-      setActiveIndex(Math.min(activeIndex, Math.max(0, newVisible.length - 1)))
-    }
+    setParticipantsLeaving(id, participants.filter(p => p.id !== id))
     // Deliberately no victory check here: a monster that is taken off the list
     // was never defeated. Only ☠ (killMonster) can win the fight.
   }
@@ -372,24 +420,17 @@ export default function InitiativeTracker({
   function handleNextTurn() {
     // First turn taken -> the order is fixed for the rest of the combat.
     setCanDrag(false)
-    const alive = participants.filter(p => !(p.type === 'monster' && p.dead))
-    const nextIdx = activeIndex + 1
-    if (nextIdx >= alive.length) {
-      setActiveIndex(0)
-      onNextTurn()
-    } else {
-      setActiveIndex(nextIdx)
-    }
+    const step = stepTurn(visible, activeIndex, 1, round)
+    setActiveIndex(step.idx)
+    if (step.roundDelta > 0) onNextTurn()
   }
 
+  const prevStep = stepTurn(visible, activeIndex, -1, round)
+
   function handlePrevTurn() {
-    const alive = participants.filter(p => !(p.type === 'monster' && p.dead))
-    if (activeIndex > 0) {
-      setActiveIndex(activeIndex - 1)
-    } else if (round > 1) {
-      setActiveIndex(Math.max(0, alive.length - 1))
-      onPrevTurn()
-    }
+    if (!prevStep) return
+    setActiveIndex(prevStep.idx)
+    if (prevStep.roundDelta < 0) onPrevTurn()
   }
 
   // ── Pointer-based Drag&Drop (Mouse + Touch) ──
@@ -680,8 +721,12 @@ export default function InitiativeTracker({
               const isDead = !!p.dead
               const isActive = !isDead && p.id === activeRowId
               const monsterCol = p.color ? getMonsterColor(p.color) : null
+              // A defeated monster has no card left — its row is the way back.
+              const revivable = isDead && p.type === 'monster'
+              const reviveArmed = revivable && reviveArmedId === p.id
+              const Row = revivable ? 'button' : 'div'
               return (
-                <div
+                <Row
                   key={p.id}
                   ref={el => { compactRowRefs.current[cIdx] = el }}
                   className={[
@@ -689,9 +734,17 @@ export default function InitiativeTracker({
                     p.type === 'player' ? 'compact-player' : p.type === 'ally' ? 'compact-ally' : 'compact-monster',
                     isActive ? 'compact-active' : '',
                     isDead ? 'compact-dead' : '',
+                    revivable ? 'compact-revivable' : '',
+                    reviveArmed ? 'compact-revive-armed' : '',
                     p.id === swapSourceId ? 'compact-swap-source' : '',
                     p.id === swapTargetId ? 'compact-swap-target' : '',
                   ].filter(Boolean).join(' ')}
+                  {...(revivable && {
+                    type: 'button',
+                    onClick: () => requestRevive(p.id),
+                    title: reviveArmed ? 'Nochmal tippen zum Wiederbeleben' : 'Besiegt — antippen zum Wiederbeleben',
+                    'aria-label': reviveArmed ? `${p.name} wirklich wiederbeleben` : `${p.name} wiederbeleben`,
+                  })}
                 >
                   {monsterCol && (
                     <span
@@ -708,8 +761,10 @@ export default function InitiativeTracker({
                   {!isDead && p.hidden && <span className="compact-status" title="Versteckt">👻</span>}
                   {!isDead && p.flying && <span className="compact-status" title="Fliegend">🪽</span>}
                   {p.dying && <span className="compact-dying">♥</span>}
-                  {isDead && <span className="compact-skull">☠</span>}
-                </div>
+                  {reviveArmed
+                    ? <span className="compact-revive">↺ Wiederbeleben?</span>
+                    : isDead && <span className="compact-skull">☠</span>}
+                </Row>
               )
             })}
         </div>
@@ -721,7 +776,7 @@ export default function InitiativeTracker({
           <button
             className="prev-turn-btn"
             onClick={handlePrevTurn}
-            disabled={activeIndex === 0 && round <= 1}
+            disabled={!prevStep}
           >
             ◀ Zurück
           </button>

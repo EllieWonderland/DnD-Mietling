@@ -39,7 +39,7 @@ export default function ParticipantCard({
   const [editMaxHp, setEditMaxHp] = useState('')
   const [editColor, setEditColor] = useState(null)
   const [editDamage, setEditDamage] = useState('')
-  const [confirmRemove, setConfirmRemove] = useState(false)
+  const [armed, setArmed] = useState(null) // 'remove' | 'kill' | null
   const confirmTimer = useRef(null)
   const concTitleId = useId()
 
@@ -170,19 +170,22 @@ export default function ParticipantCard({
     onUpdate(changes)
   }
 
-  // Removing a participant is not undoable, so ✕ always asks first. The prompt
-  // disarms itself after a few seconds so no card is left in a pending state.
-  function requestRemove() {
-    if (confirmRemove) {
-      if (confirmTimer.current) clearTimeout(confirmTimer.current)
-      setConfirmRemove(false)
-      onRemove()
+  // ✕ and the monster's ☠ take a card off the board, so both ask first: the
+  // first tap arms the button, the second one acts. The prompt disarms itself
+  // after a few seconds so no card is left in a pending state.
+  function confirmTwice(action, run) {
+    if (confirmTimer.current) clearTimeout(confirmTimer.current)
+    if (armed === action) {
+      setArmed(null)
+      run()
       return
     }
-    setConfirmRemove(true)
-    if (confirmTimer.current) clearTimeout(confirmTimer.current)
-    confirmTimer.current = setTimeout(() => setConfirmRemove(false), 4000)
+    setArmed(action)
+    confirmTimer.current = setTimeout(() => setArmed(null), 4000)
   }
+
+  const requestRemove = () => confirmTwice('remove', onRemove)
+  const confirmRemove = armed === 'remove'
 
   function toggleCondition(cond) {
     const has = p.conditions.some(c => c.name === cond)
@@ -697,11 +700,11 @@ export default function ParticipantCard({
                 <div className="monster-sep" />
                 {duplicateButton}
                 <button
-                  className={`monster-btn kill-btn${monsterDown ? ' kill-btn-suggested' : ''}`}
-                  onClick={onKill}
-                  title="Besiegt"
-                  aria-label={`${p.name} als besiegt markieren`}
-                >☠</button>
+                  className={`monster-btn kill-btn${armed === 'kill' ? ' remove-armed' : monsterDown ? ' kill-btn-suggested' : ''}`}
+                  onClick={() => confirmTwice('kill', onKill)}
+                  title={armed === 'kill' ? 'Nochmal tippen: besiegt' : 'Besiegt'}
+                  aria-label={armed === 'kill' ? `${p.name} wirklich als besiegt markieren` : `${p.name} als besiegt markieren`}
+                >{armed === 'kill' ? 'Besiegt?' : '☠'}</button>
                 <button
                   className={`monster-btn remove-btn${confirmRemove ? ' remove-armed' : ''}`}
                   onClick={requestRemove}
