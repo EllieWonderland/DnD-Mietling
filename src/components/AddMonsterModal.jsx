@@ -50,18 +50,21 @@ export default function AddMonsterModal({ onAdd, onClose, title = 'Monster hinzu
               className="modal-input"
             />
           </div>
-          <div className="modal-field">
-            <label>Max HP (optional)</label>
-            <input
-              type="number"
-              inputMode="numeric"
-              value={hp}
-              onChange={e => setHp(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') submit() }}
-              placeholder="0"
-              className="modal-input"
-            />
-          </div>
+          {/* Allies count their own HP, like the players. */}
+          {!isAlly && (
+            <div className="modal-field">
+              <label>Max HP (optional)</label>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={hp}
+                onChange={e => setHp(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') submit() }}
+                placeholder="0"
+                className="modal-input"
+              />
+            </div>
+          )}
         </div>
 
         <div className="modal-field modal-field--color">

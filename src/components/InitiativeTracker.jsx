@@ -290,13 +290,12 @@ export default function InitiativeTracker({
     setParticipantsKeepingTurn(insertByInitiative(participants, newMonster))
   }
 
-  function addAlly(name, initiative, hp, color = null) {
+  // Allies count their own HP, like the players.
+  function addAlly(name, initiative, color = null) {
     const id = `ally-${monsterIdCounter++}`
-    const maxHp = parseInt(hp) || 20
     const newAlly = {
       id, name, type: 'ally',
       initiative: Math.max(1, parseInt(initiative) || 1),
-      hp: maxHp, maxHp,
       conditions: [],
       deathSaves: { successes: 0, failures: 0 },
       color: color || null,
@@ -348,7 +347,6 @@ export default function InitiativeTracker({
       conditions: [],
     }
     if (original.type === 'ally') {
-      copy.hp = original.maxHp || original.hp
       copy.dying = false
       copy.deathSaves = { successes: 0, failures: 0 }
     } else {
@@ -797,7 +795,7 @@ export default function InitiativeTracker({
         <AddMonsterModal
           title="Verbündeten hinzufügen"
           isAlly
-          onAdd={(name, initiative, hp, color) => { addAlly(name, initiative, hp, color); setShowAddAlly(false) }}
+          onAdd={(name, initiative, _hp, color) => { addAlly(name, initiative, color); setShowAddAlly(false) }}
           onClose={() => setShowAddAlly(false)}
         />
       )}

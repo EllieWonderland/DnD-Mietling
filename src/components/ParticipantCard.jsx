@@ -23,6 +23,126 @@ const CONDITION_DATA = {
   Unconscious: { icon: '💤', label: 'Bewusstlos' },
 }
 
+// Status toggles on the card. Concentration and blessing stay with the
+// players — whether an NPC concentrates or is blessed only the DM knows.
+const STATUS_TOGGLES = [
+  { key: 'concentration', className: 'chip-conc', label: '🔮 Konzentration', playerOnly: true },
+  { key: 'hidden', className: 'chip-hidden', label: '👻 Versteckt', title: 'Verstecken umschalten' },
+  { key: 'blessed', className: 'chip-blessed', label: '⭐ Gesegnet', title: 'Gesegnet / Guidance umschalten', playerOnly: true },
+  { key: 'flying', className: 'chip-flying', label: '🪽 Fliegend', title: 'Fliegend umschalten' },
+]
+
+// One chip row for every card type, so players, allies and monsters can no
+// longer drift apart (the exhaustion level used to show on players only).
+function ConditionChips({ p, displayOnly, onUpdate, onConcClick, onRemoveCondition, onAddCondition, children }) {
+  const toggles = STATUS_TOGGLES.filter(t => p.type === 'player' || !t.playerOnly)
+  return (
+    <div className="card-chips-row">
+      {toggles.map(t => displayOnly ? (
+        p[t.key] && <span key={t.key} className={`status-chip ${t.className} chip-active`}>{t.label}</span>
+      ) : (
+        <button
+          key={t.key}
+          className={`status-chip ${t.className}${p[t.key] ? ' chip-active' : ''}`}
+          onClick={t.key === 'concentration' ? onConcClick : () => onUpdate({ [t.key]: !p[t.key] })}
+          title={t.key === 'concentration'
+            ? (p.concentration ? 'Konzentration aktiv – Klicken für DC-Check' : 'Konzentration aktivieren')
+            : t.title}
+          aria-pressed={!!p[t.key]}
+        >
+          {t.label}
+        </button>
+      ))}
+
+      {p.type === 'monster' && p.bloodied && (
+        <span className="status-chip chip-bloodied" title="Verwundet">
+          🩸 Verwundet
+        </span>
+      )}
+
+      {p.conditions && p.conditions.map(c => {
+        const info = CONDITION_DATA[c.name] || { icon: '●', label: c.name }
+        return (
+          <span key={c.name} className="status-chip chip-condition" title={info.label}>
+            <span>{info.icon}</span>
+            <span>{info.label}{c.name === 'Exhaustion' && c.level ? ` ${c.level} (-${c.level * 2})` : ''}</span>
+            {!displayOnly && (
+              <button
+                className="chip-remove-btn"
+                onClick={() => onRemoveCondition(c.name)}
+                title={`${info.label} entfernen`}
+                aria-label={`${info.label} bei ${p.name} entfernen`}
+              >✕</button>
+            )}
+          </span>
+        )
+      })}
+
+      {!displayOnly && (
+        <button
+          className="status-chip chip-add"
+          onClick={onAddCondition}
+          title="Zustand hinzufügen"
+          aria-label={`Zustand für ${p.name} hinzufügen`}
+        >
+          + Zustand 🎭
+        </button>
+      )}
+      {children}
+    </div>
+  )
+}
+
+// Three circles each for successes and failures, plus the way out by hand.
+function DeathSaves({ p, displayOnly, onToggle, onStabilize }) {
+  const groups = [
+    { type: 'success', label: 'Rettung', count: p.deathSaves?.successes || 0, verb: 'gelungen' },
+    { type: 'failure', label: 'Misserfolg', count: p.deathSaves?.failures || 0, verb: 'misslungen' },
+  ]
+  return (
+    <div className="death-saves-row">
+      {groups.map(g => (
+        <div key={g.type} className="ds-group">
+          <span className="ds-label">{g.label}</span>
+          <div className="ds-circles">
+            {[0, 1, 2].map(i => (
+              <button
+                key={i}
+                className={`ds-circle ds-circle-${g.type}${g.count > i ? ' ds-filled' : ''}`}
+                onClick={!displayOnly ? () => onToggle(g.type, i) : undefined}
+                style={displayOnly ? { cursor: 'default' } : undefined}
+                aria-label={`Rettungswurf ${i + 1} von ${p.name} ${g.verb}`}
+                aria-pressed={g.count > i}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+      {!displayOnly && (
+        <button
+          className="monster-btn"
+          style={{ marginLeft: 'auto' }}
+          title="Wieder stabil"
+          onClick={onStabilize}
+        >💚 Stabil</button>
+      )}
+    </div>
+  )
+}
+
+// ✕ with its two-tap confirmation; `long` is the labelled variant on a
+// fallen card.
+function RemoveButton({ name, armed, onClick, long = false }) {
+  return (
+    <button
+      className={`monster-btn remove-btn${armed ? ' remove-armed' : ''}`}
+      onClick={onClick}
+      title={armed ? 'Nochmal tippen zum Entfernen' : long ? 'Aus der Liste entfernen' : 'Entfernen'}
+      aria-label={armed ? `${name} wirklich entfernen` : `${name} entfernen`}
+    >{armed ? (long ? 'Wirklich entfernen?' : 'Wirklich?') : (long ? '✕ Entfernen' : '✕')}</button>
+  )
+}
+
 export default function ParticipantCard({
   participant: p, isActive, onUpdate, onKill, onRemove, onDuplicate,
   onMove, canMoveUp = false, canMoveDown = false,
@@ -30,7 +150,6 @@ export default function ParticipantCard({
 }) {
   const [showConditions, setShowConditions] = useState(false)
   const [damageInput, setDamageInput] = useState('')
-  const [allyHpInput, setAllyHpInput] = useState('')
   const [showConcModal, setShowConcModal] = useState(false)
   const [concDmgInput, setConcDmgInput] = useState('')
   const [editMode, setEditMode] = useState(false)
@@ -59,14 +178,10 @@ export default function ParticipantCard({
     const name = editName.trim() || p.name
     const initiative = Math.max(1, parseInt(editInit) || 1)
     const changes = { name, initiative }
-    // Players have no HP — only their name and initiative are editable.
-    if (p.type !== 'player') {
+    // Players and allies count their own HP — only monsters keep track here.
+    if (p.type === 'monster') {
       const maxHp = Math.max(1, parseInt(editMaxHp) || 1)
       changes.maxHp = maxHp
-      if (p.type === 'ally') changes.hp = Math.min(p.hp, maxHp)
-    }
-    if (p.type === 'monster') {
-      const maxHp = changes.maxHp
       // A mistyped damage total is fixed here instead of by deleting the monster.
       const damage = Math.max(0, parseInt(editDamage) || 0)
       changes.damage = damage
@@ -117,20 +232,12 @@ export default function ParticipantCard({
     setDamageInput('')
   }
 
-  function applyAllyDamage() {
-    const val = parseInt(allyHpInput)
-    if (isNaN(val) || val <= 0) return
-    const newHp = Math.max(0, p.hp - val)
-    onUpdate({ hp: newHp })
-    setAllyHpInput('')
+  function startDeathSaves() {
+    onUpdate({ dying: true, deathSaves: { successes: 0, failures: 0 } })
   }
 
-  function applyAllyHeal() {
-    const val = parseInt(allyHpInput)
-    if (isNaN(val) || val <= 0) return
-    const newHp = Math.min(p.maxHp, p.hp + val)
-    onUpdate({ hp: newHp })
-    setAllyHpInput('')
+  function stabilize() {
+    onUpdate({ dying: false, deathSaves: { successes: 0, failures: 0 } })
   }
 
   function toggleDeathSave(type, index) {
@@ -138,9 +245,7 @@ export default function ParticipantCard({
     if (type === 'success') {
       const newCount = ds.successes === index + 1 ? index : index + 1
       if (newCount >= 3) {
-        const stabilized = { dying: false, deathSaves: { successes: 0, failures: 0 } }
-        if (p.type === 'ally') stabilized.hp = 1
-        onUpdate(stabilized)
+        stabilize()
       } else {
         onUpdate({ deathSaves: { ...ds, successes: newCount } })
       }
@@ -157,17 +262,14 @@ export default function ParticipantCard({
     }
   }
 
-  // Allies fall like monsters do — one tap, no detour over 0 HP and three
-  // failed saves. Unlike a monster the card stays (greyed out, ☠) and can be
-  // revived, which puts them back on 1 HP.
+  // Allies fall like monsters do — one tap, no detour over three failed
+  // saves. Unlike a monster the card stays (greyed out, ☠) and can be revived.
   function defeatAlly() {
-    onUpdate({ dead: true, dying: false, hp: 0, deathSaves: { successes: 0, failures: 0 } })
+    onUpdate({ dead: true, dying: false, deathSaves: { successes: 0, failures: 0 } })
   }
 
   function revive() {
-    const changes = { dead: false, dying: false, deathSaves: { successes: 0, failures: 0 } }
-    if (p.type === 'ally') changes.hp = Math.max(1, p.hp || 0)
-    onUpdate(changes)
+    onUpdate({ dead: false, dying: false, deathSaves: { successes: 0, failures: 0 } })
   }
 
   // ✕ and the monster's ☠ take a card off the board, so both ask first: the
@@ -203,8 +305,9 @@ export default function ParticipantCard({
   }
 
   // Once the damage reaches max HP the monster is beaten on paper — the card
-  // says so, the DM still decides with ☠.
-  const monsterDown = p.type === 'monster' && p.maxHp > 0 && (p.damage || 0) >= p.maxHp
+  // says so, the DM still decides with ☠. Only on the tablet: the TV must not
+  // give it away before that decision.
+  const monsterDown = !displayOnly && p.type === 'monster' && p.maxHp > 0 && (p.damage || 0) >= p.maxHp
 
   const cardClass = [
     'participant-card',
@@ -229,14 +332,12 @@ export default function ParticipantCard({
       title={`Farbring: ${ringColor.label}`}
     />
   )
-  const allyDefeatButton = !displayOnly && (
-    <button
-      className="monster-btn kill-btn"
-      onClick={defeatAlly}
-      title="Besiegt"
-      aria-label={`${p.name} als besiegt markieren`}
-    >☠</button>
-  )
+  const chipProps = {
+    p, displayOnly, onUpdate,
+    onConcClick: handleConcClick,
+    onRemoveCondition: toggleCondition,
+    onAddCondition: () => setShowConditions(true),
+  }
 
   const duplicateButton = !displayOnly && onDuplicate && (
     <button
@@ -275,7 +376,7 @@ export default function ParticipantCard({
                 min="1" max="30"
               />
             </div>
-            {p.type !== 'player' && (
+            {p.type === 'monster' && (
               <div className="card-edit-num-group">
                 <span className="card-edit-label">Max HP</span>
                 <input
@@ -350,270 +451,44 @@ export default function ParticipantCard({
                 title="Wiederbeleben"
                 aria-label={`${p.name} wiederbeleben`}
               >💚 Wiederbeleben</button>
-              <button
-                className={`monster-btn remove-btn${confirmRemove ? ' remove-armed' : ''}`}
-                onClick={requestRemove}
-                title={confirmRemove ? 'Nochmal tippen zum Entfernen' : 'Aus der Liste entfernen'}
-                aria-label={confirmRemove ? `${p.name} wirklich entfernen` : `${p.name} entfernen`}
-              >{confirmRemove ? 'Wirklich entfernen?' : '✕ Entfernen'}</button>
+              <RemoveButton name={p.name} armed={confirmRemove} onClick={requestRemove} long />
             </div>
           )}
         </div>
-      ) : p.type === 'player' ? (
-        /* ── PLAYER LAYOUT ── */
-        <div className="card-body">
-          <div className="card-name-row">
-            <span className="card-name">{p.name}</span>
-          </div>
-
-          {/* Condition & Status Chips */}
-          <div className="card-chips-row">
-            {!displayOnly ? (
-              <>
-                <button
-                  className={`status-chip chip-conc ${p.concentration ? 'chip-active' : ''}`}
-                  onClick={handleConcClick}
-                  title={p.concentration ? 'Konzentration aktiv – Klicken für DC-Check' : 'Konzentration aktivieren'}
-                >
-                  🔮 Konzentration
-                </button>
-                <button
-                  className={`status-chip chip-hidden ${p.hidden ? 'chip-active' : ''}`}
-                  onClick={() => onUpdate({ hidden: !p.hidden })}
-                  title="Verstecken umschalten"
-                >
-                  👻 Versteckt
-                </button>
-                <button
-                  className={`status-chip chip-blessed ${p.blessed ? 'chip-active' : ''}`}
-                  onClick={() => onUpdate({ blessed: !p.blessed })}
-                  title="Gesegnet / Guidance umschalten"
-                >
-                  ⭐ Gesegnet
-                </button>
-                <button
-                  className={`status-chip chip-flying ${p.flying ? 'chip-active' : ''}`}
-                  onClick={() => onUpdate({ flying: !p.flying })}
-                  title="Fliegend umschalten"
-                >
-                  🪽 Fliegend
-                </button>
-              </>
-            ) : (
-              <>
-                {p.concentration && <span className="status-chip chip-conc chip-active">🔮 Konzentration</span>}
-                {p.hidden && <span className="status-chip chip-hidden chip-active">👻 Versteckt</span>}
-                {p.blessed && <span className="status-chip chip-blessed chip-active">⭐ Gesegnet</span>}
-                {p.flying && <span className="status-chip chip-flying chip-active">🪽 Fliegend</span>}
-              </>
-            )}
-
-            {p.conditions && p.conditions.map(c => {
-              const info = CONDITION_DATA[c.name] || { icon: '●', label: c.name }
-              return (
-                <span key={c.name} className="status-chip chip-condition" title={info.label}>
-                  <span>{info.icon}</span>
-                  <span>{info.label}{c.name === 'Exhaustion' && c.level ? ` ${c.level} (-${c.level * 2})` : ''}</span>
-                  {!displayOnly && (
-                    <button
-                      className="chip-remove-btn"
-                      onClick={() => toggleCondition(c.name)}
-                      title={`${info.label} entfernen`}
-                      aria-label={`${info.label} bei ${p.name} entfernen`}
-                    >✕</button>
-                  )}
-                </span>
-              )
-            })}
-
-            {!displayOnly && (
-              <>
-                <button
-                  className="status-chip chip-add"
-                  onClick={() => setShowConditions(true)}
-                  title="Zustand hinzufügen"
-                  aria-label={`Zustand für ${p.name} hinzufügen`}
-                >
-                  + Zustand 🎭
-                </button>
-                {!p.dying && (
-                  <button
-                    className="status-chip chip-skull"
-                    onClick={() => onUpdate({ dying: true, deathSaves: { successes: 0, failures: 0 } })}
-                    title="Auf 0 HP / Todeswürfe setzen"
-                  >
-                    ☠ Todeswürfe
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-
-          {p.dying && (
-            <div className="death-saves-row">
-              <div className="ds-group">
-                <span className="ds-label">Rettung</span>
-                <div className="ds-circles">
-                  {[0, 1, 2].map(i => (
-                    <button
-                      key={i}
-                      className={`ds-circle ds-circle-success${(p.deathSaves?.successes || 0) > i ? ' ds-filled' : ''}`}
-                      onClick={!displayOnly ? () => toggleDeathSave('success', i) : undefined}
-                      style={displayOnly ? { cursor: 'default' } : undefined}
-                      aria-label={`Rettungswurf ${i + 1} von ${p.name} gelungen`}
-                      aria-pressed={(p.deathSaves?.successes || 0) > i}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="ds-group">
-                <span className="ds-label">Misserfolg</span>
-                <div className="ds-circles">
-                  {[0, 1, 2].map(i => (
-                    <button
-                      key={i}
-                      className={`ds-circle ds-circle-failure${(p.deathSaves?.failures || 0) > i ? ' ds-filled' : ''}`}
-                      onClick={!displayOnly ? () => toggleDeathSave('failure', i) : undefined}
-                      style={displayOnly ? { cursor: 'default' } : undefined}
-                      aria-label={`Rettungswurf ${i + 1} von ${p.name} misslungen`}
-                      aria-pressed={(p.deathSaves?.failures || 0) > i}
-                    />
-                  ))}
-                </div>
-              </div>
-              {!displayOnly && (
-                <button
-                  className="monster-btn"
-                  style={{ marginLeft: 'auto' }}
-                  title="Wieder stabil"
-                  onClick={() => onUpdate({ dying: false, deathSaves: { successes: 0, failures: 0 } })}
-                >💚 Stabil</button>
-              )}
-            </div>
-          )}
-        </div>
-      ) : p.type === 'ally' ? (
-        /* ── ALLY LAYOUT ── */
-        <div className="card-body ally-body">
+      ) : p.type === 'player' || p.type === 'ally' ? (
+        /* ── PLAYER / ALLY LAYOUT ── */
+        <div className={`card-body${p.type === 'ally' ? ' ally-body' : ''}`}>
           <div className="card-name-row">
             {colorToken}
-            <span className="card-name ally-name">{p.name}</span>
+            <span className={`card-name${p.type === 'ally' ? ' ally-name' : ''}`}>{p.name}</span>
           </div>
 
-          {/* Condition Chips */}
-          <div className="card-chips-row">
-            {p.bloodied && (
-              <span className="status-chip chip-bloodied" title="Verwundet">
-                🩸 Verwundet
-              </span>
-            )}
-            {p.conditions && p.conditions.map(c => {
-              const info = CONDITION_DATA[c.name] || { icon: '●', label: c.name }
-              return (
-                <span key={c.name} className="status-chip chip-condition" title={info.label}>
-                  <span>{info.icon}</span>
-                  <span>{info.label}</span>
-                  {!displayOnly && (
-                    <button
-                      className="chip-remove-btn"
-                      onClick={() => toggleCondition(c.name)}
-                      title={`${info.label} entfernen`}
-                      aria-label={`${info.label} bei ${p.name} entfernen`}
-                    >✕</button>
-                  )}
-                </span>
-              )
-            })}
-            {!displayOnly && (
+          <ConditionChips {...chipProps}>
+            {!displayOnly && !p.dying && (
               <button
-                className="status-chip chip-add"
-                onClick={() => setShowConditions(true)}
-                title="Zustand hinzufügen"
-                aria-label={`Zustand für ${p.name} hinzufügen`}
+                className="status-chip chip-skull"
+                onClick={startDeathSaves}
+                title="Auf 0 HP / Todeswürfe setzen"
               >
-                + Zustand 🎭
+                ☠ Todeswürfe
               </button>
             )}
-          </div>
+            {p.type === 'ally' && !displayOnly && (
+              <div className="ally-controls-row">
+                {duplicateButton}
+                <button
+                  className="monster-btn kill-btn"
+                  onClick={defeatAlly}
+                  title="Besiegt"
+                  aria-label={`${p.name} als besiegt markieren`}
+                >☠</button>
+                <RemoveButton name={p.name} armed={confirmRemove} onClick={requestRemove} />
+              </div>
+            )}
+          </ConditionChips>
 
-          {p.hp > 0 ? (
-            <div className="ally-controls-row">
-              <div className="ally-hp-group">
-                <span className="ally-hp-label">HP</span>
-                <span className="ally-hp-value">{p.hp}</span>
-                {p.maxHp > 0 && <span className="ally-hp-max">/ {p.maxHp}</span>}
-              </div>
-              {!displayOnly && (
-                <>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    className="ally-hp-input"
-                    value={allyHpInput}
-                    onChange={e => setAllyHpInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') applyAllyDamage() }}
-                    placeholder="HP"
-                    min="1"
-                  />
-                  <button className="ally-btn ally-dmg-btn" onClick={applyAllyDamage} aria-label={`${p.name} Schaden zufügen`}>-Dmg</button>
-                  <button className="ally-btn ally-heal-btn" onClick={applyAllyHeal} aria-label={`${p.name} heilen`}>+Heil</button>
-                  <div className="monster-sep" />
-                  {duplicateButton}
-                  {allyDefeatButton}
-                  <button
-                    className={`monster-btn remove-btn${confirmRemove ? ' remove-armed' : ''}`}
-                    onClick={requestRemove}
-                    title={confirmRemove ? 'Nochmal tippen zum Entfernen' : 'Entfernen'}
-                    aria-label={confirmRemove ? `${p.name} wirklich entfernen` : `${p.name} entfernen`}
-                  >{confirmRemove ? 'Wirklich?' : '✕'}</button>
-                </>
-              )}
-            </div>
-          ) : (
-            <div className="death-saves-row">
-              <div className="ds-group">
-                <span className="ds-label">Rettung</span>
-                <div className="ds-circles">
-                  {[0, 1, 2].map(i => (
-                    <button
-                      key={i}
-                      className={`ds-circle ds-circle-success${(p.deathSaves?.successes || 0) > i ? ' ds-filled' : ''}`}
-                      onClick={!displayOnly ? () => toggleDeathSave('success', i) : undefined}
-                      style={displayOnly ? { cursor: 'default' } : undefined}
-                      aria-label={`Rettungswurf ${i + 1} von ${p.name} gelungen`}
-                      aria-pressed={(p.deathSaves?.successes || 0) > i}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="ds-group">
-                <span className="ds-label">Misserfolg</span>
-                <div className="ds-circles">
-                  {[0, 1, 2].map(i => (
-                    <button
-                      key={i}
-                      className={`ds-circle ds-circle-failure${(p.deathSaves?.failures || 0) > i ? ' ds-filled' : ''}`}
-                      onClick={!displayOnly ? () => toggleDeathSave('failure', i) : undefined}
-                      style={displayOnly ? { cursor: 'default' } : undefined}
-                      aria-label={`Rettungswurf ${i + 1} von ${p.name} misslungen`}
-                      aria-pressed={(p.deathSaves?.failures || 0) > i}
-                    />
-                  ))}
-                </div>
-              </div>
-              {!displayOnly && (
-                <div className="ally-down-actions">
-                  {duplicateButton}
-                  {allyDefeatButton}
-                  <button
-                    className={`monster-btn remove-btn${confirmRemove ? ' remove-armed' : ''}`}
-                    onClick={requestRemove}
-                    title={confirmRemove ? 'Nochmal tippen zum Entfernen' : 'Entfernen'}
-                    aria-label={confirmRemove ? `${p.name} wirklich entfernen` : `${p.name} entfernen`}
-                  >{confirmRemove ? 'Wirklich?' : '✕'}</button>
-                </div>
-              )}
-            </div>
+          {p.dying && (
+            <DeathSaves p={p} displayOnly={displayOnly} onToggle={toggleDeathSave} onStabilize={stabilize} />
           )}
         </div>
       ) : (
@@ -624,41 +499,7 @@ export default function ParticipantCard({
             <span className="card-name monster-name">{p.name}</span>
           </div>
 
-          {/* Condition Chips */}
-          <div className="card-chips-row">
-            {p.bloodied && (
-              <span className="status-chip chip-bloodied" title="Verwundet">
-                🩸 Verwundet
-              </span>
-            )}
-            {p.conditions && p.conditions.map(c => {
-              const info = CONDITION_DATA[c.name] || { icon: '●', label: c.name }
-              return (
-                <span key={c.name} className="status-chip chip-condition" title={info.label}>
-                  <span>{info.icon}</span>
-                  <span>{info.label}</span>
-                  {!displayOnly && (
-                    <button
-                      className="chip-remove-btn"
-                      onClick={() => toggleCondition(c.name)}
-                      title={`${info.label} entfernen`}
-                      aria-label={`${info.label} bei ${p.name} entfernen`}
-                    >✕</button>
-                  )}
-                </span>
-              )
-            })}
-            {!displayOnly && (
-              <button
-                className="status-chip chip-add"
-                onClick={() => setShowConditions(true)}
-                title="Zustand hinzufügen"
-                aria-label={`Zustand für ${p.name} hinzufügen`}
-              >
-                + Zustand 🎭
-              </button>
-            )}
-          </div>
+          <ConditionChips {...chipProps} />
 
           <div className="monster-controls-row">
             <div className="damage-group">
@@ -705,12 +546,7 @@ export default function ParticipantCard({
                   title={armed === 'kill' ? 'Nochmal tippen: besiegt' : 'Besiegt'}
                   aria-label={armed === 'kill' ? `${p.name} wirklich als besiegt markieren` : `${p.name} als besiegt markieren`}
                 >{armed === 'kill' ? 'Besiegt?' : '☠'}</button>
-                <button
-                  className={`monster-btn remove-btn${confirmRemove ? ' remove-armed' : ''}`}
-                  onClick={requestRemove}
-                  title={confirmRemove ? 'Nochmal tippen zum Entfernen' : 'Entfernen'}
-                  aria-label={confirmRemove ? `${p.name} wirklich entfernen` : `${p.name} entfernen`}
-                >{confirmRemove ? 'Wirklich?' : '✕'}</button>
+                <RemoveButton name={p.name} armed={confirmRemove} onClick={requestRemove} />
               </>
             )}
           </div>

@@ -71,10 +71,14 @@ function loadCombatState() {
   const saved = readJSON('dnd-combat-state', null)
   if (!saved || !Array.isArray(saved.participants)) return saved
   const knownIds = new Set(PLAYER_DEFAULTS.map(p => p.id))
-  const participants = saved.participants.filter(
-    p => p?.type !== 'player' || knownIds.has(p.id),
-  )
-  if (participants.length === saved.participants.length) return saved
+  const participants = saved.participants
+    .filter(p => p?.type !== 'player' || knownIds.has(p.id))
+    // Allies used to make death saves at 0 HP; now `dying` says so and their
+    // old hp/maxHp fields are simply ignored.
+    .map(p => p?.type === 'ally' && typeof p.hp === 'number' && p.hp <= 0 && !p.dead && !p.dying
+      ? { ...p, dying: true }
+      : p)
+  if (participants.length === saved.participants.length) return { ...saved, participants }
   return {
     ...saved,
     participants,
@@ -518,12 +522,15 @@ export default function App() {
 
   // TV: one-shot effect sounds
   useEffect(() => {
-    if (APP_MODE !== 'display' || !audioUnlocked || !displayState?.effectTrigger) return
+    if (APP_MODE !== 'display' || !displayState?.effectTrigger) return
     const nonce = displayState.effectTrigger.nonce
     // Only a nonce the display has not seen before is a real trigger; a
     // replayed state carries the old one.
     if (nonce === lastEffectNonceRef.current) return
     lastEffectNonceRef.current = nonce
+    // Before "Ton aktivieren" the nonce is only noted, so unlocking the
+    // sound does not replay an effect that fired while the TV was silent.
+    if (!audioUnlocked) return
     const track = EFFECT_TRACKS.find(t => t.key === displayState.effectTrigger.key)
     if (!track) return
     const audio = new Audio(track.url)

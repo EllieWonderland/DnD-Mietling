@@ -21,8 +21,8 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 | 5 | 🧹 Aufräumen & Spielrunde | 26–31 | ✅ erledigt |
 | 6 | ⚪ Build, Deploy & Performance | 32–37 | ⚠️ bis auf 36 erledigt |
 | 7 | 🎲 Spielrunde 2026-09-27 | 38–42 | ✅ erledigt |
-| 8 | 🎯 Kampflogik & Karten (Review 2026-10-26) | 43–49 | ⏳ 43–45 erledigt |
-| 9 | 🛠 Code, Betrieb & Performance (Review 2026-10-26) | 50–61 | ⏳ 55 erledigt |
+| 8 | 🎯 Kampflogik & Karten (Review 2026-10-26) | 43–49 | ✅ erledigt |
+| 9 | 🛠 Code, Betrieb & Performance (Review 2026-10-26) | 50–61 | ⏳ 50, 51, 55 erledigt |
 | 10 | 📱 Play Store | 62–72 | offen |
 
 ---
@@ -259,36 +259,42 @@ Damit diese Punkte nicht bei jedem Review neu aufkommen:
   **Fix:** Zwei-Tipp-Bestätigung wie bei ✕ **und** tote Monster in der rechten Leiste antippbar → „Wiederbeleben".
   **Erledigt:** ☠ beim Monster zeigt erst „Besiegt?", der zweite Tipp besiegt (✕ und ☠ teilen sich `confirmTwice`). Besiegte Monster sind in der rechten Leiste ein Button: erster Tipp „↺ Wiederbeleben?", zweiter holt das Monster mit seinem bisherigen Schaden an den alten Platz zurück; wer am Zug ist, bleibt am Zug. Nach „Doch weiterkämpfen" kann so auch das letzte Monster zurückgeholt werden.
 
-- [ ] **46. Alter Soundeffekt nach „Ton aktivieren"**
+- [x] **46. Alter Soundeffekt nach „Ton aktivieren"**
   `App.jsx:519-534` — ein Effekt, der ausgelöst wird, bevor am TV „Ton aktivieren" gedrückt wurde, wird beim Entsperren nachgespielt (Nonce wird nur bei `audioUnlocked` gemerkt). Variante von Punkt 10.
   **Fix:** Nonce auch ohne `audioUnlocked` in `lastEffectNonceRef` mitführen, nur das Abspielen hängt am Unlock.
+  **Erledigt:** Der Effekt-Hook merkt sich jeden neuen Nonce sofort und bricht erst danach ab, solange der Ton gesperrt ist. Beim Entsperren ist der Nonce schon bekannt, nichts wird nachgespielt.
 
-- [ ] **47. HP bei Verbündeten entfernen**
+- [x] **47. HP bei Verbündeten entfernen**
   Hat sich in der Spielrunde als unnötig erwiesen — jeder zählt seine HP selbst. Verbündete werden damit wie Spieler behandelt (analog Punkt 13):
   - `hp`/`maxHp` aus `addAlly`, `duplicateParticipant`, Edit-Modus und `AddMonsterModal` (bei `isAlly`) entfernen; -Dmg/+Heil-Leiste weg.
   - Todeswürfe über einen „☠ Todeswürfe"-Button wie beim Spieler statt über 0 HP; „Stabil" bzw. 3 Erfolge beenden sie.
   - ☠ Besiegt, ausgegraute Karte und Wiederbeleben bleiben; „Wiederbeleben" setzt keine HP mehr.
   - Der nie gesetzte 🩸-Chip bei Verbündeten entfällt.
   - Gespeicherte Kämpfe mit `hp` bei Verbündeten müssen weiter laden (Felder einfach ignorieren).
+  **Erledigt:** Spieler und Verbündete teilen sich jetzt ein Kartenlayout. Verbündete haben kein HP-Feld mehr (weder beim Hinzufügen noch im Bearbeiten-Modus), bekommen „☠ Todeswürfe“ und „💚 Stabil“ wie die Spieler; ⧉, ☠ und ✕ stehen am Ende der Chip-Zeile. `loadCombatState` macht aus einem alten Verbündeten mit 0 HP einen mit laufenden Todeswürfen, übrige `hp`/`maxHp` bleiben unbeachtet liegen.
 
-- [ ] **48. Versteckt und Fliegend auch für Monster und Verbündete**
+- [x] **48. Versteckt und Fliegend auch für Monster und Verbündete**
   Bisher nur bei Spielern. Konzentration und Gesegnet bleiben spielerexklusiv (siehe „Entschieden").
   **Fix:** Die beiden Chips auf allen Karten; die Symbole in der rechten Leiste gibt es bereits für alle Typen.
+  **Erledigt:** Über `STATUS_TOGGLES` in `ParticipantCard.jsx`; Konzentration und Gesegnet sind dort als `playerOnly` markiert.
 
-- [ ] **49. „besiegt?" erscheint auch am TV** — *Entscheidung nötig*
+- [x] **49. „besiegt?" erscheint auch am TV**
   `ParticipantCard.jsx:666` ist nicht auf `!displayOnly` beschränkt. Die Spieler sehen den Hinweis, bevor am Tablet entschieden wurde. Nur relevant, wenn Max HP eingetragen ist.
   **Optionen:** Hinweis nur am Tablet zeigen **oder** so lassen.
+  **Entschieden am 2026-10-26: nur am Tablet.** Hinweis, roter Kartenrahmen und pulsierender ☠ hängen alle an `monsterDown`, das am TV jetzt immer falsch ist.
 
 ---
 
 ## 🛠 Kategorie 9 — Code, Betrieb & Performance (Review 2026-10-26)
 
-- [ ] **50. Erschöpfungsstufe nur bei Spielern sichtbar**
+- [x] **50. Erschöpfungsstufe nur bei Spielern sichtbar**
   Bei Verbündeten und Monstern zeigt der Chip nur „Erschöpfung" ohne Stufe. Folge von Punkt 51.
+  **Erledigt:** Mit 51 behoben, alle Karten zeigen die Stufe.
 
-- [ ] **51. Copy-Paste in `ParticipantCard.jsx`**
+- [x] **51. Copy-Paste in `ParticipantCard.jsx`**
   Zustands-Chips 3×, Todeswürfe 2×, Entfernen-Button 3× — die Abweichungen zwischen den Kartentypen (Punkte 50, 47) entstehen genau dort.
   **Fix:** `ConditionChips`, `DeathSaves`, `RemoveButton` als eigene Komponenten. Am besten zusammen mit 47/48 umsetzen.
+  **Erledigt:** Die drei Bausteine stehen oben in `ParticipantCard.jsx` und werden von allen Kartentypen benutzt.
 
 - [ ] **52. `App.jsx` macht zu viel**
   837 Zeilen: Relay, TV-Audio, Persistenz und drei Display-Screens mit Inline-Styles.

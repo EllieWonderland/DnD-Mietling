@@ -466,77 +466,10 @@
 
 .ally-body { gap: 4px; }
 
+/* Duplicate, ☠ and ✕ sit at the end of the chip row. */
 .ally-controls-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: nowrap;
-}
-
-.ally-hp-group {
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-  flex-shrink: 0;
-}
-
-.ally-hp-label {
-  font-size: 0.68rem;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.ally-hp-value {
-  font-family: var(--font-title);
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #88ccff;
-  line-height: 1;
-}
-
-.ally-hp-max { font-size: 0.95rem; color: var(--text-dim); }
-
-.ally-hp-input {
-  width: 60px;
-  padding: 5px 8px;
-  background: var(--bg-dark);
-  border: 1px solid #3a6ea8;
-  border-radius: 5px;
-  color: var(--text-main);
-  font-size: 0.95rem;
-  font-weight: 700;
-  text-align: center;
-  flex-shrink: 0;
-}
-.ally-hp-input:focus { outline: none; border-color: #66aadd; }
-
-.ally-btn {
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-weight: 700;
-  font-size: 0.85rem;
-  border: 1px solid;
-  transition: background 0.15s;
-  flex-shrink: 0;
-}
-
-.ally-dmg-btn {
-  background: #1a2a3a;
-  color: #88ccff;
-  border-color: #2a4a6a;
-}
-.ally-dmg-btn:hover { background: #223344; }
-
-.ally-heal-btn {
-  background: #1a3a2a;
-  color: #88ddaa;
-  border-color: #2a6a4a;
-}
-.ally-heal-btn:hover { background: #224433; }
-
-.ally-down-actions {
-  display: flex;
   gap: 6px;
   margin-left: auto;
 }
@@ -748,25 +681,21 @@
   font-size: 1.35rem;
 }
 
-.card-display-only .damage-group,
-.card-display-only .ally-hp-group {
+.card-display-only .damage-group {
   margin-top: 2px;
   gap: 8px;
 }
 
-.card-display-only .damage-label,
-.card-display-only .ally-hp-label {
+.card-display-only .damage-label {
   font-size: 0.8rem;
   letter-spacing: 0.06em;
 }
 
-.card-display-only .damage-value,
-.card-display-only .ally-hp-value {
+.card-display-only .damage-value {
   font-size: 1.9rem;
 }
 
-.card-display-only .damage-max,
-.card-display-only .ally-hp-max {
+.card-display-only .damage-max {
   font-size: 1.15rem;
 }
 
