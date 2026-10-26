@@ -19,12 +19,17 @@ const PLAYER_DEFAULTS = [
   { id: 'delat',      name: 'Delat' },
   { id: 'tharion',    name: 'Tharion' },
   { id: 'vhahlhohkh', name: 'Vahlok' },
+  { id: 'flagur',     name: 'Flagur' },
+  // Name not known yet. When it is, only change `name` here — the id stays.
+  { id: 'spieler6',   name: 'Neuer Spieler' },
 ]
 
 // Default names that turned out to be misspelled. The id stays (a saved
 // combat refers to it), but a stored profile still carrying the old default
-// was never a deliberate rename and must not keep the typo alive.
-const RETIRED_DEFAULT_NAMES = new Set(['Vhahlhohkh'])
+// was never a deliberate rename and must not keep the typo alive. The same
+// goes for the placeholder: saving any profile writes all of them, and the
+// placeholder must not outlive the real name once it lands in the defaults.
+const RETIRED_DEFAULT_NAMES = new Set(['Vhahlhohkh', 'Neuer Spieler'])
 
 // Stored profiles used to replace the defaults wholesale, so a character
 // added in code never showed up for anyone who had already used the app —
