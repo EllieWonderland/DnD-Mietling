@@ -11,6 +11,7 @@ import { getEffectGroups } from './soundboardData.jsx'
 import MoodMixer from './MoodMixer.jsx'
 import MusicLibrary from './MusicLibrary.jsx'
 import { getMonsterColor } from '../utils/monsterColors.js'
+import { rememberDefeatedMonsters, findRememberedMonsterHp } from '../utils/monsterHpMemory.js'
 import useBackNavigation from '../hooks/useBackNavigation.js'
 import './InitiativeTracker.css'
 
@@ -203,6 +204,11 @@ export default function InitiativeTracker({
 
   const visible = turnOrder(participants)
 
+  // Separate local memory; observing deaths never changes the running combat.
+  useEffect(() => {
+    if (!displayOnly) rememberDefeatedMonsters(participants)
+  }, [participants, displayOnly])
+
   // TV: refit after every render (a new participant or chip changes the
   // height) and whenever the screen size or the web font changes it. Runs
   // before paint, so the intermediate sizes are never visible.
@@ -277,13 +283,14 @@ export default function InitiativeTracker({
     }
   }, [participants, victory, defeat, dismissedResult, setVictory, setDefeat])
 
-  function addMonster(name, initiative, hp, color = null) {
+  function addMonster(name, initiative, hp, color = null, hpSource = 'maxHp') {
     const id = `monster-${monsterIdCounter++}`
     const newMonster = {
       id, name, type: 'monster',
       initiative: Math.max(1, parseInt(initiative) || 1),
       hp: parseInt(hp) || 0,
       maxHp: parseInt(hp) || 0,
+      maxHpEstimated: hpSource === 'damage',
       damage: 0,
       bloodied: false, dead: false,
       conditions: [],
@@ -353,6 +360,14 @@ export default function InitiativeTracker({
       copy.deathSaves = { successes: 0, failures: 0 }
     } else {
       copy.damage = 0
+      if (!(copy.maxHp > 0)) {
+        const remembered = findRememberedMonsterHp(original.name)
+        if (remembered) {
+          copy.hp = remembered.hp
+          copy.maxHp = remembered.hp
+          copy.maxHpEstimated = remembered.source === 'damage'
+        }
+      }
     }
     setParticipantsKeepingTurn(insertByInitiative(participants, copy))
   }
@@ -788,7 +803,7 @@ export default function InitiativeTracker({
 
       {!displayOnly && showAddMonster && (
         <AddMonsterModal
-          onAdd={(name, initiative, hp, color) => { addMonster(name, initiative, hp, color); setShowAddMonster(false) }}
+          onAdd={(name, initiative, hp, color, hpSource) => { addMonster(name, initiative, hp, color, hpSource); setShowAddMonster(false) }}
           onClose={() => setShowAddMonster(false)}
         />
       )}

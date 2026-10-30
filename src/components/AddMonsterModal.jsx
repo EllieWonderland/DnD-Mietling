@@ -1,18 +1,23 @@
 import { useState, useId } from 'react'
 import ColorPicker from './ColorPicker.jsx'
 import Modal from './Modal.jsx'
+import { findRememberedMonsterHp } from '../utils/monsterHpMemory.js'
 import './AddMonsterModal.css'
 
 export default function AddMonsterModal({ onAdd, onClose, title = 'Monster hinzufügen', isAlly = false }) {
   const [name, setName] = useState('')
   const [initiative, setInitiative] = useState('')
-  const [hp, setHp] = useState('')
+  // null follows the remembered value; even an explicitly cleared field is
+  // a manual choice and must never be overwritten by an automatic suggestion.
+  const [hp, setHp] = useState(null)
   const [color, setColor] = useState(null)
   const titleId = useId()
+  const remembered = isAlly ? null : findRememberedMonsterHp(name)
+  const effectiveHp = hp ?? (remembered ? String(remembered.hp) : '')
 
   function submit() {
     if (!name.trim()) return
-    onAdd(name.trim(), initiative, hp, color)
+    onAdd(name.trim(), initiative, effectiveHp, color, hp === null ? remembered?.source : 'maxHp')
   }
 
   return (
@@ -57,12 +62,19 @@ export default function AddMonsterModal({ onAdd, onClose, title = 'Monster hinzu
               <input
                 type="number"
                 inputMode="numeric"
-                value={hp}
+                value={effectiveHp}
                 onChange={e => setHp(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') submit() }}
                 placeholder="0"
                 className="modal-input"
               />
+              {hp === null && remembered && (
+                <span className="modal-hp-memory">
+                  {remembered.source === 'damage'
+                    ? 'Geschätzt aus dem Schaden beim letzten besiegten Monster. Änderbar.'
+                    : 'Max HP vom letzten besiegten Monster übernommen. Änderbar.'}
+                </span>
+              )}
             </div>
           )}
         </div>

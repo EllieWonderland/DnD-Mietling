@@ -36,6 +36,12 @@
   letter-spacing: 0.06em;
 }
 
+.modal-hp-memory {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
 .modal-field--color {
   margin-top: 2px;
 }

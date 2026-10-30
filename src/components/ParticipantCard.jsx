@@ -183,6 +183,7 @@ export default function ParticipantCard({
     if (p.type === 'monster') {
       const maxHp = Math.max(1, parseInt(editMaxHp) || 1)
       changes.maxHp = maxHp
+      if (maxHp !== p.maxHp) changes.maxHpEstimated = false
       // A mistyped damage total is fixed here instead of by deleting the monster.
       const damage = Math.max(0, parseInt(editDamage) || 0)
       changes.damage = damage
