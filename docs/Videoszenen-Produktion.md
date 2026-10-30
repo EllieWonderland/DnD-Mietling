@@ -5,14 +5,15 @@ Fantasy-Szenen für die ruhigen Loop-Hintergründe der App.
 
 ## Bestand und erste Auswahl
 
-Nach der Sumpf-Erweiterung enthält `VIDEO_SCENES` in
-`src/components/soundboardData.jsx` 20 Einträge. Der zusätzliche Sumpf-Eintrag
-verwendet den geprüften R2-Upload unter `Videos/sumpf.mp4`.
+Nach der Sumpf- und Bergpass-Erweiterung enthält `VIDEO_SCENES` in
+`src/components/soundboardData.jsx` 21 Einträge. Die zusätzlichen Einträge
+verwenden die geprüften R2-Uploads unter `Videos/sumpf.mp4` und `Videos/bergpass.mp4`.
 Burg, Höhle, Friedhof und Kerker sind bereits eingetragen, obwohl sie in der
 Wunschliste bisher offen waren. Bibliothek, Piratenschiff, Waldrand, Mondnacht,
 Mondmeer und Nachtregen sind dort ebenfalls vorhanden. Der Abgleich der
 19 bisherigen Einträge ist ein Codeabgleich, keine Prüfung ihrer Dateien im
-R2-Bucket und keine visuelle Stilprüfung. Der neue Sumpf-Clip ist separat geprüft.
+R2-Bucket und keine visuelle Stilprüfung. Die neuen Sumpf- und Bergpass-Clips
+sind separat geprüft.
 
 Zuerst **Sumpf, Bergpass, Thronsaal, Schmiede, Portal und Feenwald** erstellen.
 Diese sechs Motive ergänzen Reise, Hof, Handwerk und Magie, ohne die bereits
@@ -319,9 +320,9 @@ npx wrangler r2 object put dnd-mietling-media/Videos/sumpf.mp4 --file output/med
 Keine Änderungen an Bucket-Freigaben, CORS, Custom Domains oder dem Relay-Worker
 waren dafür erforderlich.
 
-## Bergpass: nächste Generierung
+## Bergpass: generierter Loop
 
-Als zweite Szene der ersten Serie wird der Bergpass erstellt. Die
+Als zweite Szene der ersten Serie wurde der Bergpass erstellt. Die
 [Sumpf-Bildvorlage](media/sumpf-keyframe-v1.png) dient ausschließlich als
 Stilreferenz für Materialwirkung, Kontrast, Details und Farbkorrektur.
 Felswände, Passweg und Schneefelder sollen im Video stabil bleiben; nur ferne
@@ -348,10 +349,41 @@ der Start wie beim Sumpf über den Nutzer im bereits angemeldeten Flow-Konto:
    Gewähltes Modell und angezeigten Credit-Verbrauch möglichst mit notieren;
    diese Angaben werden nicht aus der späteren Videodatei geraten.
 
-Danach folgen vollständige Decodierung, Stichproben zur Bildstabilität,
-Nahtprüfung, Loop-Schnitt und Export ohne Ton in der tatsächlichen
-Quellauflösung. Erst nach diesen Prüfungen nach R2 hochladen und den
-Szenenkatalog ergänzen.
+### Geprüfter Export und R2-Einbindung
 
-**Status:** Bildvorlage und Prompts vorbereitet. Noch kein Bergpass-Video
-generiert, kein R2-Upload und kein zusätzlicher Szeneneintrag in der App.
+Der Nutzer hat `output/media/bergpass-flow-v1.mp4` bereitgestellt. Quelle und
+Export wurden vollständig ohne Decoderfehler gelesen. Stichproben über den
+Verlauf sowie die Überblendung zeigen stabile Felswände und ruhige
+Wolkenbewegung. Modell und tatsächlicher Credit-Verbrauch sind nicht bestätigt.
+
+| Eigenschaft | Quelle | Fertiger Loop |
+| --- | --- | --- |
+| Auflösung / Bildrate | 1280×720 / 24 fps | 1280×720 / 24 fps, ohne Hochskalierung |
+| Videodauer / Frames | 10 Sekunden / 240 | 18 Sekunden / 432 |
+| Ton | AAC vorhanden | Keine Tonspur |
+| Dateigröße | 8.020.126 Bytes | 11.075.910 Bytes |
+| Dateipfad | `output/media/bergpass-flow-v1.mp4` | `output/media/bergpass-loop-v1.mp4` |
+
+Die Verarbeitung entspricht dem Sumpf-Rezept: Anfang bei Quellsekunde eins,
+kurze Überblendung vom Ende zum Anfang, neun Sekunden Zyklus, zwei identische
+Zyklen im 18-Sekunden-Export. Für die Reproduktion im obigen FFmpeg-Rezept
+`sumpf-flow-v1.mp4`, `sumpf-flow-cycle-v2.mp4` und `sumpf-loop-v2.mp4` durch
+`bergpass-flow-v1.mp4`, `bergpass-cycle-v1.mp4` und `bergpass-loop-v1.mp4` ersetzen.
+
+Export: MP4/H.264, `yuv420p`, Faststart mit geprüftem `moov` vor `mdat`.
+Der gemessene Bildsprung zwischen Ende und Anfang sank von 2,744 auf 1,253
+Helligkeitsstufen bei 320×180 Graustufen. Der maximale benachbarte Bildsprung
+im Export liegt bei 1,470. Das belegt eine geglättete technische Naht, keine
+Garantie für einen subjektiv unsichtbaren Übergang auf jedem Tischdisplay.
+
+- R2: `dnd-mietling-media/Videos/bergpass.mp4`, Upload am 30.10.2026.
+- [Öffentlicher Bergpass-Loop](https://pub-28096ab7cf5d497990bc972094f05721.r2.dev/Videos/bergpass.mp4).
+- HTTP 200, `Content-Type: video/mp4`, `Content-Length: 11075910`,
+  `Cache-Control: public, max-age=86400`.
+- Byte-Range geprüft: HTTP 206, `Content-Range: bytes 0-1023/11075910`.
+- Vollständiger öffentlicher Download per SHA-256 identisch zum lokalen Export.
+- App: Schlüssel `mountain-pass`, Anzeige „Bergpass“, vorhandenes Weg-Icon;
+  Soundboard und TV verwenden den gemeinsamen Szenenkatalog.
+- [Metadaten und Prüfsummen](media/bergpass-flow-v1.json).
+
+**Status:** Loop exportiert, R2-Auslieferung geprüft und Szenenkatalog ergänzt.

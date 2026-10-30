@@ -52,6 +52,7 @@ const moonVideo         = `${CDN}/Videos/mond.mp4`
 const moonSeaVideo      = `${CDN}/Videos/mond_meer.mp4`
 const nightRainVideo    = `${CDN}/Videos/nachtregen.mp4`
 const swampVideo        = `${CDN}/Videos/sumpf.mp4`
+const mountainPassVideo = `${CDN}/Videos/bergpass.mp4`
 
 export function IconCompass() {
   return (
@@ -499,6 +500,7 @@ export const VIDEO_SCENES = [
   { key: 'river', label: 'Bach', url: bachVideo, Icon: IconRiver },
   { key: 'forest-edge', label: 'Waldrand', url: forestEdgeVideo, Icon: IconTrees },
   { key: 'swamp', label: 'Sumpf', url: swampVideo, Icon: IconTrees },
+  { key: 'mountain-pass', label: 'Bergpass', url: mountainPassVideo, Icon: IconRoad },
   { key: 'castle', label: 'Burg', url: castleVideo, Icon: IconCrown },
   { key: 'library', label: 'Bibliothek', url: libraryVideo, Icon: IconBook },
   { key: 'ship', label: 'Piratenschiff', url: shipVideo, Icon: IconShip },

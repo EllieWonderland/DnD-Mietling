@@ -12,10 +12,10 @@ Idealerweise nahtlos loopende, ruhige Clips (10–30 s), die flach auf dem Tisch
 laufen können, ohne abzulenken. Vorhandene Szenen siehe `VIDEO_SCENES` in
 `src/components/soundboardData.jsx`.
 
-Abgleich am 30.10.2026: **20 Szenen sind im Code eingetragen**. ✅ bedeutet
+Abgleich am 30.10.2026: **21 Szenen sind im Code eingetragen**. ✅ bedeutet
 hier „im Szenenkatalog vorhanden“; CDN-Erreichbarkeit und Bildinhalt der
-19 bisherigen Clips wurden bei diesem Abgleich nicht geprüft. Der neue
-Sumpf-Clip ist separat geprüft. Spezielle Varianten wie Burghof oder
+19 bisherigen Clips wurden bei diesem Abgleich nicht geprüft. Die neuen
+Sumpf- und Bergpass-Clips sind separat geprüft. Spezielle Varianten wie Burghof oder
 Leuchtkristalle können deshalb weiterhin fehlen.
 
 Für die Erweiterung ist ein **einheitlicher KI-Fantasy-Stil** gewünscht.
@@ -38,7 +38,7 @@ Sumpf-Vorlage stehen im [Produktionsplan](Videoszenen-Produktion.md).
 - ✅ Lichtung
 - ✅ Waldhaus (Hütte im Wald)
 - ✅ Bach / Fluss
-- Bergpass / Gebirge (Schnee, Felswände) – Bildvorlage vorbereitet; Flow-Video ausstehend
+- ✅ Bergpass / Gebirge (`bergpass.mp4`; 18-Sekunden-KI-Loop, R2-Auslieferung geprüft)
 - Wüste / Ödland (Düne, Hitzeflimmern)
 - ✅ Sumpf / Moor (`sumpf.mp4`; 18-Sekunden-KI-Loop, R2-Auslieferung geprüft)
 - Straße / Wegmarsch (Feldweg, Hügel)

@@ -1,0 +1,63 @@
+{
+  "date": "2026-10-30",
+  "scene": "Bergpass",
+  "provider": "Google Flow, vom Nutzer generiert und bereitgestellt",
+  "model": null,
+  "actualGenerationCredits": null,
+  "keyframe": "docs/media/bergpass-keyframe-v1.png",
+  "motionPrompt": "docs/media/bergpass-motion-v1.prompt.txt",
+  "source": {
+    "path": "output/media/bergpass-flow-v1.mp4",
+    "sha256": "65710ff7868c851355041ba4913880744cffcd63df1b0d6cf1af138a87214e9c",
+    "bytes": 8020126,
+    "width": 1280,
+    "height": 720,
+    "fps": 24,
+    "videoFrames": 240,
+    "containerDurationSeconds": 10.026667,
+    "audioCodec": "aac"
+  },
+  "output": {
+    "path": "output/media/bergpass-loop-v1.mp4",
+    "sha256": "e659f0fa546a90bdb28070998432f44137e12ba95d8712b2f1d927b9f3e3fe4b",
+    "bytes": 11075910,
+    "width": 1280,
+    "height": 720,
+    "fps": 24,
+    "videoFrames": 432,
+    "durationSeconds": 18,
+    "videoCodec": "h264",
+    "pixelFormat": "yuv420p",
+    "audioStreams": 0,
+    "cycleSeconds": 9,
+    "crossfadeSeconds": 0.958333,
+    "repetitions": 2,
+    "faststartVerified": true
+  },
+  "validation": {
+    "sourceFullDecode": "passed",
+    "outputFullDecode": "passed",
+    "sampledFrames": "reviewed",
+    "lumaMaeScale": "320x180, 8-bit grayscale",
+    "sourceSeamMae": 2.7442534722222223,
+    "outputSeamMae": 1.2530729166666668,
+    "outputMeanAdjacentMae": 0.31271328789636504,
+    "outputMaxAdjacentMae": 1.4700173611111111,
+    "continuousPlaybackOnTargetDisplay": "pending",
+    "note": "Frame sampling and luma metrics do not certify a perceptually invisible seam."
+  },
+  "publication": {
+    "r2Uploaded": true,
+    "sceneCatalogUpdated": true,
+    "sceneKey": "mountain-pass",
+    "r2Bucket": "dnd-mietling-media",
+    "r2Key": "Videos/bergpass.mp4",
+    "publicUrl": "https://pub-28096ab7cf5d497990bc972094f05721.r2.dev/Videos/bergpass.mp4",
+    "uploadedDate": "2026-10-30",
+    "contentType": "video/mp4",
+    "cacheControl": "public, max-age=86400",
+    "verifiedHeadStatus": 200,
+    "verifiedRangeStatus": 206,
+    "downloadSha256Matches": true
+  }
+}
