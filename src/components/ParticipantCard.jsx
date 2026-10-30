@@ -160,8 +160,14 @@ export default function ParticipantCard({
   const [editColor, setEditColor] = useState(null)
   const [editDamage, setEditDamage] = useState('')
   const [armed, setArmed] = useState(null) // 'remove' | 'kill' | null
+  const [saveKillHp, setSaveKillHp] = useState(false)
+  const [killHpInput, setKillHpInput] = useState('')
   const confirmTimer = useRef(null)
   const concTitleId = useId()
+  const killHpId = useId()
+  const killPromptId = useId()
+  const killHp = Number(killHpInput)
+  const validKillHp = Number.isSafeInteger(killHp) && killHp > 0
 
   useEffect(() => () => { if (confirmTimer.current) clearTimeout(confirmTimer.current) }, [])
 
@@ -274,9 +280,8 @@ export default function ParticipantCard({
     onUpdate({ dead: false, dying: false, deathSaves: { successes: 0, failures: 0 } })
   }
 
-  // ✕ and the monster's ☠ take a card off the board, so both ask first: the
-  // first tap arms the button, the second one acts. The prompt disarms itself
-  // after a few seconds so no card is left in a pending state.
+  // Removal disarms itself after a few seconds. Defeat stays open while the
+  // DM decides whether to remember HP and types the chosen value.
   function confirmTwice(action, run) {
     if (confirmTimer.current) clearTimeout(confirmTimer.current)
     if (armed === action) {
@@ -290,6 +295,19 @@ export default function ParticipantCard({
 
   const requestRemove = () => confirmTwice('remove', onRemove)
   const confirmRemove = armed === 'remove'
+
+  function requestKill() {
+    if (confirmTimer.current) clearTimeout(confirmTimer.current)
+    if (armed === 'kill') {
+      if (saveKillHp && !validKillHp) return
+      setArmed(null)
+      onKill(saveKillHp ? killHp : null)
+      return
+    }
+    setSaveKillHp(false)
+    setKillHpInput(p.maxHp > 0 && !p.maxHpEstimated ? String(p.maxHp) : '')
+    setArmed('kill')
+  }
 
   function toggleCondition(cond) {
     const has = p.conditions.some(c => c.name === cond)
@@ -544,7 +562,10 @@ export default function ParticipantCard({
                 {duplicateButton}
                 <button
                   className={`monster-btn kill-btn${armed === 'kill' ? ' remove-armed' : monsterDown ? ' kill-btn-suggested' : ''}`}
-                  onClick={() => confirmTwice('kill', onKill)}
+                  onClick={requestKill}
+                  disabled={armed === 'kill' && saveKillHp && !validKillHp}
+                  aria-expanded={armed === 'kill'}
+                  aria-controls={armed === 'kill' ? killPromptId : undefined}
                   title={armed === 'kill' ? 'Nochmal tippen: besiegt' : 'Besiegt'}
                   aria-label={armed === 'kill' ? `${p.name} wirklich als besiegt markieren` : `${p.name} als besiegt markieren`}
                 >{armed === 'kill' ? 'Besiegt?' : '☠'}</button>
@@ -552,6 +573,32 @@ export default function ParticipantCard({
               </>
             )}
           </div>
+          {!displayOnly && armed === 'kill' && (
+            <div className="kill-hp-prompt" id={killPromptId}>
+              <label className="kill-hp-choice">
+                <input type="checkbox" checked={saveKillHp} onChange={e => setSaveKillHp(e.target.checked)} />
+                HP für „{p.name}“ speichern?
+              </label>
+              {saveKillHp && (
+                <label className="kill-hp-value" htmlFor={killHpId}>
+                  Wie viele HP?
+                  <input
+                    id={killHpId}
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    step="1"
+                    className="damage-input"
+                    value={killHpInput}
+                    onChange={e => setKillHpInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') requestKill() }}
+                    aria-invalid={!validKillHp}
+                  />
+                </label>
+              )}
+              <button type="button" className="monster-btn" onClick={() => setArmed(null)}>Abbrechen</button>
+            </div>
+          )}
         </div>
       )}
 

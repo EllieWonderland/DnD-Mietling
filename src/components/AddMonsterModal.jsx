@@ -17,7 +17,7 @@ export default function AddMonsterModal({ onAdd, onClose, title = 'Monster hinzu
 
   function submit() {
     if (!name.trim()) return
-    onAdd(name.trim(), initiative, effectiveHp, color, hp === null ? remembered?.source : 'maxHp')
+    onAdd(name.trim(), initiative, effectiveHp, color)
   }
 
   return (
@@ -70,9 +70,7 @@ export default function AddMonsterModal({ onAdd, onClose, title = 'Monster hinzu
               />
               {hp === null && remembered && (
                 <span className="modal-hp-memory">
-                  {remembered.source === 'damage'
-                    ? 'Geschätzt aus dem Schaden beim letzten besiegten Monster. Änderbar.'
-                    : 'Max HP vom letzten besiegten Monster übernommen. Änderbar.'}
+                  Gespeicherte Max HP übernommen. Änderbar.
                 </span>
               )}
             </div>

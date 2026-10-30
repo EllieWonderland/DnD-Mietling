@@ -204,7 +204,7 @@ export default function InitiativeTracker({
 
   const visible = turnOrder(participants)
 
-  // Separate local memory; observing deaths never changes the running combat.
+  // Separate local memory; only explicitly approved HP are remembered.
   useEffect(() => {
     if (!displayOnly) rememberDefeatedMonsters(participants)
   }, [participants, displayOnly])
@@ -283,14 +283,13 @@ export default function InitiativeTracker({
     }
   }, [participants, victory, defeat, dismissedResult, setVictory, setDefeat])
 
-  function addMonster(name, initiative, hp, color = null, hpSource = 'maxHp') {
+  function addMonster(name, initiative, hp, color = null) {
     const id = `monster-${monsterIdCounter++}`
     const newMonster = {
       id, name, type: 'monster',
       initiative: Math.max(1, parseInt(initiative) || 1),
       hp: parseInt(hp) || 0,
       maxHp: parseInt(hp) || 0,
-      maxHpEstimated: hpSource === 'damage',
       damage: 0,
       bloodied: false, dead: false,
       conditions: [],
@@ -360,12 +359,13 @@ export default function InitiativeTracker({
       copy.deathSaves = { successes: 0, failures: 0 }
     } else {
       copy.damage = 0
+      copy.rememberedHp = null
       if (!(copy.maxHp > 0)) {
         const remembered = findRememberedMonsterHp(original.name)
         if (remembered) {
           copy.hp = remembered.hp
           copy.maxHp = remembered.hp
-          copy.maxHpEstimated = remembered.source === 'damage'
+          copy.maxHpEstimated = false
         }
       }
     }
@@ -403,8 +403,8 @@ export default function InitiativeTracker({
     setParticipants(renumber(swapPlaces(rows, a, b)))
   }
 
-  function killMonster(id) {
-    setParticipantsLeaving(id, participants.map(p => p.id === id ? { ...p, dead: true } : p))
+  function killMonster(id, rememberedHp = null) {
+    setParticipantsLeaving(id, participants.map(p => p.id === id ? { ...p, dead: true, rememberedHp } : p))
   }
 
   // The way back from ☠, from the right-hand strip: the monster returns to its
@@ -716,7 +716,7 @@ export default function InitiativeTracker({
                 participant={p}
                 isActive={idx === activeIndex}
                 onUpdate={(changes, alertData) => updateParticipant(p.id, changes, alertData)}
-                onKill={p.type === 'monster' ? () => killMonster(p.id) : undefined}
+                onKill={p.type === 'monster' ? hp => killMonster(p.id, hp) : undefined}
                 onRemove={p.type === 'monster' ? () => removeMonster(p.id) : () => removeAlly(p.id)}
                 onDuplicate={p.type !== 'player' ? () => setDuplicateTarget(p) : undefined}
                 onMove={canDrag ? delta => moveParticipant(p.id, delta) : undefined}
@@ -803,7 +803,7 @@ export default function InitiativeTracker({
 
       {!displayOnly && showAddMonster && (
         <AddMonsterModal
-          onAdd={(name, initiative, hp, color, hpSource) => { addMonster(name, initiative, hp, color, hpSource); setShowAddMonster(false) }}
+          onAdd={(name, initiative, hp, color) => { addMonster(name, initiative, hp, color); setShowAddMonster(false) }}
           onClose={() => setShowAddMonster(false)}
         />
       )}

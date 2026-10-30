@@ -773,6 +773,38 @@
   letter-spacing: 0.03em;
 }
 
+.kill-hp-prompt {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-red);
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+.kill-hp-choice,
+.kill-hp-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kill-hp-choice {
+  min-height: 36px;
+  cursor: pointer;
+}
+
+.kill-hp-choice input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--red-mid);
+}
+
+.kill-hp-value .damage-input { width: 90px; }
+.kill-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
 .dmg-btn-minus {
   background: #1a3a24;
   color: #88dd9e;

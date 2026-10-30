@@ -12,7 +12,7 @@ function positiveHp(value) {
 
 function validRecord(record) {
   return record && typeof record.id === 'string' && nameKey(record.name)
-    && positiveHp(record.hp) && ['maxHp', 'damage'].includes(record.source)
+    && positiveHp(record.hp) && record.source === 'confirmed'
 }
 
 function readHistory() {
@@ -20,23 +20,20 @@ function readHistory() {
   return Array.isArray(saved) ? saved.filter(validRecord) : []
 }
 
-// Only confirmed deaths count. Retain removed monsters; a living participant
-// with the same id means the DM undid that death, so withdraw its observation.
-// This also imports defeated monsters still present in an older combat save.
+// Only the HP explicitly approved in the defeat confirmation count. Older
+// automatic observations are ignored. Undoing a death withdraws its record.
 export function reconcileMonsterHpHistory(history, participants) {
   let next = history
   for (const monster of participants) {
     if (monster.type !== 'monster' || typeof monster.id !== 'string') continue
     const previous = next.find(record => record.id === monster.id)
-    const maxHp = positiveHp(monster.maxHp)
-    const knownMaxHp = monster.maxHpEstimated ? 0 : maxHp
+    const hp = positiveHp(monster.rememberedHp)
     const damage = positiveHp(monster.damage)
-    const hp = knownMaxHp || damage || maxHp
     const record = monster.dead && hp && nameKey(monster.name) ? {
       id: monster.id,
       name: monster.name.trim(),
       hp,
-      source: knownMaxHp ? 'maxHp' : 'damage',
+      source: 'confirmed',
       damage,
     } : null
     if (!previous && !record) continue
