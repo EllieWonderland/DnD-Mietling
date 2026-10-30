@@ -201,6 +201,7 @@ export default function App() {
   const bcRef = useRef(null)
   const pendingStateRef = useRef(null)
   const lastMsgAtRef = useRef(Date.now())
+  const lastDisplayStateJsonRef = useRef(null)
   const [displayState, setDisplayState] = useState(null)
   // Relay connection, shown as a dot in the header (todo.md, Punkt 17).
   const [wsStatus, setWsStatus] = useState(ROOM ? 'connecting' : 'off')
@@ -219,7 +220,13 @@ export default function App() {
   }
 
   function applyDisplayState(raw) {
+    // Both transports can deliver the same state, and idle heartbeats repeat
+    // it. Their handlers already refresh liveness; skip React and TV layout
+    // work unless the payload changed. Keep every field, including effect nonce.
+    const json = JSON.stringify(raw)
+    if (json === lastDisplayStateJsonRef.current) return
     const state = normalizeDisplayState(raw)
+    lastDisplayStateJsonRef.current = json
     if (!effectPrimedRef.current) {
       effectPrimedRef.current = true
       lastEffectNonceRef.current = state.effectTrigger?.nonce ?? null

@@ -22,7 +22,7 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 | 6 | ⚪ Build, Deploy & Performance | 32–37 | ⚠️ bis auf 36 erledigt |
 | 7 | 🎲 Spielrunde 2026-09-27 | 38–42 | ✅ erledigt |
 | 8 | 🎯 Kampflogik & Karten (Review 2026-10-26) | 43–49 | ✅ erledigt |
-| 9 | 🛠 Code, Betrieb & Performance (Review 2026-10-26) | 50–61 | ⏳ 50, 51, 55 erledigt |
+| 9 | 🛠 Code, Betrieb & Performance (Review 2026-10-26) | 50–61 | ⏳ 50, 51, 55, 58 erledigt |
 | 10 | 📱 Play Store | 62–72 | offen |
 
 ---
@@ -318,9 +318,10 @@ Damit diese Punkte nicht bei jedem Review neu aufkommen:
   `worker/wrangler.toml` — der Origin-Check ist in Produktion damit aus.
   **Fix:** Vercel-Domain (und ggf. spätere eigene Domain) eintragen, `npx wrangler deploy`. Hinweis: Wer den TV-Link hat, kann auch `STATE` senden — für den Einsatz am Tisch vertretbar.
 
-- [ ] **58. TV rendert alle 4 s komplett neu**
+- [x] **58. TV rendert alle 4 s komplett neu**
   Der Heartbeat schickt identischen State, `setDisplayState` bekommt trotzdem ein neues Objekt, `fitTvList` misst das Layout jedes Mal mehrfach neu. Auf schwachen TV-Browsern spürbar.
   **Fix:** Empfangenes JSON mit dem zuletzt angewendeten vergleichen und Duplikate verwerfen.
+  **Erledigt am 2026-10-30:** Beide Empfangswege vergleichen den vollständigen State vor Normalisierung und React-Update mit dem zuletzt angewendeten JSON. Identische Heartbeats und doppelte Zustellungen über WebSocket/BroadcastChannel lösen kein Karten-Rendering und keine Layout-Messung mehr aus; die Empfangszeit für Verbindungsanzeige und Watchdog wird weiterhin aktualisiert. Änderungen inklusive neuer Soundeffekt-Nonce werden weiter übernommen.
 
 - [ ] **59. Lautstärkeregler kann das Rate-Limit reißen**
   Jede Reglerbewegung schickt den vollen State, das Relay verwirft alles über 60 Nachrichten/s. Der letzte Wert kommt erst mit dem nächsten Heartbeat an.
