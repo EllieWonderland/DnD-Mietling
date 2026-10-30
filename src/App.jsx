@@ -10,6 +10,7 @@ import { readJSON, writeJSON, storageRemove } from './utils/safeStorage.js'
 import { getRoomId } from './utils/session.js'
 import { createThrottledSender } from './utils/throttledSender.js'
 import { createEffectPlayer } from './utils/effectPlayer.js'
+import { createMusicPlayer } from './utils/musicPlayer.js'
 import { MUSIC_TRACKS, EFFECT_TRACKS, VIDEO_SCENES } from './components/soundboardData.jsx'
 import mietlingLogo from './assets/images/mietling.webp'
 
@@ -91,26 +92,6 @@ function clearCombatState() {
   storageRemove('dnd-combat-state')
 }
 
-// Smoothly fade audio volume on a single element to save memory.
-// Cancels any running fade. onDone is called when target is reached.
-function fadeAudio(audio, fadeRef, target, durationMs, onDone) {
-  if (fadeRef.current) clearInterval(fadeRef.current)
-  const stepMs = 40
-  const start = audio.volume
-  const steps = Math.max(1, Math.round(durationMs / stepMs))
-  let i = 0
-  const id = setInterval(() => {
-    i++
-    audio.volume = Math.min(1, Math.max(0, start + (target - start) * (i / steps)))
-    if (i >= steps) {
-      clearInterval(id)
-      if (fadeRef.current === id) fadeRef.current = null
-      onDone?.()
-    }
-  }, stepMs)
-  fadeRef.current = id
-}
-
 function makePlayer(pid, profiles) {
   const profile = profiles.find(p => p.id === pid) ?? { id: pid, name: pid }
   return {
@@ -183,22 +164,19 @@ export default function App() {
   const [ambienceFits, setAmbienceFits] = useState(() => readJSON('dnd-ambience-fits', {}) || {})
   const [effectTrigger, setEffectTrigger] = useState(null)
   const [audioUnlocked, setAudioUnlocked] = useState(false)
+  const [musicStatus, setMusicStatus] = useState('idle')
+  const [effectError, setEffectError] = useState(false)
   const [playerProfiles, setPlayerProfiles] = useState(loadPlayerProfiles)
   const [savedCombat, setSavedCombat] = useState(() => loadCombatState())
   const [mood, setMood] = useState({ danger: 0.2, energy: 0.4, mysticism: 0.3, tone: 0.6 })
   const tvMusicRef = useRef(null)
   const tvEffectsRef = useRef(null)
-  const fadeRef = useRef(null)
   // The relay replays the cached state on every (re)connect, effect trigger
   // included. The first state a display sees only primes these refs — without
   // that, reconnecting or pressing "Ton aktivieren" fires the last explosion
   // into a quiet table.
   const effectPrimedRef = useRef(false)
   const lastEffectNonceRef = useRef(null)
-  // Volume the controller last asked for. A fade owns audio.volume while it
-  // runs, so slider moves during those ~600 ms land here and are applied at
-  // the end instead of being dropped.
-  const targetVolumeRef = useRef(0.72)
 
   const wsRef = useRef(null)
   const bcRef = useRef(null)
@@ -481,71 +459,54 @@ export default function App() {
   // TV: start/stop music when playingMusicKey changes (or after audio unlock)
   useEffect(() => {
     if (APP_MODE !== 'display' || !audioUnlocked) return
-    const key = displayState?.playingMusicKey
-    const volume = displayState?.masterVolume ?? 0.72
-
-    // Reuse a single persistent audio element instead of creating new ones
-    // to prevent memory/limit freezes on tablets.
-    let audio = tvMusicRef.current
-    if (!audio) {
-      audio = new Audio()
-      audio.loop = true
-      tvMusicRef.current = audio
-    }
-
-    const FADE_MS = 600
-
-    // Swap source, start quietly and fade in gently (old stream is released by load()).
-    const startTrack = track => {
-      audio.pause()
-      audio.src = track.url
-      audio.loop = true
-      audio.volume = 0
-      audio.load()
-      audio.play().catch(() => {})
-      // Fade towards the volume known when the fade started, then snap to
-      // whatever the slider says now — a move during the fade is not lost.
-      fadeAudio(audio, fadeRef, volume, FADE_MS, () => {
-        audio.volume = targetVolumeRef.current
-      })
-    }
-
-    if (!key) {
-      // Fade out, then stop and explicitly release buffer/stream
-      if (!audio.src || audio.paused) return
-      fadeAudio(audio, fadeRef, 0, FADE_MS, () => {
-        audio.pause()
-        audio.removeAttribute('src')
-        audio.load()
-      })
-      return
-    }
-
-    const track = MUSIC_TRACKS.find(t => t.key === key)
-    if (!track) return
-
-    // If another song is already playing -> fade out first, then switch
-    if (audio.src && !audio.paused) {
-      fadeAudio(audio, fadeRef, 0, FADE_MS, () => startTrack(track))
-    } else {
-      startTrack(track)
-    }
+    tvMusicRef.current?.setTrack(MUSIC_TRACKS.find(t => t.key === displayState?.playingMusicKey), displayState?.masterVolume ?? 0.72)
   }, [displayState?.playingMusicKey, audioUnlocked])
 
   // TV: sync volume while music is playing
   useEffect(() => {
-    if (APP_MODE !== 'display') return
-    targetVolumeRef.current = displayState?.masterVolume ?? 0.72
-    if (!audioUnlocked || !tvMusicRef.current) return
-    // A running fade owns the volume; its onDone applies the ref afterwards.
-    if (fadeRef.current) return
-    tvMusicRef.current.volume = targetVolumeRef.current
+    if (APP_MODE !== 'display' || !audioUnlocked) return
+    tvMusicRef.current?.setVolume(displayState?.masterVolume ?? 0.72)
   }, [displayState?.masterVolume, audioUnlocked])
 
   useEffect(() => () => {
+    tvMusicRef.current?.dispose()
+    tvMusicRef.current = null
     tvEffectsRef.current?.dispose()
     tvEffectsRef.current = null
   }, [])
+
+  // Recover from standby/tab changes without restarting a healthy song.
+  useEffect(() => {
+    if (APP_MODE !== 'display' || !audioUnlocked) return
+    const resume = () => {
+      if (document.visibilityState !== 'visible') return
+      tvMusicRef.current?.resume()
+      tvEffectsRef.current?.resume()
+    }
+    document.addEventListener('visibilitychange', resume)
+    window.addEventListener('focus', resume)
+    window.addEventListener('pageshow', resume)
+    const timer = setInterval(resume, 10000)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', resume)
+      window.removeEventListener('focus', resume)
+      window.removeEventListener('pageshow', resume)
+    }
+  }, [audioUnlocked])
+
+  function activateAudio() {
+    setEffectError(false)
+    if (!tvEffectsRef.current) tvEffectsRef.current = createEffectPlayer(EFFECT_TRACKS, {
+      onError: () => setEffectError(true),
+      onReady: () => setEffectError(false),
+    })
+    tvEffectsRef.current.preload()
+    if (!tvMusicRef.current) tvMusicRef.current = createMusicPlayer(new Audio(), setMusicStatus)
+    // Both calls stay in the click handler: playback permission can be per element.
+    tvMusicRef.current.activate(MUSIC_TRACKS.find(t => t.key === displayState?.playingMusicKey), displayState?.masterVolume ?? 0.72)
+    setAudioUnlocked(true)
+  }
 
   // TV: one-shot effect sounds
   useEffect(() => {
@@ -708,12 +669,7 @@ export default function App() {
         <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '32px', padding: 'clamp(20px, 4vh, 48px)', boxSizing: 'border-box' }}>
           <img src={mietlingLogo} alt="DnD Mietling" style={{ maxWidth: '320px', width: '60vw', objectFit: 'contain' }} />
           <button
-            onClick={() => {
-              if (!tvEffectsRef.current) tvEffectsRef.current = createEffectPlayer(EFFECT_TRACKS)
-              tvEffectsRef.current.preload()
-              const a = new Audio(); a.play().catch(() => {})
-              setAudioUnlocked(true)
-            }}
+            onClick={activateAudio}
             style={{
               padding: '20px 48px', fontSize: '1.4rem', fontWeight: 700, letterSpacing: '0.08em',
               background: 'linear-gradient(180deg, #2f2418, #1f1812)',
@@ -747,6 +703,12 @@ export default function App() {
     return (
       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
         <ScreenKeepAlive enabled={true} />
+        {(effectError || ['blocked', 'error', 'interrupted', 'loading'].includes(musicStatus)) && (
+          <div className="tv-audio-recovery" role="status" aria-live="polite">
+            <span>{musicStatus === 'loading' && !effectError ? 'Musik wird geladen …' : 'Ton wurde unterbrochen oder konnte nicht gestartet werden.'}</span>
+            <button type="button" onClick={activateAudio}>Ton erneut aktivieren</button>
+          </div>
+        )}
         {/* The combat screen always takes precedence. Starting or resuming a
             combat clears the scene for good — it does not come back when the
             combat ends (see startCombat/resumeCombat). */}

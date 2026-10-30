@@ -58,6 +58,35 @@ input {
   font-family: var(--font-body);
 }
 
+.tv-audio-recovery {
+  position: fixed;
+  z-index: 10000;
+  top: max(12px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 24px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  background: var(--bg-dark);
+}
+
+.tv-audio-recovery button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--gold);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--gold-light);
+  font-weight: 700;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-dark); }

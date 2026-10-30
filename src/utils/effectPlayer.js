@@ -4,6 +4,8 @@ export function createEffectPlayer(tracks, {
   AudioContext = globalThis.AudioContext || globalThis.webkitAudioContext,
   Audio = globalThis.Audio,
   fetch = globalThis.fetch,
+  onError = () => {},
+  onReady = () => {},
 } = {}) {
   const urls = new Map(tracks.map(track => [track.key, track.url]))
   const buffers = new Map()
@@ -27,8 +29,12 @@ export function createEffectPlayer(tracks, {
     return buffers.get(key)
   }
 
-  function resume() {
-    return context.state === 'running' ? Promise.resolve() : context.resume()
+  async function resume() {
+    if (!context || disposed || context.state === 'running') return Promise.resolve()
+    await context.resume()
+    if (disposed) return
+    if (context.state !== 'running') throw new Error('Audio context is not running')
+    onReady()
   }
 
   function playFallback(key, volume) {
@@ -46,8 +52,13 @@ export function createEffectPlayer(tracks, {
     const stop = release
     active.add(stop)
     audio.onended = release
-    audio.onerror = release
-    return audio.play().catch(release)
+    const failed = () => { release(); if (!disposed) onError() }
+    audio.onerror = failed
+    try {
+      return Promise.resolve(audio.play()).then(() => { if (!disposed) onReady() }).catch(failed)
+    } catch {
+      failed()
+    }
   }
 
   return {
@@ -56,11 +67,20 @@ export function createEffectPlayer(tracks, {
     preload() {
       if (disposed) return Promise.resolve([])
       if (!context && AudioContext) {
-        try { context = new AudioContext() } catch { /* HTML audio fallback */ }
+        try {
+          context = new AudioContext()
+          context.onstatechange = () => {
+            if (!disposed && ['suspended', 'interrupted', 'closed'].includes(context.state)) onError()
+          }
+        } catch { /* HTML audio fallback */ }
       }
       if (!context) return Promise.resolve([])
-      resume().catch(() => {})
+      resume().catch(() => { if (!disposed) onError() })
       return Promise.allSettled([...urls.keys()].map(load))
+    },
+
+    resume() {
+      return resume().catch(() => { if (!disposed) onError() })
     },
 
     async play(key, volume) {
@@ -86,6 +106,7 @@ export function createEffectPlayer(tracks, {
         active.add(stop)
         source.onended = release
         source.start()
+        onReady()
       } catch {
         return playFallback(key, volume)
       }
@@ -97,7 +118,10 @@ export function createEffectPlayer(tracks, {
       for (const stop of active) stop()
       active.clear()
       buffers.clear()
-      if (context) context.close().catch(() => {})
+      if (context) {
+        context.onstatechange = null
+        context.close().catch(() => {})
+      }
     },
   }
 }

@@ -4,12 +4,14 @@ import { createEffectPlayer } from './effectPlayer.js'
 
 const tracks = [{ key: 'dragon', url: '/dragon.mp3' }, { key: 'cheer', url: '/cheer.mp3' }]
 
-function setup({ fetchError = false, decodeError = false, supported = true, contextError = false } = {}) {
+function setup({ fetchError = false, decodeError = false, supported = true, contextError = false, fallbackError = false } = {}) {
   const requests = []
   const decoded = []
   const sources = []
   const gains = []
   const fallback = []
+  const errors = []
+  const ready = []
   const context = {
     state: 'suspended', destination: {}, closed: false, resumes: 0,
     async resume() { this.resumes++; this.state = 'running' },
@@ -42,7 +44,7 @@ function setup({ fetchError = false, decodeError = false, supported = true, cont
   }
   class Audio {
     constructor(url) { this.src = url; fallback.push(this) }
-    async play() { this.played = true }
+    async play() { if (fallbackError) throw new Error('Playback blocked'); this.played = true }
     pause() { this.paused = true }
     removeAttribute() { this.src = '' }
     load() { this.released = true }
@@ -50,12 +52,14 @@ function setup({ fetchError = false, decodeError = false, supported = true, cont
   const player = createEffectPlayer(tracks, {
     AudioContext: supported ? AudioContext : null,
     Audio,
+    onError: () => errors.push(true),
+    onReady: () => ready.push(true),
     async fetch(url, options) {
       requests.push({ url, ...options })
       return { ok: !fetchError, status: fetchError ? 503 : 200, async arrayBuffer() { return url } }
     },
   })
-  return { player, requests, decoded, sources, gains, fallback, context }
+  return { player, requests, decoded, sources, gains, fallback, context, errors, ready }
 }
 
 test('unlock resumes immediately and preloads every effect silently only once', async () => {
@@ -141,4 +145,41 @@ test('cleanup during loading prevents delayed playback', async () => {
   await Promise.all([ready, playing])
   assert.equal(sources.length, 0)
   assert.equal(fallback.length, 0)
+})
+
+test('failed HTML audio playback is reported instead of silently discarded', async () => {
+  const { player, errors, fallback } = setup({ supported: false, fallbackError: true })
+  await player.preload()
+  await player.play('dragon', 0.6)
+  assert.equal(errors.length, 1)
+  assert.ok(fallback[0].released)
+})
+
+test('an interrupted context can resume without replaying an old effect', async () => {
+  const { player, context, sources, errors, ready } = setup()
+  await player.preload()
+  context.state = 'interrupted'
+  context.onstatechange()
+  assert.equal(errors.length, 1)
+  await player.resume()
+  assert.equal(context.state, 'running')
+  assert.equal(context.resumes, 2)
+  assert.equal(sources.length, 0)
+  assert.ok(ready.length >= 2)
+  player.dispose()
+  await player.resume()
+  assert.equal(context.resumes, 2)
+})
+
+test('failed context recovery stays visible and a later gesture can retry', async () => {
+  const { player, context, errors } = setup()
+  await player.preload()
+  context.state = 'suspended'
+  const original = context.resume
+  context.resume = async () => { throw new Error('Needs user activation') }
+  await player.resume()
+  assert.equal(errors.length, 1)
+  context.resume = original
+  await player.resume()
+  assert.equal(context.state, 'running')
 })
