@@ -318,3 +318,40 @@ npx wrangler r2 object put dnd-mietling-media/Videos/sumpf.mp4 --file output/med
 
 Keine Änderungen an Bucket-Freigaben, CORS, Custom Domains oder dem Relay-Worker
 waren dafür erforderlich.
+
+## Bergpass: nächste Generierung
+
+Als zweite Szene der ersten Serie wird der Bergpass erstellt. Die
+[Sumpf-Bildvorlage](media/sumpf-keyframe-v1.png) dient ausschließlich als
+Stilreferenz für Materialwirkung, Kontrast, Details und Farbkorrektur.
+Felswände, Passweg und Schneefelder sollen im Video stabil bleiben; nur ferne
+Wolken und ganz wenig Schneestaub bewegen sich. Das erleichtert einen ruhigen
+Loop ohne auffällige Kamerafahrt.
+
+- Bildvorlage: [bergpass-keyframe-v1.png](media/bergpass-keyframe-v1.png).
+- Tatsächlicher Bildprompt: [bergpass-keyframe-v1.prompt.txt](media/bergpass-keyframe-v1.prompt.txt).
+- Vorbereiteter Bewegungsprompt: [bergpass-motion-v1.prompt.txt](media/bergpass-motion-v1.prompt.txt).
+
+### Übergabe an Google Flow
+
+Der direkte Browserzugriff ist weiterhin nicht verfügbar. Deshalb erfolgt
+der Start wie beim Sumpf über den Nutzer im bereits angemeldeten Flow-Konto:
+
+1. Die Bergpass-Bildvorlage als Startbild in einem neuen Bild-zu-Video-Auftrag
+   verwenden. Die übrigen Sumpf-Projekte und Ergebnisse behalten.
+2. 16:9, möglichst zehn Sekunden und ein Ergebnis wählen. Das vorhandene
+   Google-AI-Pro-Kontingent nutzen; keine Zusatzcredits kaufen.
+3. Den vorbereiteten Bewegungsprompt unverändert einsetzen. Falls Start- und
+   Endbild angeboten werden, dasselbe Bild an beiden Enden verwenden; die
+   fertige Naht muss anschließend trotzdem geprüft werden.
+4. Das Ergebnis als `output/media/bergpass-flow-v1.mp4` im Projekt ablegen.
+   Gewähltes Modell und angezeigten Credit-Verbrauch möglichst mit notieren;
+   diese Angaben werden nicht aus der späteren Videodatei geraten.
+
+Danach folgen vollständige Decodierung, Stichproben zur Bildstabilität,
+Nahtprüfung, Loop-Schnitt und Export ohne Ton in der tatsächlichen
+Quellauflösung. Erst nach diesen Prüfungen nach R2 hochladen und den
+Szenenkatalog ergänzen.
+
+**Status:** Bildvorlage und Prompts vorbereitet. Noch kein Bergpass-Video
+generiert, kein R2-Upload und kein zusätzlicher Szeneneintrag in der App.

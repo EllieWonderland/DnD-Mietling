@@ -38,7 +38,7 @@ Sumpf-Vorlage stehen im [Produktionsplan](Videoszenen-Produktion.md).
 - ✅ Lichtung
 - ✅ Waldhaus (Hütte im Wald)
 - ✅ Bach / Fluss
-- Bergpass / Gebirge (Schnee, Felswände)
+- Bergpass / Gebirge (Schnee, Felswände) – Bildvorlage vorbereitet; Flow-Video ausstehend
 - Wüste / Ödland (Düne, Hitzeflimmern)
 - ✅ Sumpf / Moor (`sumpf.mp4`; 18-Sekunden-KI-Loop, R2-Auslieferung geprüft)
 - Straße / Wegmarsch (Feldweg, Hügel)
