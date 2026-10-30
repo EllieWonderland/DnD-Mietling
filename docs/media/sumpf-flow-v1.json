@@ -46,8 +46,17 @@
     "note": "Frame sampling and luma metrics do not certify a perceptually invisible seam."
   },
   "publication": {
-    "r2Uploaded": false,
-    "liveSceneCatalogUpdated": false,
-    "proposedR2Key": "Videos/sumpf.mp4"
+    "r2Uploaded": true,
+    "sceneCatalogUpdated": true,
+    "sceneKey": "swamp",
+    "r2Bucket": "dnd-mietling-media",
+    "r2Key": "Videos/sumpf.mp4",
+    "publicUrl": "https://pub-28096ab7cf5d497990bc972094f05721.r2.dev/Videos/sumpf.mp4",
+    "uploadedDate": "2026-10-30",
+    "contentType": "video/mp4",
+    "cacheControl": "public, max-age=86400",
+    "verifiedHeadStatus": 200,
+    "verifiedRangeStatus": 206,
+    "downloadSha256Matches": true
   }
 }

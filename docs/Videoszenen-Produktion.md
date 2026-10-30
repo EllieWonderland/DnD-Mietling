@@ -5,11 +5,14 @@ Fantasy-Szenen für die ruhigen Loop-Hintergründe der App.
 
 ## Bestand und erste Auswahl
 
-`VIDEO_SCENES` in `src/components/soundboardData.jsx` enthält 19 Einträge.
+Nach der Sumpf-Erweiterung enthält `VIDEO_SCENES` in
+`src/components/soundboardData.jsx` 20 Einträge. Der zusätzliche Sumpf-Eintrag
+verwendet den geprüften R2-Upload unter `Videos/sumpf.mp4`.
 Burg, Höhle, Friedhof und Kerker sind bereits eingetragen, obwohl sie in der
 Wunschliste bisher offen waren. Bibliothek, Piratenschiff, Waldrand, Mondnacht,
-Mondmeer und Nachtregen sind dort ebenfalls vorhanden. Das ist ein Codeabgleich,
-keine Prüfung der Dateien im R2-Bucket und keine visuelle Stilprüfung.
+Mondmeer und Nachtregen sind dort ebenfalls vorhanden. Der Abgleich der
+19 bisherigen Einträge ist ein Codeabgleich, keine Prüfung ihrer Dateien im
+R2-Bucket und keine visuelle Stilprüfung. Der neue Sumpf-Clip ist separat geprüft.
 
 Zuerst **Sumpf, Bergpass, Thronsaal, Schmiede, Portal und Feenwald** erstellen.
 Diese sechs Motive ergänzen Reise, Hof, Handwerk und Magie, ohne die bereits
@@ -284,5 +287,34 @@ Metadaten und SHA-256-Prüfsummen stehen in
 [sumpf-flow-v1.json](media/sumpf-flow-v1.json). Alle MP4-Dateien bleiben lokal
 unter dem ignorierten Verzeichnis `output/media/`.
 
-Es wurde kein R2-Upload vorgenommen und der Live-Szenenkatalog wurde nicht
-erweitert. Die endgültige Sichtabnahme und die Veröffentlichung sind noch offen.
+Der Sumpf-Loop wurde nach R2 hochgeladen und im gemeinsamen Szenenkatalog
+ergänzt. Die abschließende Sichtprüfung auf dem tatsächlichen Tischdisplay
+bleibt eine geräteabhängige Abnahme.
+
+### Stand der R2-Einbindung
+
+- `swamp` / „Sumpf“ ist mit `${CDN}/Videos/sumpf.mp4` im Szenenkatalog
+  ergänzt. Soundboard und TV-Anzeige verwenden den gemeinsamen Katalog.
+- Die Quelldatei entspricht der dokumentierten SHA-256-Prüfsumme.
+- Alle 27 vorhandenen Tests, der Produktionsbuild und `git diff --check`
+  sind erfolgreich durchgelaufen.
+- Bucket: `dnd-mietling-media`; Objekt: `Videos/sumpf.mp4`.
+- Öffentliche Datei:
+  [Sumpf-Loop](https://pub-28096ab7cf5d497990bc972094f05721.r2.dev/Videos/sumpf.mp4).
+- Die öffentliche URL antwortet mit HTTP 200, `Content-Type: video/mp4`,
+  `Content-Length: 12592438` und `Cache-Control: public, max-age=86400`.
+- Byte-Range-Anfragen funktionieren: HTTP 206 mit
+  `Content-Range: bytes 0-1023/12592438`.
+- Ein vollständiger Download stimmt per SHA-256 exakt mit dem lokalen Export
+  überein. Es wurde tatsächlich in den entfernten Bucket hochgeladen (`--remote`).
+- Upload und Prüfung erfolgten am 30.10.2026. Die benötigte Cloudflare-Anmeldung
+  wurde nach ausdrücklicher Nutzerfreigabe erneuert.
+
+Reproduktion des Uploads mit vorhandener Cloudflare-Anmeldung:
+
+```powershell
+npx wrangler r2 object put dnd-mietling-media/Videos/sumpf.mp4 --file output/media/sumpf-loop-v2.mp4 --remote --content-type video/mp4 --content-disposition inline --cache-control 'public, max-age=86400'
+```
+
+Keine Änderungen an Bucket-Freigaben, CORS, Custom Domains oder dem Relay-Worker
+waren dafür erforderlich.
