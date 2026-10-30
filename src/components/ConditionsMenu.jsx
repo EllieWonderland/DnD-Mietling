@@ -5,7 +5,7 @@ import './ConditionsMenu.css'
 const ALL_CONDITIONS = [
   'Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled',
   'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned',
-  'Prone', 'Restrained', 'Stunned', 'Unconscious',
+  'Prone', 'Restrained', 'Stunned', 'Unconscious', 'Laughing',
 ]
 
 const DE_NAMES = {
@@ -14,6 +14,7 @@ const DE_NAMES = {
   Incapacitated: 'Handlungsunfähig', Invisible: 'Unsichtbar', Paralyzed: 'Paralysiert',
   Petrified: 'Versteinert', Poisoned: 'Vergiftet', Prone: 'Liegend',
   Restrained: 'Festgesetzt', Stunned: 'Betäubt', Unconscious: 'Bewusstlos',
+  Laughing: 'Lachend',
 }
 
 export default function ConditionsMenu({ conditions, onToggle, onSetExhaustionLevel, onClose }) {

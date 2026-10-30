@@ -21,6 +21,7 @@ const CONDITION_DATA = {
   Restrained: { icon: '⛓️', label: 'Festgesetzt' },
   Stunned: { icon: '💫', label: 'Betäubt' },
   Unconscious: { icon: '💤', label: 'Bewusstlos' },
+  Laughing: { icon: '😂', label: 'Lachend' },
 }
 
 // Status toggles on the card. Concentration and blessing stay with the
