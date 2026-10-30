@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { createScenePlayback } from '../utils/scenePlayback.js'
 import './AmbienceScene.css'
 
 function makePoster(label) {
@@ -28,33 +29,25 @@ function makePoster(label) {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
 }
 
-// Only the TV renders a scene — the controller just shows in the soundboard
-// that one is live. The component therefore has no controls of its own.
+// A new scene owns fresh status and callbacks, even after a previous failure.
 export default function AmbienceScene({ scene, fit = 'contain' }) {
+  if (!scene) return null
+  return <Scene key={JSON.stringify([scene.key, scene.url])} scene={scene} fit={fit} />
+}
+
+function Scene({ scene, fit }) {
   const [videoStatus, setVideoStatus] = useState('loading')
   const videoRef = useRef(null)
+  const playbackRef = useRef(null)
 
   useEffect(() => {
-    const video = videoRef.current
-    if (!video) return
-    video.muted = true
-    video.playsInline = true
-    video.defaultMuted = true
-    video.play().catch(() => {})
-
+    const playback = createScenePlayback(videoRef.current, scene.url, setVideoStatus)
+    playbackRef.current = playback
     return () => {
-      // Release the video before React detaches it. TV browsers have very few
-      // decoder slots and can keep a detached element playing, which is what
-      // blocked the switch into the combat screen.
-      try {
-        video.pause()
-        video.removeAttribute('src')
-        video.load()
-      } catch { /* ignore */ }
+      playbackRef.current = null
+      playback.dispose()
     }
-  }, [scene?.key])
-
-  if (!scene) return null
+  }, [scene.url])
 
   const poster = makePoster(scene.label)
 
@@ -63,29 +56,32 @@ export default function AmbienceScene({ scene, fit = 'contain' }) {
       <div className="ambience-stage">
         <video
           ref={videoRef}
-          key={scene.key}
           className="ambience-video"
           style={{ objectFit: fit }}
-          src={scene.url}
-          autoPlay
           loop
           muted
           playsInline
           preload="auto"
           poster={poster}
-          onPlaying={() => setVideoStatus('ready')}
-          onError={() => setVideoStatus('error')}
-          onEnded={e => { e.target.currentTime = 0; e.target.play().catch(() => {}) }}
         />
 
         {videoStatus !== 'ready' && (
-          <div className={`ambience-fallback ${videoStatus === 'error' ? 'is-error' : ''}`}>
+          <div className="ambience-fallback">
             <div className="ambience-fallback-panel">
-              <strong>{scene.label}</strong>
-              {videoStatus === 'error' ? (
-                <span>Video konnte nicht geladen werden. Es wird ein statischer Hintergrund angezeigt.</span>
-              ) : (
-                <span>Video wird geladen.</span>
+              <div role="status" aria-live="polite">
+                <strong>{scene.label}</strong>
+                <span>
+                  {videoStatus === 'blocked'
+                    ? 'Der Browser hat die automatische Wiedergabe blockiert.'
+                    : videoStatus === 'error'
+                      ? 'Video konnte nicht geladen oder abgespielt werden. Der statische Hintergrund bleibt sichtbar.'
+                      : 'Video wird geladen.'}
+                </span>
+              </div>
+              {(videoStatus === 'blocked' || videoStatus === 'error') && (
+                <button className="ambience-retry" type="button" onClick={() => playbackRef.current?.retry()}>
+                  {videoStatus === 'blocked' ? 'Video starten' : 'Erneut laden'}
+                </button>
               )}
             </div>
           </div>

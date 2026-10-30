@@ -340,6 +340,14 @@ Damit diese Punkte nicht bei jedem Review neu aufkommen:
 
 ---
 
+## Zusätzliche Verbesserungen (2026-10-30)
+
+- [x] **Videoszenen robuster machen**
+  Jede neue Szene startet mit eigener Ladeanzeige, auch nach vorherigen Ladefehlern. Die Statusanzeige liegt sichtbar über dem Video. Blockierte automatische Wiedergabe zeigt „Video starten“; Lade- und Wiedergabefehler bieten „Erneut laden“. Ein Klick startet die Wiedergabe direkt, damit die Nutzerinteraktion den Browser entsperren kann. Fehler beim erneuten Start am Videoende werden ebenfalls angezeigt. Beim Szenenwechsel werden Medienressourcen und Listener freigegeben; verspätete Promise-Fehler alter Szenen oder Versuche verändern den aktuellen Status nicht. React-StrictMode stellt die freigegebene Videoquelle beim erneuten Effektaufbau wieder her.
+  **Geprüft:** Acht neue Wiedergabetests, alle 18 Tests (`node --test src/utils/*.test.js`), Produktionsbuild und `git diff --check` erfolgreich. Browser-Sichtprüfung ausstehend: Browserzugriff nicht verfügbar; der native Ausweichversuch wurde vom Computer-Use-Schutz gestoppt, weil die aktuelle Browseradresse nicht sicher bestimmbar war. Die tatsächliche Wiedergabe und Bedienung am TV bleiben zu prüfen.
+
+---
+
 ## 📱 Kategorie 10 — Play Store
 
 Ziel: Die App für beliebige Spielrunden anbieten. Der Weg ist eine **Trusted Web Activity (TWA)** — die bestehende PWA wird in eine Android-Hülle verpackt, die Website bleibt die eigentliche App (der TV braucht sie ohnehin als URL).

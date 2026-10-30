@@ -27,7 +27,7 @@
 .ambience-fallback {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -60,6 +60,25 @@
   display: block;
   font-size: 0.92rem;
   color: var(--text-main);
+}
+
+.ambience-retry {
+  margin-top: 18px;
+  min-height: 44px;
+  padding: 10px 20px;
+  border: 1px solid var(--gold-light);
+  border-radius: 8px;
+  background: #261b15;
+  color: var(--gold-light);
+  font: inherit;
+  cursor: pointer;
+}
+
+.ambience-retry:hover,
+.ambience-retry:focus-visible {
+  background: #3b2a1a;
+  outline: 2px solid var(--gold-light);
+  outline-offset: 3px;
 }
 
 .ambience-overlay {
