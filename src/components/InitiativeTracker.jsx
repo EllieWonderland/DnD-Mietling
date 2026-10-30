@@ -11,6 +11,7 @@ import { getEffectGroups } from './soundboardData.jsx'
 import MoodMixer from './MoodMixer.jsx'
 import MusicLibrary from './MusicLibrary.jsx'
 import { getMonsterColor } from '../utils/monsterColors.js'
+import useBackNavigation from '../hooks/useBackNavigation.js'
 import './InitiativeTracker.css'
 
 let monsterIdCounter = Date.now()
@@ -156,6 +157,7 @@ export default function InitiativeTracker({
   const [showAddAlly, setShowAddAlly] = useState(false)
   const [duplicateTarget, setDuplicateTarget] = useState(null)
   const [confirmEnd, setConfirmEnd] = useState(false)
+  useBackNavigation(() => setConfirmEnd(true), !displayOnly, 0)
   const [concentrationAlert, setConcentrationAlert] = useState(null)
   const [showSoundboard, setShowSoundboard] = useState(false)
   const [cTab, setCTab] = useState(null) // 'music' | 'effects' | 'scenes' | null

@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react'
+import useBackNavigation from '../hooks/useBackNavigation.js'
 import defeatOutro from '../defeat_outro.mp3'
 import './DefeatOverlay.css'
 
 export default function DefeatOverlay({ onEnd, onContinue, muted = false, displayOnly = false }) {
+  useBackNavigation(onContinue, !displayOnly)
   const canvasRef = useRef(null)
 
   useEffect(() => {

@@ -4,7 +4,7 @@ import './ResumeCombatDialog.css'
 
 // Discarding an interrupted combat cannot be undone, so "Verwerfen" only opens
 // the question — the second press is the one that throws the autosave away.
-export default function ResumeCombatDialog({ savedCombat, onResume, onDiscard }) {
+export default function ResumeCombatDialog({ savedCombat, onResume, onDiscard, onClose }) {
   const [confirming, setConfirming] = useState(false)
   const titleId = useId()
 
@@ -13,7 +13,7 @@ export default function ResumeCombatDialog({ savedCombat, onResume, onDiscard })
 
   return (
     <Modal
-      onClose={() => setConfirming(false)}
+      onClose={() => confirming ? setConfirming(false) : onClose()}
       labelledBy={titleId}
       overlayClassName="resume-overlay"
       className="resume-box"

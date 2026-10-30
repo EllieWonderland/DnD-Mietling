@@ -23,7 +23,7 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 | 7 | 🎲 Spielrunde 2026-09-27 | 38–42 | ✅ erledigt |
 | 8 | 🎯 Kampflogik & Karten (Review 2026-10-26) | 43–49 | ✅ erledigt |
 | 9 | 🛠 Code, Betrieb & Performance (Review 2026-10-26) | 50–61 | ⏳ 50, 51, 55, 58–60 erledigt |
-| 10 | 📱 Play Store | 62–72 | offen |
+| 10 | 📱 Play Store | 62–72 | ⏳ 69 erledigt |
 
 ---
 
@@ -387,9 +387,11 @@ Ziel: Die App für beliebige Spielrunden anbieten. Der Weg ist eine **Trusted We
   - Paket mit Bubblewrap oder PWABuilder erzeugen, Signaturschlüssel sicher aufbewahren (bei Verlust kein Update mehr möglich — Play App Signing nutzen).
   - Eigene Domain statt `*.vercel.app` empfohlen (unabhängig von Vercel, schönere TV-Adresse).
 
-- [ ] **69. Android-Zurück-Taste**
+- [x] **69. Android-Zurück-Taste**
   Die SPA hat keine History-Einträge — „Zurück" schließt die App mitten im Kampf (Autosave rettet den Stand, aber unschön). Offene Dialoge sollten per Zurück schließen.
   **Fix:** Für Kampf und Modals History-Einträge setzen und `popstate` behandeln.
+  **Erledigt:** Gemeinsamer History-Schutz für den Controller-Kampf und offene Dialoge. Zurück schließt nur die oberste Ebene; im Kampf ohne Dialog öffnet es die bestehende Rückfrage „Kampf beenden?“. Sieg/Niederlage kehren per Zurück zum Kampf zurück. Beim Wiederaufnahme-Dialog bricht Zurück zuerst das Verwerfen ab, danach schließt es den Dialog ohne den gespeicherten Kampf zu löschen. Buttons, Backdrop und Escape hinterlassen keine zusätzlichen aktiven History-Einträge; StrictMode und asynchrone Dialogwechsel sind berücksichtigt. Setup ohne Dialog und TV-Modus bleiben frei navigierbar.
+  **Prüfung:** 9 gezielte Navigationstests, insgesamt 27 Tests erfolgreich; Produktionsbuild erfolgreich. Sichtbarer Browsertest durch Computer Use blockiert (aktuelle Chrome-URL nicht zuverlässig ermittelbar); Hardware-Test mit Android-Zurück-Taste/Geste noch offen.
 
 - [ ] **70. Relay und CDN für öffentliche Nutzung**
   - Punkt 36 (eigene Domain für R2) wird Pflicht — `r2.dev` ist rate-limitiert.

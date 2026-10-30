@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import useBackNavigation from '../hooks/useBackNavigation.js'
 import './Modal.css'
 
 const FOCUSABLE = [
@@ -32,6 +33,9 @@ export default function Modal({
   // would jump back to the first field on every keystroke.
   const onCloseRef = useRef(onClose)
   useEffect(() => { onCloseRef.current = onClose })
+  const isTop = useBackNavigation(onClose)
+  const isTopRef = useRef(isTop)
+  isTopRef.current = isTop
 
   useEffect(() => {
     const restoreTo = document.activeElement
@@ -46,6 +50,7 @@ export default function Modal({
     else box?.focus()
 
     function onKeyDown(event) {
+      if (!isTopRef.current()) return
       if (event.key === 'Escape') {
         event.preventDefault()
         event.stopPropagation()

@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react'
+import useBackNavigation from '../hooks/useBackNavigation.js'
 import orchestralWin from '../orchestral_win.mp3'
 import './VictoryOverlay.css'
 
 export default function VictoryOverlay({ onEnd, onContinue, muted = false, displayOnly = false }) {
+  useBackNavigation(onContinue, !displayOnly)
   const canvasRef = useRef(null)
 
   useEffect(() => {

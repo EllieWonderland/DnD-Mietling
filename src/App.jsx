@@ -807,6 +807,7 @@ export default function App() {
           savedCombat={savedCombat}
           onResume={resumeCombat}
           onDiscard={() => { clearCombatState(); setSavedCombat(null) }}
+          onClose={() => setSavedCombat(null)}
         />
       )}
       {phase === 'setup' && (
