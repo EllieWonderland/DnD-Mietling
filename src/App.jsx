@@ -20,8 +20,8 @@ const PLAYER_DEFAULTS = [
   { id: 'tharion',    name: 'Tharion' },
   { id: 'vhahlhohkh', name: 'Vahlok' },
   { id: 'flagur',     name: 'Flagur' },
-  // Name not known yet. When it is, only change `name` here — the id stays.
-  { id: 'spieler6',   name: 'Neuer Spieler' },
+  // Keep the original id so saved profiles and combats still match.
+  { id: 'spieler6',   name: 'ynos' },
 ]
 
 // Default names that turned out to be misspelled. The id stays (a saved
