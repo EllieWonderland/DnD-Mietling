@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-30",
+  "scene": "Sumpf",
+  "provider": "Google Flow, vom Nutzer generiert und bereitgestellt",
+  "model": null,
+  "actualGenerationCredits": null,
+  "keyframe": "docs/media/sumpf-keyframe-v1.png",
+  "source": {
+    "path": "output/media/sumpf-flow-v1.mp4",
+    "sha256": "8a5bde447c2007961411d147a6bce127a1ae9993c962dcf79c40887c3ac79bcc",
+    "bytes": 9348251,
+    "width": 1280,
+    "height": 720,
+    "fps": 24,
+    "videoFrames": 240,
+    "containerDurationSeconds": 10.026667,
+    "audioCodec": "aac"
+  },
+  "output": {
+    "path": "output/media/sumpf-loop-v2.mp4",
+    "sha256": "644a2e999a7a78b16cb7cbdf95e2495a44fa5c0d09ef1c96e085acab37e2707a",
+    "bytes": 12592438,
+    "width": 1280,
+    "height": 720,
+    "fps": 24,
+    "videoFrames": 432,
+    "durationSeconds": 18,
+    "videoCodec": "h264",
+    "pixelFormat": "yuv420p",
+    "audioStreams": 0,
+    "cycleSeconds": 9,
+    "crossfadeSeconds": 0.958333,
+    "repetitions": 2,
+    "faststartVerified": true
+  },
+  "validation": {
+    "sourceFullDecode": "passed",
+    "outputFullDecode": "passed",
+    "sampledFrames": "reviewed",
+    "lumaMaeScale": "320x180, 8-bit grayscale",
+    "sourceSeamMae": 5.466631944444444,
+    "outputSeamMae": 1.4600694444444444,
+    "outputMeanAdjacentMae": 0.6849738979118328,
+    "outputMaxAdjacentMae": 1.7413541666666668,
+    "continuousPlaybackOnTargetDisplay": "pending",
+    "note": "Frame sampling and luma metrics do not certify a perceptually invisible seam."
+  },
+  "publication": {
+    "r2Uploaded": false,
+    "liveSceneCatalogUpdated": false,
+    "proposedR2Key": "Videos/sumpf.mp4"
+  }
+}

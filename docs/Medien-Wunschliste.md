@@ -12,10 +12,19 @@ Idealerweise nahtlos loopende, ruhige Clips (10–30 s), die flach auf dem Tisch
 laufen können, ohne abzulenken. Vorhandene Szenen siehe `VIDEO_SCENES` in
 `src/components/soundboardData.jsx`.
 
+Abgleich am 30.10.2026: **19 Szenen sind im Code eingetragen**. ✅ bedeutet
+hier „im Szenenkatalog vorhanden“; CDN-Erreichbarkeit und Bildinhalt wurden
+bei diesem Abgleich nicht geprüft. Spezielle Varianten wie Burghof oder
+Leuchtkristalle können deshalb weiterhin fehlen.
+
+Für die Erweiterung ist ein **einheitlicher KI-Fantasy-Stil** gewünscht.
+Konkrete Motive, Prioritäten, Bild- und Video-Prompts sowie eine erste
+Sumpf-Vorlage stehen im [Produktionsplan](Videoszenen-Produktion.md).
+
 ### Siedlung & Hof
 - ✅ Taverne (Innenraum, Kaminfeuer, Kerzen)
 - ✅ Dorf (Marktplatz / Fachwerk)
-- Burg / Burghof (Innenhof, Banner, Wachen)
+- ✅ Burg (`burg.mp4`; Burghof mit Bannern/Wachen als Variante noch prüfen)
 - Thronsaal / Adelshalle (Säulen, Kerzen, Wandteppiche)
 - Stadtgasse bei Nacht (Laternen, Pflaster, Regen)
 - Hafen / Docks (Schiffe, Wasser, Möwen)
@@ -30,7 +39,7 @@ laufen können, ohne abzulenken. Vorhandene Szenen siehe `VIDEO_SCENES` in
 - ✅ Bach / Fluss
 - Bergpass / Gebirge (Schnee, Felswände)
 - Wüste / Ödland (Düne, Hitzeflimmern)
-- Sumpf / Moor (Nebel, totes Geäst)
+- Sumpf / Moor (Nebel, totes Geäst) – KI-Loop lokal vorbereitet; R2/Einbindung offen
 - Straße / Wegmarsch (Feldweg, Hügel)
 - Küste / Klippe (Meer, Wind)
 - Schneelandschaft / Tundra (Schneefall)
@@ -39,10 +48,10 @@ laufen können, ohne abzulenken. Vorhandene Szenen siehe `VIDEO_SCENES` in
 ### Verlies & Ruinen
 - ✅ Dungeon (Steingewölbe, Fackeln)
 - ✅ Ruinen (verfallenes Gemäuer)
-- Höhle / Kristallhöhle (feucht, Tropfen, Leuchtkristalle)
+- ✅ Höhle (`höhle.mp4`; Kristallhöhle als Variante noch prüfen)
 - Krypta / Gruft (Sarkophage, Spinnweben)
-- Friedhof (Nebel, Grabsteine, Mond)
-- Kerker / Verlies (Gitter, Ketten, Dunkelheit)
+- ✅ Friedhof (`friedhof.mp4`)
+- ✅ Kerker / Verlies (`kerker.mp4`)
 - Verlassene Mine / Stollen (Holzstützen, Loren)
 
 ### Kampf & Verfolgung
@@ -64,6 +73,15 @@ laufen können, ohne abzulenken. Vorhandene Szenen siehe `VIDEO_SCENES` in
 - Schwarzbild / Reine Stille (Pause, Szenenwechsel)
 - Karte / Pergament (Reiseplanung, Zwischenszene)
 - Würfel-Nahaufnahme / Tischatmosphäre (optional Intro)
+
+### Weitere bereits eingetragene Szenen
+
+- ✅ Bibliothek (`bibliothek.mp4`)
+- ✅ Piratenschiff (`piratenschiff.mp4`) – ersetzt nicht automatisch einen Hafen
+- ✅ Waldrand (`waldrand.mp4`)
+- ✅ Mondnacht (`mond.mp4`) – mögliche Teilabdeckung für Sternenhimmel/Nachtlager
+- ✅ Mondmeer (`mond_meer.mp4`) – mögliche Teilabdeckung für Küste bei Nacht
+- ✅ Nachtregen (`nachtregen.mp4`) – Stadtgasse als eigene Variante noch prüfen
 
 ---
 

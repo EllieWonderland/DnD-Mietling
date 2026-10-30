@@ -4,3 +4,6 @@ dist/
 src/Videos/
 # Musik wird über Cloudflare R2 ausgeliefert, nicht gebündelt
 src/Music/*.mp3
+
+# Lokale Medienentwürfe; fertige Videos werden später über R2 ausgeliefert.
+/output/media/
