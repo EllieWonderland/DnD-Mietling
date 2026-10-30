@@ -9,6 +9,7 @@ import ConnectionBadge from './components/ConnectionBadge.jsx'
 import { readJSON, writeJSON, storageRemove } from './utils/safeStorage.js'
 import { getRoomId } from './utils/session.js'
 import { createThrottledSender } from './utils/throttledSender.js'
+import { createEffectPlayer } from './utils/effectPlayer.js'
 import { MUSIC_TRACKS, EFFECT_TRACKS, VIDEO_SCENES } from './components/soundboardData.jsx'
 import mietlingLogo from './assets/images/mietling.webp'
 
@@ -186,6 +187,7 @@ export default function App() {
   const [savedCombat, setSavedCombat] = useState(() => loadCombatState())
   const [mood, setMood] = useState({ danger: 0.2, energy: 0.4, mysticism: 0.3, tone: 0.6 })
   const tvMusicRef = useRef(null)
+  const tvEffectsRef = useRef(null)
   const fadeRef = useRef(null)
   // The relay replays the cached state on every (re)connect, effect trigger
   // included. The first state a display sees only primes these refs — without
@@ -540,6 +542,11 @@ export default function App() {
     tvMusicRef.current.volume = targetVolumeRef.current
   }, [displayState?.masterVolume, audioUnlocked])
 
+  useEffect(() => () => {
+    tvEffectsRef.current?.dispose()
+    tvEffectsRef.current = null
+  }, [])
+
   // TV: one-shot effect sounds
   useEffect(() => {
     if (APP_MODE !== 'display' || !displayState?.effectTrigger) return
@@ -551,13 +558,8 @@ export default function App() {
     // Before "Ton aktivieren" the nonce is only noted, so unlocking the
     // sound does not replay an effect that fired while the TV was silent.
     if (!audioUnlocked) return
-    const track = EFFECT_TRACKS.find(t => t.key === displayState.effectTrigger.key)
-    if (!track) return
-    const audio = new Audio(track.url)
-    audio.volume = displayState.masterVolume ?? 0.72
-    audio.play().catch(() => {})
-    // Release stream/buffer after playing so effect audios don't accumulate
-    audio.onended = () => { audio.removeAttribute('src'); audio.load() }
+    tvEffectsRef.current?.play(displayState.effectTrigger.key, displayState.masterVolume ?? 0.72)
+      .catch(() => {})
   }, [displayState?.effectTrigger?.nonce, audioUnlocked])
 
   // Controller: auto-save full combat state on every change during combat
@@ -707,8 +709,8 @@ export default function App() {
           <img src={mietlingLogo} alt="DnD Mietling" style={{ maxWidth: '320px', width: '60vw', objectFit: 'contain' }} />
           <button
             onClick={() => {
-              const AudioCtx = window.AudioContext || window.webkitAudioContext
-              if (AudioCtx) new AudioCtx().resume()
+              if (!tvEffectsRef.current) tvEffectsRef.current = createEffectPlayer(EFFECT_TRACKS)
+              tvEffectsRef.current.preload()
               const a = new Audio(); a.play().catch(() => {})
               setAudioUnlocked(true)
             }}

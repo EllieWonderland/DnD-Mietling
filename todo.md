@@ -22,7 +22,7 @@ Befundliste aus dem Vollcheck (UX, UI, Sicherheit, Stabilität, Logik) vom **202
 | 6 | ⚪ Build, Deploy & Performance | 32–37 | ⚠️ bis auf 36 erledigt |
 | 7 | 🎲 Spielrunde 2026-09-27 | 38–42 | ✅ erledigt |
 | 8 | 🎯 Kampflogik & Karten (Review 2026-10-26) | 43–49 | ✅ erledigt |
-| 9 | 🛠 Code, Betrieb & Performance (Review 2026-10-26) | 50–61 | ⏳ 50, 51, 55, 58 erledigt |
+| 9 | 🛠 Code, Betrieb & Performance (Review 2026-10-26) | 50–61 | ⏳ 50, 51, 55, 58–60 erledigt |
 | 10 | 📱 Play Store | 62–72 | offen |
 
 ---
@@ -328,9 +328,10 @@ Damit diese Punkte nicht bei jedem Review neu aufkommen:
   **Fix:** Senden drosseln (z. B. max. alle 100 ms, letzter Wert gewinnt).
   **Erledigt am 2026-10-30:** Reine Lautstärkeänderungen werden für WebSocket und BroadcastChannel auf eine Übertragung pro 100 ms gebündelt. Der letzte Wert wird per Timer ohne weiteren Eingriff oder Heartbeat gesendet; der lokale Regler reagiert sofort. Spielaktionen und Soundeffekte senden weiterhin sofort den neuesten Gesamtzustand und ersetzen eine ausstehende Lautstärkeübertragung. Timer werden beim Unmount aufgeräumt. Geprüft mit vier automatisierten Tests (`node --test src/utils/throttledSender.test.js`), lokalem WebSocket-Relay inklusive Wiederverbindung und Produktionsbuild. Browserprüfung durch nicht verfügbaren Computer-Use-Zugriff blockiert.
 
-- [ ] **60. Soundeffekte mit Verzögerung beim ersten Abspielen**
+- [x] **60. Soundeffekte mit Verzögerung beim ersten Abspielen**
   `App.jsx:529` erzeugt pro Auslösung `new Audio(url)`, der Service Worker cached Medien nicht.
   **Fix:** Beim „Ton aktivieren" alle Effekte vorladen (oder als Web-Audio-Buffer dekodieren).
+  **Erledigt am 2026-10-30:** „Ton aktivieren“ lädt und dekodiert alle 24 Soundboard-Effekte auf dem TV im Hintergrund. Ein AudioContext und ein Puffer pro Effekt bleiben für die Sitzung erhalten; wiederholte und überlappende Auslösungen verwenden eigene Wiedergabeknoten mit der jeweils angeforderten Lautstärke. Während des Vorladens wird derselbe laufende Ladevorgang verwendet. Lade-/Dekodierfehler werden einzeln behandelt, können erneut versucht werden und lassen die bisherige HTML-Audiowiedergabe als Rückfall zu; diese bleibt auch ohne nutzbare Web-Audio-Unterstützung erhalten. Beim Unmount werden Downloads abgebrochen, Wiedergaben gestoppt und Puffer/AudioContext freigegeben. Die Nonce-Sperre gegen alte Effekte bleibt bestehen. Geprüft mit sechs neuen Audiotests, allen zehn Tests (`node --test src/utils/*.test.js`), Produktionsbuild und `git diff --check`. Browserprüfung vom Computer-Use-Schutz gestoppt, weil die aktuelle Browseradresse nicht sicher bestimmt werden konnte; Hörtest auf dem TV bleibt ausstehend.
 
 - [ ] **61. Kleinkram Build & Dateien**
   - Umlaute/Leerzeichen in Mediendateinamen (`höhle.mp4`, `tür öffnen.mp3`, `Holy Spell.mp3` …) → ASCII-Namen, manche TV-Browser sind da empfindlich. R2-Dateien mit umbenennen.
