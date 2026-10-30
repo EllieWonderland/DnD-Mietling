@@ -323,9 +323,10 @@ Damit diese Punkte nicht bei jedem Review neu aufkommen:
   **Fix:** Empfangenes JSON mit dem zuletzt angewendeten vergleichen und Duplikate verwerfen.
   **Erledigt am 2026-10-30:** Beide Empfangswege vergleichen den vollständigen State vor Normalisierung und React-Update mit dem zuletzt angewendeten JSON. Identische Heartbeats und doppelte Zustellungen über WebSocket/BroadcastChannel lösen kein Karten-Rendering und keine Layout-Messung mehr aus; die Empfangszeit für Verbindungsanzeige und Watchdog wird weiterhin aktualisiert. Änderungen inklusive neuer Soundeffekt-Nonce werden weiter übernommen.
 
-- [ ] **59. Lautstärkeregler kann das Rate-Limit reißen**
+- [x] **59. Lautstärkeregler kann das Rate-Limit reißen**
   Jede Reglerbewegung schickt den vollen State, das Relay verwirft alles über 60 Nachrichten/s. Der letzte Wert kommt erst mit dem nächsten Heartbeat an.
   **Fix:** Senden drosseln (z. B. max. alle 100 ms, letzter Wert gewinnt).
+  **Erledigt am 2026-10-30:** Reine Lautstärkeänderungen werden für WebSocket und BroadcastChannel auf eine Übertragung pro 100 ms gebündelt. Der letzte Wert wird per Timer ohne weiteren Eingriff oder Heartbeat gesendet; der lokale Regler reagiert sofort. Spielaktionen und Soundeffekte senden weiterhin sofort den neuesten Gesamtzustand und ersetzen eine ausstehende Lautstärkeübertragung. Timer werden beim Unmount aufgeräumt. Geprüft mit vier automatisierten Tests (`node --test src/utils/throttledSender.test.js`), lokalem WebSocket-Relay inklusive Wiederverbindung und Produktionsbuild. Browserprüfung durch nicht verfügbaren Computer-Use-Zugriff blockiert.
 
 - [ ] **60. Soundeffekte mit Verzögerung beim ersten Abspielen**
   `App.jsx:529` erzeugt pro Auslösung `new Audio(url)`, der Service Worker cached Medien nicht.

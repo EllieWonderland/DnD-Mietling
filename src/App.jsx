@@ -8,6 +8,7 @@ import ResumeCombatDialog from './components/ResumeCombatDialog.jsx'
 import ConnectionBadge from './components/ConnectionBadge.jsx'
 import { readJSON, writeJSON, storageRemove } from './utils/safeStorage.js'
 import { getRoomId } from './utils/session.js'
+import { createThrottledSender } from './utils/throttledSender.js'
 import { MUSIC_TRACKS, EFFECT_TRACKS, VIDEO_SCENES } from './components/soundboardData.jsx'
 import mietlingLogo from './assets/images/mietling.webp'
 
@@ -338,9 +339,6 @@ export default function App() {
   }, [])
 
   const latestStateRef = useRef({})
-  useEffect(() => {
-    latestStateRef.current = { phase, participants, round, activeIndex, victory, defeat, ambienceScene, ambienceFits, playingMusicKey, masterVolume, effectTrigger }
-  }, [phase, participants, round, activeIndex, victory, defeat, ambienceScene, ambienceFits, playingMusicKey, masterVolume, effectTrigger])
 
   // Controller: push the current state to the TV. Reads from latestStateRef so
   // the heartbeat below can reuse it without stale-closure trouble.
@@ -360,10 +358,22 @@ export default function App() {
     }
   }
 
-  // Controller: broadcast full state on every change
+  const stateSenderRef = useRef(null)
+  if (!stateSenderRef.current) {
+    stateSenderRef.current = createThrottledSender(broadcastState)
+  }
+
+  // Keep the slider responsive locally, but send volume-only updates at most
+  // every 100 ms, including a trailing send. Other actions stay immediate and
+  // include the latest volume, replacing any pending volume-only send.
   useEffect(() => {
+    const previous = latestStateRef.current
+    const state = { phase, participants, round, activeIndex, victory, defeat, ambienceScene, ambienceFits, playingMusicKey, masterVolume, effectTrigger }
+    latestStateRef.current = state
     if (APP_MODE !== 'controller') return
-    broadcastState()
+    const volumeOnly = Object.keys(state).every(key => key === 'masterVolume' || state[key] === previous[key])
+    if (volumeOnly) stateSenderRef.current.schedule()
+    else stateSenderRef.current.flush()
   }, [phase, participants, round, activeIndex, victory, defeat, ambienceScene, ambienceFits, playingMusicKey, masterVolume, effectTrigger])
 
   // Controller: idle heartbeat. If the TV ever misses a single message - a
@@ -374,9 +384,12 @@ export default function App() {
     if (APP_MODE !== 'controller') return
     const id = setInterval(() => {
       if (Date.now() - lastStateSentRef.current < 4000) return
-      broadcastState()
+      stateSenderRef.current.flush()
     }, 4000)
-    return () => clearInterval(id)
+    return () => {
+      clearInterval(id)
+      stateSenderRef.current.cancel()
+    }
   }, [])
 
   function notePresence() {
